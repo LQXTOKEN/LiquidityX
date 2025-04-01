@@ -13,6 +13,11 @@ body {
     margin-top: 50px;
 }
 
+h1 {
+    color: #1a73e8;
+    margin-bottom: 20px;
+}
+
 button {
     padding: 10px 20px;
     margin: 10px;
@@ -33,4 +38,13 @@ input {
     margin: 10px;
     border-radius: 5px;
     border: 1px solid #ddd;
+    background-color: #1a1a1a;
+    color: white;
+}
+
+.stake-section {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
