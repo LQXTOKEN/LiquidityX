@@ -28,6 +28,11 @@ const CONFIG = {
 
 let provider, signer, account;
 
+function showLoading(show) {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    loadingIndicator.style.display = show ? 'block' : 'none';
+}
+
 async function connectWallet() {
     if (window.ethereum) {
         try {
@@ -50,6 +55,7 @@ async function connectWallet() {
 }
 
 async function loadBalances() {
+    showLoading(true);
     try {
         const lqxContract = new ethers.Contract(CONFIG.LQX_TOKEN.address, CONFIG.LQX_TOKEN.abi, provider);
         const lpContract = new ethers.Contract(CONFIG.LP_TOKEN.address, CONFIG.LP_TOKEN.abi, provider);
@@ -64,14 +70,14 @@ async function loadBalances() {
         document.getElementById('lpBalance').innerText = `LP Balance: ${ethers.utils.formatUnits(lpBalance, 18)} LP`;
         document.getElementById('stakedAmount').innerText = `Staked Amount: ${ethers.utils.formatUnits(stakedAmount, 18)} LP`;
         document.getElementById('pendingReward').innerText = `Pending Reward: ${ethers.utils.formatUnits(pendingReward, 18)} LQX`;
-
-        console.log("Balances loaded successfully.");
     } catch (error) {
         console.error("Error loading balances:", error);
     }
+    showLoading(false);
 }
 
 async function stake() {
+    showLoading(true);
     try {
         const amount = document.getElementById('stakeAmount').value;
         if (!amount) return alert('Enter an amount to stake.');
@@ -85,9 +91,11 @@ async function stake() {
     } catch (error) {
         console.error("Error during stake:", error);
     }
+    showLoading(false);
 }
 
 async function unstake() {
+    showLoading(true);
     try {
         const amount = document.getElementById('unstakeAmount').value;
         if (!amount) return alert('Enter an amount to unstake.');
@@ -101,9 +109,11 @@ async function unstake() {
     } catch (error) {
         console.error("Error during unstake:", error);
     }
+    showLoading(false);
 }
 
 async function claimReward() {
+    showLoading(true);
     try {
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
         const tx = await stakingContract.claimReward();
@@ -114,6 +124,7 @@ async function claimReward() {
     } catch (error) {
         console.error("Error during claim reward:", error);
     }
+    showLoading(false);
 }
 
 document.getElementById('connectButton').addEventListener('click', connectWallet);
