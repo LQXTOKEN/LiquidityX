@@ -10,7 +10,8 @@ const CONFIG = {
         address: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
         abi: [
             "function balanceOf(address account) public view returns (uint256)",
-            "function approve(address spender, uint256 amount) public returns (bool)"
+            "function approve(address spender, uint256 amount) public returns (bool)",
+            "function allowance(address owner, address spender) public view returns (uint256)"
         ]
     },
     STAKING_CONTRACT: {
@@ -24,9 +25,11 @@ const CONFIG = {
 
 let provider, signer, account;
 
+const providerOptions = {};
+
 const web3Modal = new Web3Modal.default({
     cacheProvider: false,
-    providerOptions: {}
+    providerOptions
 });
 
 async function connectWallet() {
@@ -53,6 +56,8 @@ async function loadBalances() {
 
         const lqxBalance = await lqxContract.balanceOf(account);
         const lpBalance = await lpContract.balanceOf(account);
+        
+        // Call to proxy contract for staked amount
         const stakedAmount = await stakingContract.getStakedAmount(account);
 
         document.getElementById('balanceDisplay').innerHTML = `
@@ -61,7 +66,7 @@ async function loadBalances() {
             <p>Staked LP Tokens: ${ethers.utils.formatUnits(stakedAmount, 18)} LP</p>
         `;
     } catch (error) {
-        console.error("Could not load balances:", error);
+        console.error("Error during Proxy call:", error);
     }
 }
 
