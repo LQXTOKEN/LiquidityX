@@ -1,43 +1,30 @@
-const CONFIG = {
-    LQX_TOKEN: {
-        address: '0x9e27f48659b1005b1abc0f58465137e531430d4b',
-        abi: [
-            "function balanceOf(address account) public view returns (uint256)"
-        ]
-    },
-    LP_TOKEN: {
-        address: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
-        abi: [
-            "function balanceOf(address account) public view returns (uint256)",
-            "function approve(address spender, uint256 amount) public returns (bool)",
-            "function allowance(address owner, address spender) public view returns (uint256)"
-        ]
-    },
-    STAKING_CONTRACT: {
-        address: '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9',
-        abi: [
-            "function stake(uint256 amount) public",
-            "function getStakedAmount(address user) public view returns (uint256)"
-        ]
+const providerOptions = {
+    walletconnect: {
+        package: window.WalletConnectProvider.default,
+        options: {
+            infuraId: "YOUR_INFURA_ID" // Βάλε το Infura ID σου εδώ
+        }
     }
 };
+
+const web3Modal = new window.Web3Modal.default({
+    cacheProvider: true,
+    providerOptions
+});
 
 let provider, signer, account;
 
 async function connectWallet() {
-    if (window.ethereum) {
-        try {
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            account = accounts[0];
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            signer = provider.getSigner();
-            document.getElementById('connectButton').innerText = `Connected: ${account}`;
-            loadBalances();
-        } catch (error) {
-            console.error('Error connecting wallet:', error);
-        }
-    } else {
-        alert('Please install MetaMask.');
+    try {
+        const instance = await web3Modal.connect();
+        provider = new ethers.providers.Web3Provider(instance);
+        signer = provider.getSigner();
+        account = await signer.getAddress();
+
+        document.getElementById('connectButton').innerText = `Connected: ${account}`;
+        loadBalances();
+    } catch (error) {
+        console.error('Could not connect to wallet:', error);
     }
 }
 
