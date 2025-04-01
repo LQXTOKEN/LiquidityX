@@ -1,59 +1,61 @@
 body {
-    background-color: #0d0d0d;
+    background-color: #1A1A1A;
     color: white;
     font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-}
-
-.container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
     padding: 20px;
+    margin: 0;
+    min-height: 100vh;
 }
 
 h1 {
-    color: #1a73e8;
-    margin-bottom: 20px;
+    text-align: center;
+    color: #4CAF50;
+    margin-bottom: 30px;
 }
 
 button {
-    padding: 10px 20px;
-    margin: 10px;
-    background-color: #1a73e8;
+    background-color: #4CAF50;
     color: white;
     border: none;
-    border-radius: 5px;
+    padding: 10px 20px;
     cursor: pointer;
+    font-size: 16px;
+    border-radius: 8px;
     transition: background-color 0.3s;
 }
 
 button:hover {
-    background-color: #0049b7;
+    background-color: #45a049;
 }
 
-input {
+#balances, #actions {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+    border-radius: 12px;
+    background-color: #333;
+    margin-bottom: 20px;
+}
+
+#balances p {
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 4px 0;
+}
+
+input[type="text"] {
     padding: 10px;
-    margin: 10px;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-    background-color: #1a1a1a;
-    color: white;
-    width: 300px;
+    width: 80%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 10px;
 }
 
-.stake-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 20px;
+button {
+    width: 100%;
+    margin-bottom: 10px;
 }
 
-@media (max-width: 768px) {
-    input {
-        width: 100%;
-    }
+button#connectButton {
+    margin-bottom: 20px;
 }
