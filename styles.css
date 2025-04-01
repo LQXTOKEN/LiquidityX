@@ -1,0 +1,71 @@
+/* General Styles */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f5f7fa;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #333;
+}
+
+#app {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+}
+
+h1 {
+  color: #6e48aa; /* Polygon purple-ish */
+  margin-bottom: 1.5rem;
+}
+
+/* Buttons */
+button {
+  background-color: #6e48aa;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0.5rem;
+}
+
+button:hover {
+  background-color: #7d5bbe;
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Wallet Info */
+#walletInfo {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+#accountAddress {
+  font-weight: bold;
+  color: #6e48aa;
+  word-break: break-all;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  #app {
+    padding: 1.5rem;
+    width: 85%;
+  }
+}
