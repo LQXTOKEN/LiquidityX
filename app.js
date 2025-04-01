@@ -88,12 +88,10 @@ async function stake() {
         const lpContract = new ethers.Contract(CONFIG.LP_TOKEN.address, CONFIG.LP_TOKEN.abi, signer);
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
-        console.log("Sending approve transaction for stake...");
         const approveTx = await lpContract.approve(CONFIG.STAKING_CONTRACT.address, parsedAmount);
         await approveTx.wait();
-        console.log("Approve successful.");
+        console.log("Approve successful for stake.");
 
-        console.log("Sending stake transaction...");
         const tx = await stakingContract.stake(parsedAmount);
         await tx.wait();
         
@@ -111,7 +109,6 @@ async function unstake() {
 
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
-        console.log("Sending unstake transaction...");
         const tx = await stakingContract.unstake(parsedAmount);
         await tx.wait();
         
@@ -126,7 +123,6 @@ async function claimReward() {
     try {
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
-        console.log("Sending claimReward transaction...");
         const tx = await stakingContract.claimReward();
         await tx.wait();
         
