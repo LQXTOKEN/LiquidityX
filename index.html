@@ -3,15 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX - User Stake Checker</title>
+    <title>LiquidityX - Complete Staking DApp</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+    <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-    <h1>LiquidityX - Check Your Stake</h1>
+    <h1>LiquidityX - LP Staking DApp</h1>
     <button id="connectButton">Connect Wallet</button>
-    <button id="fetchStakeButton">Check Stake</button>
-    <div id="stakeDisplay"></div>
 
-    <script src="app.js"></script>
+    <div id="balances">
+        <p id="lqxBalance">LQX Balance: </p>
+        <p id="lpBalance">LP Balance: </p>
+        <p id="stakedAmount">Staked Amount: </p>
+        <p id="pendingReward">Pending Reward: </p>
+    </div>
+
+    <div id="actions">
+        <input type="text" id="stakeAmount" placeholder="Enter amount to stake">
+        <button id="stakeButton">Stake</button>
+
+        <input type="text" id="unstakeAmount" placeholder="Enter amount to unstake">
+        <button id="unstakeButton">Unstake</button>
+
+        <button id="claimButton">Claim Reward</button>
+    </div>
+
+    <script src="./app.js"></script>
 </body>
 </html>
