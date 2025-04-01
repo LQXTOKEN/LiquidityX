@@ -4,24 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX - Staking DApp</title>
-    <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web3modal"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.0/dist/umd/index.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>LiquidityX - Staking DApp</h1>
-        <button id="connectButton">Connect Wallet</button>
-        
-        <div id="balanceDisplay"></div>
+    <h1>LiquidityX - Implementation Checker</h1>
+    <button id="checkImplementationButton">Check Implementation</button>
+    <div id="implementationResult"></div>
 
-        <div class="stake-section">
-            <input type="number" id="stakeAmount" placeholder="Enter LP amount to stake" />
-            <button id="stakeButton">Stake</button>
-            <button id="unstakeButton">Unstake All</button>
-        </div>
-    </div>
-    <script defer src="app.js"></script>
+    <script>
+        async function checkImplementation() {
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const proxy = new ethers.Contract(
+                    '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9', // Proxy Address
+                    ["function _implementation() view returns (address)"],
+                    provider
+                );
+
+                const implementationAddress = await proxy._implementation();
+                document.getElementById('implementationResult').innerText = `Implementation Address: ${implementationAddress}`;
+            } catch (error) {
+                document.getElementById('implementationResult').innerText = `Error fetching implementation address: ${error.message}`;
+            }
+        }
+
+        document.getElementById('checkImplementationButton').addEventListener('click', checkImplementation);
+    </script>
 </body>
 </html>
