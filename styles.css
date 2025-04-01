@@ -9,12 +9,12 @@ body {
 
 h1 {
     text-align: center;
-    color: #4CAF50;
+    color: #1fb6ff; /* Γαλάζιο χρώμα από το λογότυπο */
     margin-bottom: 30px;
 }
 
 button {
-    background-color: #4CAF50;
+    background-color: #1fb6ff; /* Γαλάζιο χρώμα από το λογότυπο */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -23,10 +23,11 @@ button {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    margin-top: 10px;
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #15a1d8; /* Σκούρο γαλάζιο για hover effect */
     transform: scale(1.05);
 }
 
@@ -47,7 +48,7 @@ button:active {
 #progressBar {
     width: 0%;
     height: 5px;
-    background-color: #4CAF50;
+    background-color: #1fb6ff;
     transition: width 0.3s;
     margin-top: 10px;
 }
@@ -62,4 +63,14 @@ button:active {
     border-radius: 8px;
     display: none;
     z-index: 1000;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #1fb6ff;
+    border-radius: 8px;
+    background-color: #333;
+    color: white;
 }
