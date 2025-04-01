@@ -88,7 +88,7 @@ async function stake() {
         const lpContract = new ethers.Contract(CONFIG.LP_TOKEN.address, CONFIG.LP_TOKEN.abi, signer);
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
-        console.log("Sending approve transaction...");
+        console.log("Sending approve transaction for stake...");
         const approveTx = await lpContract.approve(CONFIG.STAKING_CONTRACT.address, parsedAmount);
         await approveTx.wait();
         console.log("Approve successful.");
