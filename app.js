@@ -18,7 +18,7 @@ const CONFIG = {
         address: '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9',
         abi: [
             "function stake(uint256 amount) public",
-            "function getStakedAmount(address user) public view returns (uint256)"
+            "function getUserStake(address account) external view returns (uint256)"
         ]
     }
 };
@@ -57,8 +57,8 @@ async function loadBalances() {
         const lqxBalance = await lqxContract.balanceOf(account);
         const lpBalance = await lpContract.balanceOf(account);
         
-        // Call to proxy contract for staked amount
-        const stakedAmount = await stakingContract.getStakedAmount(account);
+        // Call to proxy contract for staked amount using getUserStake
+        const stakedAmount = await stakingContract.getUserStake(account);
 
         document.getElementById('balanceDisplay').innerHTML = `
             <p>LQX Balance: ${ethers.utils.formatUnits(lqxBalance, 18)} LQX</p>
