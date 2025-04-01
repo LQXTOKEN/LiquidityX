@@ -46,7 +46,7 @@ let provider, signer, account;
 async function connectWallet() {
     try {
         const instance = await web3Modal.connect();
-        provider = new ethers.providers.Web3Provider(instance);
+        provider = new ethers.providers.Web3Provider(instance, "any");
         signer = provider.getSigner();
         account = await signer.getAddress();
         document.getElementById('connectButton').innerText = `Connected: ${account}`;
@@ -83,10 +83,20 @@ async function loadBalances() {
 async function stake() {
     try {
         const amount = document.getElementById('stakeAmount').value;
+        const parsedAmount = ethers.utils.parseUnits(amount, 18);
+
+        const lpContract = new ethers.Contract(CONFIG.LP_TOKEN.address, CONFIG.LP_TOKEN.abi, signer);
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
-        const tx = await stakingContract.stake(ethers.utils.parseUnits(amount, 18));
+        console.log("Sending approve transaction...");
+        const approveTx = await lpContract.approve(CONFIG.STAKING_CONTRACT.address, parsedAmount);
+        await approveTx.wait();
+        console.log("Approve successful.");
+
+        console.log("Sending stake transaction...");
+        const tx = await stakingContract.stake(parsedAmount);
         await tx.wait();
+        
         alert('Stake successful!');
         loadBalances();
     } catch (error) {
@@ -97,10 +107,14 @@ async function stake() {
 async function unstake() {
     try {
         const amount = document.getElementById('unstakeAmount').value;
+        const parsedAmount = ethers.utils.parseUnits(amount, 18);
+
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
-        const tx = await stakingContract.unstake(ethers.utils.parseUnits(amount, 18));
+        console.log("Sending unstake transaction...");
+        const tx = await stakingContract.unstake(parsedAmount);
         await tx.wait();
+        
         alert('Unstake successful!');
         loadBalances();
     } catch (error) {
@@ -112,8 +126,10 @@ async function claimReward() {
     try {
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
+        console.log("Sending claimReward transaction...");
         const tx = await stakingContract.claimReward();
         await tx.wait();
+        
         alert('Reward claimed successfully!');
         loadBalances();
     } catch (error) {
