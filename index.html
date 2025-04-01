@@ -1,23 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-  <script src="app.js" defer></script>
-  <title>LQX Staking dApp</title>
-  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-  <script src="app.js" defer></script>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div id="app">
-    <h1>LP Staking dApp</h1>
-    <button id="connectButton">Connect MetaMask</button>
-    <div id="walletInfo" style="display: none;">
-      <p>Connected: <span id="accountAddress"></span></p>
-      <button id="stakeButton">Stake 10 LP Tokens</button>
+<div id="app">
+  <h1>LQX Staking dApp</h1>
+  <button id="connectButton">Connect MetaMask</button>
+  
+  <div id="walletInfo" style="display: none;">
+    <p>Connected: <span id="accountAddress"></span></p>
+    
+    <div>
+      <h3>LP Token Balance: <span id="lpBalance">0</span></h3>
+      <h3>Staked Amount: <span id="stakedAmount">0</span></h3>
     </div>
+    
+    <input type="number" id="stakeAmount" placeholder="Amount" step="any">
+    <button id="stakeButton">Stake</button>
+    <button id="withdrawButton">Withdraw</button>
+    <button id="claimButton">Claim Rewards</button>
   </div>
-</body>
-</html>
+</div>
