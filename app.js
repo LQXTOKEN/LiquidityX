@@ -18,8 +18,8 @@ const CONFIG = {
         address: '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9',
         abi: [
             "function stake(uint256 amount) public",
-            "function unstake(uint256 amount) public",
-            "function claimReward() public",
+            "function withdraw(uint256 amount) external",
+            "function exit() external",
             "function getUserStake(address account) external view returns (uint256)",
             "function getPendingReward(address account) external view returns (uint256)"
         ]
@@ -88,10 +88,12 @@ async function stake() {
         const lpContract = new ethers.Contract(CONFIG.LP_TOKEN.address, CONFIG.LP_TOKEN.abi, signer);
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
+        console.log("Sending approve transaction for stake...");
         const approveTx = await lpContract.approve(CONFIG.STAKING_CONTRACT.address, parsedAmount);
         await approveTx.wait();
         console.log("Approve successful for stake.");
 
+        console.log("Sending stake transaction...");
         const tx = await stakingContract.stake(parsedAmount);
         await tx.wait();
         
@@ -109,7 +111,8 @@ async function unstake() {
 
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
-        const tx = await stakingContract.unstake(parsedAmount);
+        console.log("Sending unstake transaction...");
+        const tx = await stakingContract.withdraw(parsedAmount);
         await tx.wait();
         
         alert('Unstake successful!');
@@ -123,7 +126,8 @@ async function claimReward() {
     try {
         const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
 
-        const tx = await stakingContract.claimReward();
+        console.log("Sending claimReward transaction...");
+        const tx = await stakingContract.exit();
         await tx.wait();
         
         alert('Reward claimed successfully!');
