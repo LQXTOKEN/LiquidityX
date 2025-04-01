@@ -3,33 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX - Implementation Checker</title>
+    <title>LiquidityX - User Stake Checker</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <h1>LiquidityX - Implementation Checker</h1>
-    <button id="checkImplementationButton">Check Implementation</button>
-    <div id="implementationResult"></div>
+    <h1>LiquidityX - Check Your Stake</h1>
+    <button id="connectButton">Connect Wallet</button>
+    <button id="fetchStakeButton">Check Stake</button>
+    <div id="stakeDisplay"></div>
 
-    <script>
-        async function checkImplementation() {
-            try {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const implementationSlot = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
-                
-                const implementationAddressBytes = await provider.getStorageAt(
-                    '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9', // Proxy Address
-                    implementationSlot
-                );
-
-                const implementationAddress = ethers.utils.getAddress('0x' + implementationAddressBytes.slice(26));
-                document.getElementById('implementationResult').innerText = `Implementation Address: ${implementationAddress}`;
-            } catch (error) {
-                document.getElementById('implementationResult').innerText = `Error fetching implementation address: ${error.message}`;
-            }
-        }
-
-        document.getElementById('checkImplementationButton').addEventListener('click', checkImplementation);
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
