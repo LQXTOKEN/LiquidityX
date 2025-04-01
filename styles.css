@@ -1,71 +1,134 @@
 /* General Styles */
 body {
   font-family: 'Arial', sans-serif;
-  background-color: #f5f7fa;
+  background-color: #f0f2f5;
   margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  padding: 20px;
   color: #333;
 }
 
 #app {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+header {
   text-align: center;
+  margin-bottom: 20px;
 }
 
 h1 {
-  color: #6e48aa; /* Polygon purple-ish */
-  margin-bottom: 1.5rem;
+  color: #6e48aa; /* Polygon purple */
+}
+
+.network-info {
+  color: #666;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.balance-section {
+  display: flex;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.balance-card {
+  flex: 1;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+}
+
+.balance-card h3 {
+  margin-top: 0;
+  color: #555;
+}
+
+.balance-card p {
+  font-size: 24px;
+  font-weight: bold;
+  color: #6e48aa;
 }
 
 /* Buttons */
-button {
-  background-color: #6e48aa;
+.button-primary {
+  background: #6e48aa;
   color: white;
   border: none;
-  border-radius: 8px;
   padding: 12px 24px;
-  font-size: 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 0.5rem;
+  font-size: 16px;
+  width: 100%;
+  transition: background 0.3s;
 }
 
-button:hover {
-  background-color: #7d5bbe;
-  transform: translateY(-2px);
+.button-primary:hover {
+  background: #7d5bbe;
 }
 
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+.button-action {
+  background: #6e48aa;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 5px;
+  flex: 1;
+  transition: background 0.3s;
 }
 
-/* Wallet Info */
-#walletInfo {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #eee;
+.button-action:hover {
+  background: #7d5bbe;
 }
 
-#accountAddress {
-  font-weight: bold;
-  color: #6e48aa;
+/* Input */
+.input-field {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+/* Address & Status */
+.address {
+  font-family: monospace;
   word-break: break-all;
+  display: inline-block;
+  color: #6e48aa;
 }
 
-/* Responsive Design */
+.status-message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.success {
+  background: #e6ffed;
+  color: #2ea44f;
+}
+
+.error {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+/* Responsive */
 @media (max-width: 600px) {
-  #app {
-    padding: 1.5rem;
-    width: 85%;
+  .balance-section {
+    flex-direction: column;
   }
 }
