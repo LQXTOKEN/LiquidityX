@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX</title>
-    <link rel="stylesheet" href="./index.css">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval';">   
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LQX Staking dApp</title>
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="root"></div>
-    <script type="module" src="./src/main.jsx"></script>
+  <div id="app">
+    <h1>LP Staking dApp</h1>
+    <button id="connectButton">Connect MetaMask</button>
+    <div id="walletInfo" style="display: none;">
+      <p>Connected: <span id="accountAddress"></span></p>
+      <button id="stakeButton">Stake 10 LP Tokens</button>
+    </div>
+  </div>
 </body>
 </html>
