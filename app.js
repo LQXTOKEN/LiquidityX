@@ -10,8 +10,7 @@ const CONFIG = {
         address: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
         abi: [
             "function balanceOf(address account) public view returns (uint256)",
-            "function approve(address spender, uint256 amount) public returns (bool)",
-            "function allowance(address owner, address spender) public view returns (uint256)"
+            "function approve(address spender, uint256 amount) public returns (bool)"
         ]
     },
     STAKING_CONTRACT: {
@@ -25,11 +24,9 @@ const CONFIG = {
 
 let provider, signer, account;
 
-const providerOptions = {};
-
 const web3Modal = new Web3Modal.default({
     cacheProvider: false,
-    providerOptions
+    providerOptions: {}
 });
 
 async function connectWallet() {
@@ -68,32 +65,4 @@ async function loadBalances() {
     }
 }
 
-async function stakeTokens() {
-    const amountToStake = document.getElementById('stakeAmount').value;
-    if (!amountToStake || isNaN(amountToStake) || amountToStake <= 0) {
-        alert("Enter a valid amount to stake.");
-        return;
-    }
-
-    try {
-        const lpContract = new ethers.Contract(CONFIG.LP_TOKEN.address, CONFIG.LP_TOKEN.abi, signer);
-        const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
-
-        const amount = ethers.utils.parseUnits(amountToStake, 18);
-
-        const approveTx = await lpContract.approve(CONFIG.STAKING_CONTRACT.address, amount);
-        await approveTx.wait();
-
-        const tx = await stakingContract.stake(amount);
-        await tx.wait();
-
-        alert('Stake successful!');
-        loadBalances();
-    } catch (error) {
-        console.error("Stake failed:", error);
-        alert('Stake failed. Check console for details.');
-    }
-}
-
 document.getElementById('connectButton').addEventListener('click', connectWallet);
-document.getElementById('stakeButton').addEventListener('click', stakeTokens);
