@@ -18,7 +18,8 @@ const CONFIG = {
         address: '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9',
         abi: [
             "function stake(uint256 amount) public",
-            "function getUserStake(address account) external view returns (uint256)"
+            "function getUserStake(address account) external view returns (uint256)",
+            "function getPendingReward(address account) external view returns (uint256)"
         ]
     }
 };
@@ -41,6 +42,12 @@ async function connectWallet() {
         const accounts = await provider.listAccounts();
         account = accounts[0];
         
+        const network = await provider.getNetwork();
+        if (network.chainId !== 137) {
+            alert("Please connect to the Polygon Network.");
+            return;
+        }
+
         document.getElementById('connectButton').innerText = `Connected: ${account}`;
         loadBalances();
     } catch (error) {
@@ -57,13 +64,14 @@ async function loadBalances() {
         const lqxBalance = await lqxContract.balanceOf(account);
         const lpBalance = await lpContract.balanceOf(account);
         
-        // Call to proxy contract for staked amount using getUserStake
         const stakedAmount = await stakingContract.getUserStake(account);
+        const pendingReward = await stakingContract.getPendingReward(account);
 
         document.getElementById('balanceDisplay').innerHTML = `
             <p>LQX Balance: ${ethers.utils.formatUnits(lqxBalance, 18)} LQX</p>
             <p>LP Token Balance: ${ethers.utils.formatUnits(lpBalance, 18)} LP</p>
             <p>Staked LP Tokens: ${ethers.utils.formatUnits(stakedAmount, 18)} LP</p>
+            <p>Pending Rewards: ${ethers.utils.formatUnits(pendingReward, 18)} LQX</p>
         `;
     } catch (error) {
         console.error("Error during Proxy call:", error);
