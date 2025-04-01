@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX - Complete Staking DApp</title>
     <link rel="stylesheet" href="./styles.css">
+
+    <!-- Import των απαραίτητων βιβλιοθηκών -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
     <script src="https://unpkg.com/web3modal"></script>
     <script src="https://unpkg.com/@walletconnect/web3-provider@1.7.1/dist/umd/index.min.js"></script>
@@ -21,22 +23,13 @@
     </div>
 
     <div id="actions">
-        <div class="tooltip">
-            <input type="text" id="stakeAmount" placeholder="Enter amount to stake">
-            <button id="stakeButton">Stake</button>
-            <span class="tooltiptext">Stake your LP Tokens to earn rewards</span>
-        </div>
+        <input type="text" id="stakeAmount" placeholder="Enter amount to stake">
+        <button id="stakeButton">Stake</button>
         
-        <div class="tooltip">
-            <input type="text" id="unstakeAmount" placeholder="Enter amount to unstake">
-            <button id="unstakeButton">Unstake</button>
-            <span class="tooltiptext">Unstake your LP Tokens</span>
-        </div>
-
-        <div class="tooltip">
-            <button id="claimButton">Claim Reward</button>
-            <span class="tooltiptext">Claim your pending rewards</span>
-        </div>
+        <input type="text" id="unstakeAmount" placeholder="Enter amount to unstake">
+        <button id="unstakeButton">Unstake</button>
+        
+        <button id="claimButton">Claim Reward</button>
     </div>
 
     <!-- Loading indicator and progress bar -->
@@ -44,6 +37,7 @@
     <div id="progressBar"></div>
     <div id="notification"></div>
 
+    <!-- Import του app.js -->
     <script src="./app.js"></script>
 </body>
 </html>
