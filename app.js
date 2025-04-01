@@ -1,11 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("Ethers loaded:", typeof ethers !== 'undefined'); // Debug
-
+  // Configuration
   const CONFIG = {
-    LQX_TOKEN: {
-      address: '0x9e27f48659b1005b1abc0f58465137e531430d4b',
-      abi: ["function balanceOf(address account) view returns (uint256)"]
-    },
     LP_TOKEN: {
       address: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
       abi: [
@@ -21,6 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
         "function claimRewards() external",
         "function getStakedAmount(address user) view returns (uint256)"
       ]
+    },
+    NETWORK: {
+      chainId: '0x89', // Polygon
+      name: 'Polygon Mainnet'
     }
   };
 
@@ -60,14 +59,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      // Request accounts
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+      
+      // Initialize provider
       provider = new ethers.providers.Web3Provider(window.ethereum);
       signer = provider.getSigner();
 
-      // Check Network (Polygon Mainnet)
+      // Check network
       const network = await provider.getNetwork();
-      if (network.chainId !== 137) {
-        statusMessage.textContent = "Please switch to Polygon Mainnet (ChainID: 137)";
+      if (network.chainId !== parseInt(CONFIG.NETWORK.chainId, 16)) {
+        statusMessage.textContent = `Please switch to ${CONFIG.NETWORK.name}!`;
         return;
       }
 
@@ -78,11 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
       statusMessage.textContent = "Connected successfully!";
       statusMessage.style.color = "green";
 
-      // Init Contracts
+      // Initialize contracts
       initContracts();
-      updateBalances();
+      await updateBalances();
 
     } catch (error) {
+      console.error("Connection error:", error);
       statusMessage.textContent = "Connection failed: " + error.message;
       statusMessage.style.color = "red";
     }
@@ -107,7 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      // Approve
+      // Approve LP tokens
+      statusMessage.textContent = "Approving...";
       const approveTx = await lpTokenContract.approve(
         CONFIG.STAKING_CONTRACT.address,
         ethers.utils.parseEther(amount)
@@ -115,12 +121,58 @@ document.addEventListener('DOMContentLoaded', () => {
       await approveTx.wait();
 
       // Stake
+      statusMessage.textContent = "Staking...";
       const stakeTx = await stakingContract.stake(ethers.utils.parseEther(amount));
       await stakeTx.wait();
+
       statusMessage.textContent = "Staked successfully!";
-      updateBalances();
+      statusMessage.style.color = "green";
+      await updateBalances();
+
     } catch (error) {
-      statusMessage.textContent = "Stake failed: " + error.message;
+      console.error("Staking error:", error);
+      statusMessage.textContent = "Staking failed: " + error.message;
+      statusMessage.style.color = "red";
+    }
+  }
+
+  // Withdraw Tokens
+  async function withdrawTokens() {
+    const amount = stakeAmountInput.value;
+    if (!amount || isNaN(amount)) {
+      statusMessage.textContent = "Please enter a valid amount!";
+      return;
+    }
+
+    try {
+      statusMessage.textContent = "Withdrawing...";
+      const tx = await stakingContract.withdraw(ethers.utils.parseEther(amount));
+      await tx.wait();
+
+      statusMessage.textContent = "Withdrawn successfully!";
+      statusMessage.style.color = "green";
+      await updateBalances();
+
+    } catch (error) {
+      console.error("Withdraw error:", error);
+      statusMessage.textContent = "Withdraw failed: " + error.message;
+      statusMessage.style.color = "red";
+    }
+  }
+
+  // Claim Rewards
+  async function claimRewards() {
+    try {
+      statusMessage.textContent = "Claiming rewards...";
+      const tx = await stakingContract.claimRewards();
+      await tx.wait();
+
+      statusMessage.textContent = "Rewards claimed!";
+      statusMessage.style.color = "green";
+
+    } catch (error) {
+      console.error("Claim error:", error);
+      statusMessage.textContent = "Claim failed: " + error.message;
       statusMessage.style.color = "red";
     }
   }
@@ -130,13 +182,4 @@ document.addEventListener('DOMContentLoaded', () => {
   stakeButton.addEventListener('click', stakeTokens);
   withdrawButton.addEventListener('click', withdrawTokens);
   claimButton.addEventListener('click', claimRewards);
-
-  // Placeholder functions (implement similarly to stakeTokens)
-  async function withdrawTokens() {
-    alert("Implement withdraw similar to stakeTokens()");
-  }
-
-  async function claimRewards() {
-    alert("Implement claimRewards()");
-  }
 });
