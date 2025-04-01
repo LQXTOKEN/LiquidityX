@@ -1,18 +1,56 @@
-<div id="app">
-  <h1>LQX Staking dApp</h1>
-  <button id="connectButton">Connect MetaMask</button>
-  
-  <div id="walletInfo" style="display: none;">
-    <p>Connected: <span id="accountAddress"></span></p>
-    
-    <div>
-      <h3>LP Token Balance: <span id="lpBalance">0</span></h3>
-      <h3>Staked Amount: <span id="stakedAmount">0</span></h3>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LQX Staking dApp</title>
+  <!-- Ethers.js CDN -->
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <!-- CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>LQX Staking dApp</h1>
+      <p class="network-info">Network: <span id="networkName">Not connected</span></p>
+    </header>
+
+    <div class="card">
+      <!-- Wallet Connection -->
+      <div id="walletSection">
+        <button id="connectButton" class="button-primary">Connect MetaMask</button>
+        <div id="walletInfo" style="display: none;">
+          <p>Connected: <span id="accountAddress" class="address"></span></p>
+        </div>
+      </div>
+
+      <!-- Balances -->
+      <div class="balance-section">
+        <div class="balance-card">
+          <h3>LP Token Balance</h3>
+          <p id="lpBalance">0</p>
+        </div>
+        <div class="balance-card">
+          <h3>Staked Amount</h3>
+          <p id="stakedAmount">0</p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-section">
+        <input type="number" id="stakeAmount" placeholder="Amount" step="any" class="input-field">
+        <button id="stakeButton" class="button-action">Stake</button>
+        <button id="withdrawButton" class="button-action">Withdraw</button>
+        <button id="claimButton" class="button-action">Claim Rewards</button>
+      </div>
+
+      <!-- Transaction Status -->
+      <div id="statusMessage" class="status-message"></div>
     </div>
-    
-    <input type="number" id="stakeAmount" placeholder="Amount" step="any">
-    <button id="stakeButton">Stake</button>
-    <button id="withdrawButton">Withdraw</button>
-    <button id="claimButton">Claim Rewards</button>
   </div>
-</div>
+
+  <!-- JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>
