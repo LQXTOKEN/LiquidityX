@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LQX Staking dApp</title>
-  <!-- CDN με Fallback -->
+  <!-- Ethers.js με Fallback -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.9.0/ethers.umd.min.js"></script>
   <script>
     if (typeof ethers === 'undefined') {
@@ -17,19 +17,30 @@
   <div id="app">
     <h1>LQX Staking dApp</h1>
     <button id="connectButton">Connect MetaMask</button>
+    
     <div id="walletInfo" style="display: none;">
       <p>Connected: <span id="accountAddress" class="address"></span></p>
-      <div class="balance">
-        <p>LP Balance: <span id="lpBalance">0</span></p>
-        <p>Staked: <span id="stakedAmount">0</span></p>
+      
+      <div class="balances">
+        <div class="balance-card">
+          <h3>LP Balance</h3>
+          <p id="lpBalance">0</p>
+        </div>
+        <div class="balance-card">
+          <h3>Staked</h3>
+          <p id="stakedAmount">0</p>
+        </div>
       </div>
+
       <input type="number" id="stakeAmount" placeholder="Amount" step="any">
       <button id="stakeButton">Stake</button>
       <button id="withdrawButton">Withdraw</button>
       <button id="claimButton">Claim Rewards</button>
     </div>
+
     <p id="statusMessage"></p>
   </div>
+
   <script src="app.js"></script>
 </body>
 </html>
