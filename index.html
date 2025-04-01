@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX - Complete Staking DApp</title>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
     <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -19,14 +18,27 @@
     </div>
 
     <div id="actions">
-        <input type="text" id="stakeAmount" placeholder="Enter amount to stake">
-        <button id="stakeButton">Stake</button>
+        <div class="tooltip">
+            <input type="text" id="stakeAmount" placeholder="Enter amount to stake">
+            <button id="stakeButton">Stake</button>
+            <span class="tooltiptext">Stake your LP Tokens to earn rewards</span>
+        </div>
+        
+        <div class="tooltip">
+            <input type="text" id="unstakeAmount" placeholder="Enter amount to unstake">
+            <button id="unstakeButton">Unstake</button>
+            <span class="tooltiptext">Unstake your LP Tokens</span>
+        </div>
 
-        <input type="text" id="unstakeAmount" placeholder="Enter amount to unstake">
-        <button id="unstakeButton">Unstake</button>
-
-        <button id="claimButton">Claim Reward</button>
+        <div class="tooltip">
+            <button id="claimButton">Claim Reward</button>
+            <span class="tooltiptext">Claim your pending rewards</span>
+        </div>
     </div>
+
+    <div id="loadingIndicator">Loading... Please wait.</div>
+    <div id="progressBar"></div>
+    <div id="notification"></div>
 
     <script src="./app.js"></script>
 </body>
