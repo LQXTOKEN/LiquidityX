@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX - Complete Staking DApp</title>
     <link rel="stylesheet" href="./styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/web3modal"></script>
+    <script src="https://unpkg.com/@walletconnect/web3-provider@1.7.1/dist/umd/index.min.js"></script>
 </head>
 <body>
     <h1>LiquidityX - LP Staking DApp</h1>
@@ -38,7 +41,7 @@
 
     <!-- Loading indicator and progress bar -->
     <div id="loadingIndicator" style="display: none;">Loading... Please wait.</div>
-    <div id="progressBar" style="width: 0%; height: 5px; background-color: #4CAF50;"></div>
+    <div id="progressBar"></div>
     <div id="notification"></div>
 
     <script src="./app.js"></script>
