@@ -62,6 +62,8 @@ const unstakeButton = document.getElementById('unstakeButton');
 const claimButton = document.getElementById('claimButton');
 const stakeAmountInput = document.getElementById('stakeAmount');
 const unstakeAmountInput = document.getElementById('unstakeAmount');
+const maxStakeBtn = document.getElementById('maxStakeBtn');
+const maxUnstakeBtn = document.getElementById('maxUnstakeBtn');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const notification = document.getElementById('notification');
 
@@ -311,6 +313,15 @@ function disconnectWallet() {
         el.textContent = '0';
     });
 }
+
+// MAX Button Handlers
+maxStakeBtn.addEventListener('click', () => {
+    stakeAmountInput.value = document.getElementById('lpBalance').textContent;
+});
+
+maxUnstakeBtn.addEventListener('click', () => {
+    unstakeAmountInput.value = document.getElementById('stakedAmount').textContent;
+});
 
 // UI Helpers
 function showLoading(message) {
