@@ -397,6 +397,37 @@ input[type="number"]:focus {
     border-left: 4px solid var(--warning);
 }
 
+/* Web3Modal Custom Styles */
+.web3modal-modal-lightbox {
+    z-index: 10000 !important;
+    backdrop-filter: blur(5px);
+}
+
+.web3modal-modal-card {
+    border-radius: 12px !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--primary) !important;
+}
+
+.web3modal-provider-container {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    margin: 10px 0 !important;
+    border-radius: 8px !important;
+}
+
+.web3modal-provider-container:hover {
+    background: rgba(31, 182, 255, 0.1) !important;
+}
+
+.web3modal-provider-name {
+    color: var(--text-primary) !important;
+    font-family: 'Montserrat', sans-serif !important;
+}
+
+.web3modal-provider-description {
+    color: var(--text-secondary) !important;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
