@@ -33,7 +33,7 @@ const CONFIG = {
     }
 };
 
-// Initialize Web3Modal
+// Initialize Web3Modal with proper defaults
 const Web3Modal = window.Web3Modal.default;
 const WalletConnectProvider = window.WalletConnectProvider.default;
 
@@ -42,7 +42,10 @@ const providerOptions = {
         package: WalletConnectProvider,
         options: {
             rpc: {
-                137: "https://polygon-rpc.com" // Polygon Mainnet
+                137: CONFIG.NETWORK.rpcUrl
+            },
+            qrcodeModalOptions: {
+                mobileLinks: ["metamask", "trust"]
             }
         }
     }
@@ -91,7 +94,7 @@ function initContracts() {
     };
 }
 
-// Connect Wallet (MetaMask/WalletConnect)
+// Connect Wallet (MetaMask + WalletConnect)
 async function connectWallet() {
     try {
         showLoading("Connecting wallet...");
