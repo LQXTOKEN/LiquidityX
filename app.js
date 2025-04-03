@@ -17,7 +17,7 @@ const CONFIG = {
     STAKING_CONTRACT: {
         address: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
         abi: [
-            "function stake(uint256 amount) public",
+            "function stake(uint256 amount) external",
             "function unstake(uint256 amount) external",
             "function claimRewards() external",
             "function getStakedAmount(address user) external view returns (uint256)",
@@ -54,11 +54,30 @@ async function connectWallet() {
 }
 
 async function loadBalances() {
-    const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
-    const stakedAmount = await stakingContract.getStakedAmount(account);
-    const pendingReward = await stakingContract.earned(account);
-    document.getElementById('stakedAmount').innerText = `Staked: ${ethers.utils.formatUnits(stakedAmount, 18)}`;
-    document.getElementById('pendingReward').innerText = `Pending Reward: ${ethers.utils.formatUnits(pendingReward, 18)}`;
+    try {
+        const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
+        let stakedAmount = 0;
+        let pendingReward = 0;
+
+        try {
+            stakedAmount = await stakingContract.getStakedAmount(account);
+        } catch (error) {
+            console.log('User has no stake, returning 0');
+            stakedAmount = 0;
+        }
+
+        try {
+            pendingReward = await stakingContract.earned(account);
+        } catch (error) {
+            console.log('User has no pending rewards, returning 0');
+            pendingReward = 0;
+        }
+
+        document.getElementById('stakedAmount').innerText = `Staked Amount: ${ethers.utils.formatUnits(stakedAmount, 18)}`;
+        document.getElementById('pendingReward').innerText = `Pending Reward: ${ethers.utils.formatUnits(pendingReward, 18)}`;
+    } catch (error) {
+        console.error("Error loading balances:", error);
+    }
 }
 
 document.getElementById('connectButton').addEventListener('click', connectWallet);
