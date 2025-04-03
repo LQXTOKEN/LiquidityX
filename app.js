@@ -86,7 +86,25 @@ async function connectWallet() {
         // Check network
         const network = await provider.getNetwork();
         if (network.chainId !== CONFIG.NETWORK.chainId) {
-            throw new Error(`Please switch to ${CONFIG.NETWORK.name}`);
+            try {
+                await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(CONFIG.NETWORK.chainId) }]);
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    await provider.send("wallet_addEthereumChain", [{
+                        chainId: ethers.utils.hexValue(CONFIG.NETWORK.chainId),
+                        chainName: CONFIG.NETWORK.name,
+                        rpcUrls: [CONFIG.NETWORK.rpcUrl],
+                        nativeCurrency: {
+                            name: CONFIG.NETWORK.currency,
+                            symbol: CONFIG.NETWORK.currency,
+                            decimals: 18
+                        },
+                        blockExplorerUrls: [CONFIG.NETWORK.explorerUrl]
+                    }]);
+                } else {
+                    throw new Error(`Failed to switch to ${CONFIG.NETWORK.name}: ${switchError.message}`);
+                }
+            }
         }
         
         signer = provider.getSigner();
