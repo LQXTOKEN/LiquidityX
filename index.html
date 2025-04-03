@@ -3,46 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX - Complete Staking DApp</title>
-    <link rel="stylesheet" href="./styles.css">
-
-    <!-- Import των απαραίτητων βιβλιοθηκών -->
+    <title>LiquidityX - LP Staking</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
-    <script src="https://unpkg.com/web3modal"></script>
-    <script src="https://unpkg.com/@walletconnect/web3-provider@1.7.1/dist/umd/index.min.js"></script>
+    <script src="https://unpkg.com/web3modal@1.9.7/dist/index.js"></script>
+    <script src="https://unpkg.com/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
 </head>
 <body>
-    <!-- Διακριτικό Λογότυπο -->
-    <div style="position: absolute; top: 20px; left: 20px;">
-        <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="Logo" width="60">
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo-container">
+                <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
+                <h1>LiquidityX <span>Staking</span></h1>
+            </div>
+            <button id="connectButton" class="connect-btn">
+                <span class="btn-text">Connect Wallet</span>
+                <span class="wallet-icon">🦊</span>
+            </button>
+        </header>
+
+        <main class="app-content">
+            <section class="balance-card">
+                <h2>Your Balances</h2>
+                <div class="balance-row">
+                    <span class="balance-label">LQX Balance:</span>
+                    <span id="lqxBalance" class="balance-value">0</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">LP Balance:</span>
+                    <span id="lpBalance" class="balance-value">0</span>
+                </div>
+                <div class="balance-row highlight">
+                    <span class="balance-label">Staked Amount:</span>
+                    <span id="stakedAmount" class="balance-value">0</span>
+                </div>
+                <div class="balance-row highlight">
+                    <span class="balance-label">Pending Reward:</span>
+                    <span id="pendingReward" class="balance-value">0</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">Current APR:</span>
+                    <span id="aprValue" class="balance-value">0%</span>
+                </div>
+            </section>
+
+            <section class="action-card">
+                <h2>Staking Actions</h2>
+                <div class="input-group">
+                    <input type="number" id="stakeAmount" placeholder="Amount to stake" min="0" step="0.0001">
+                    <button id="stakeButton" class="action-btn primary">Stake LP</button>
+                </div>
+                
+                <div class="input-group">
+                    <input type="number" id="unstakeAmount" placeholder="Amount to unstake" min="0" step="0.0001">
+                    <button id="unstakeButton" class="action-btn secondary">Unstake LP</button>
+                </div>
+                
+                <button id="claimButton" class="action-btn accent">Claim Rewards</button>
+            </section>
+        </main>
+
+        <div class="network-status">
+            <div class="status-indicator"></div>
+            <span>Polygon Mainnet</span>
+        </div>
+
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p id="loadingText">Processing transaction...</p>
+            </div>
+        </div>
+
+        <div id="notification" class="notification"></div>
     </div>
 
-    <h1>LiquidityX - LP Staking DApp</h1>
-    <button id="connectButton">Connect Wallet</button>
-
-    <div id="balances">
-        <p id="lqxBalance">LQX Balance: </p>
-        <p id="lpBalance">LP Balance: </p>
-        <p id="stakedAmount">Staked Amount: </p>
-        <p id="pendingReward">Pending Reward: </p>
-    </div>
-
-    <div id="actions">
-        <input type="text" id="stakeAmount" placeholder="Enter amount to stake">
-        <button id="stakeButton">Stake</button>
-        
-        <input type="text" id="unstakeAmount" placeholder="Enter amount to unstake">
-        <button id="unstakeButton">Unstake</button>
-        
-        <button id="claimButton">Claim Reward</button>
-    </div>
-
-    <!-- Loading indicator and progress bar -->
-    <div id="loadingIndicator" style="display: none;">Loading... Please wait.</div>
-    <div id="progressBar"></div>
-    <div id="notification"></div>
-
-    <!-- Import του app.js -->
-    <script src="./app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
