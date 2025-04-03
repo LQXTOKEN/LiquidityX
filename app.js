@@ -196,25 +196,41 @@ async function loadBalances() {
 async function stakeTokens() {
     const amount = stakeAmountInput.value;
     if (!validateAmount(amount)) return;
-    
+
     try {
         showLoading("Staking tokens...");
-        
+
+        // Ensure signer is properly set
+        if (!signer) {
+            signer = provider.getSigner();
+        }
+
         // 1. Approve tokens
-        const approveTx = await contracts.lp.approve(
+        const lpContract = new ethers.Contract(
+            CONFIG.LP_TOKEN.address,
+            CONFIG.LP_TOKEN.abi,
+            signer
+        );
+        
+        const approveTx = await lpContract.approve(
             CONFIG.CONTRACTS.STAKING_CONTRACT.address,
-            parseUnits(amount, 18)
+            ethers.utils.parseUnits(amount, 18)
         );
         await approveTx.wait();
-        
+
         // 2. Stake tokens
-        const stakeTx = await contracts.staking.stake(parseUnits(amount, 18));
+        const stakingContract = new ethers.Contract(
+            CONFIG.CONTRACTS.STAKING_CONTRACT.address,
+            CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
+            signer
+        );
+
+        const stakeTx = await stakingContract.stake(ethers.utils.parseUnits(amount, 18));
         await stakeTx.wait();
-        
+
         // 3. Update UI
         stakeAmountInput.value = "";
         await loadBalances();
-        
         showNotification("Tokens staked successfully!", "success");
     } catch (error) {
         console.error("Staking error:", error);
@@ -225,19 +241,29 @@ async function stakeTokens() {
 }
 
 // Unstake LP Tokens
+// Unstake LP Tokens
 async function unstakeTokens() {
     const amount = unstakeAmountInput.value;
     if (!validateAmount(amount)) return;
-    
+
     try {
         showLoading("Unstaking tokens...");
-        
-        const tx = await contracts.staking.unstake(parseUnits(amount, 18));
+
+        if (!signer) {
+            signer = provider.getSigner();
+        }
+
+        const stakingContract = new ethers.Contract(
+            CONFIG.CONTRACTS.STAKING_CONTRACT.address,
+            CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
+            signer
+        );
+
+        const tx = await stakingContract.unstake(ethers.utils.parseUnits(amount, 18));
         await tx.wait();
-        
+
         unstakeAmountInput.value = "";
         await loadBalances();
-        
         showNotification("Tokens unstaked successfully!", "success");
     } catch (error) {
         console.error("Unstaking error:", error);
@@ -251,10 +277,20 @@ async function unstakeTokens() {
 async function claimRewards() {
     try {
         showLoading("Claiming rewards...");
-        
-        const tx = await contracts.staking.claimRewards();
+
+        if (!signer) {
+            signer = provider.getSigner();
+        }
+
+        const stakingContract = new ethers.Contract(
+            CONFIG.CONTRACTS.STAKING_CONTRACT.address,
+            CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
+            signer
+        );
+
+        const tx = await stakingContract.claimRewards();
         await tx.wait();
-        
+
         await loadBalances();
         showNotification("Rewards claimed successfully!", "success");
     } catch (error) {
@@ -264,6 +300,7 @@ async function claimRewards() {
         hideLoading();
     }
 }
+
 
 // Helper Functions
 function formatUnits(value, decimals) {
