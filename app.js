@@ -33,7 +33,6 @@ const CONFIG = {
     }
 };
 
-// Initialize Web3Modal with proper defaults
 const Web3Modal = window.Web3Modal.default;
 const WalletConnectProvider = window.WalletConnectProvider.default;
 
@@ -57,34 +56,25 @@ const web3Modal = new Web3Modal({
     theme: 'dark'
 });
 
-// App State
 let provider, signer, account;
 let contracts = {};
 
-// DOM Elements
-const connectButton = document.getElementById('connectButton');
-const stakeButton = document.getElementById('stakeButton');
-const unstakeButton = document.getElementById('unstakeButton');
-const claimButton = document.getElementById('claimButton');
-const stakeAmountInput = document.getElementById('stakeAmount');
-const unstakeAmountInput = document.getElementById('unstakeAmount');
-const maxStakeBtn = document.getElementById('maxStakeBtn');
-const maxUnstakeBtn = document.getElementById('maxUnstakeBtn');
-const loadingOverlay = document.getElementById('loadingOverlay');
-const notification = document.getElementById('notification');
-
 // Initialize Contracts
 function initContracts() {
+    if (!signer) {
+        signer = provider.getSigner();
+    }
+
     contracts = {
         lqx: new ethers.Contract(
             CONFIG.CONTRACTS.LQX_TOKEN.address, 
             CONFIG.CONTRACTS.LQX_TOKEN.abi, 
-            provider
+            signer
         ),
         lp: new ethers.Contract(
             CONFIG.CONTRACTS.LP_TOKEN.address, 
             CONFIG.CONTRACTS.LP_TOKEN.abi, 
-            provider
+            signer
         ),
         staking: new ethers.Contract(
             CONFIG.CONTRACTS.STAKING_CONTRACT.address, 
@@ -94,306 +84,84 @@ function initContracts() {
     };
 }
 
-// Connect Wallet (MetaMask + WalletConnect)
+// Check if LQX Tokens are available for staking
+async function checkStakingBalance() {
+    try {
+        const balance = await contracts.lqx.balanceOf(CONFIG.CONTRACTS.STAKING_CONTRACT.address);
+        const formattedBalance = parseFloat(ethers.utils.formatUnits(balance, 18));
+        console.log(`Staking Contract Balance: ${formattedBalance} LQX`);
+        return formattedBalance;
+    } catch (error) {
+        console.error("Error checking staking balance:", error);
+        return 0;
+    }
+}
+
+// Connect Wallet
 async function connectWallet() {
     try {
-        showLoading("Connecting wallet...");
-        
-        // 1. Connect via Web3Modal
         const instance = await web3Modal.connect();
         provider = new ethers.providers.Web3Provider(instance, "any");
-        
-        // 2. Check network
-        const network = await provider.getNetwork();
-        if (network.chainId !== CONFIG.NETWORK.chainId) {
-            await switchToCorrectNetwork(provider);
-        }
-        
-        // 3. Get signer and account
         signer = provider.getSigner();
         account = await signer.getAddress();
-        
-        // 4. Update UI
-        updateWalletUI(account);
-        
-        // 5. Initialize contracts and load data
         initContracts();
-        await loadBalances();
-        
-        // 6. Setup event listeners
-        setupEventListeners(instance);
-        
-        showNotification("Wallet connected successfully!", "success");
     } catch (error) {
-        console.error("Connection error:", error);
-        showNotification(
-            error.message.includes("rejected") 
-                ? "Connection canceled" 
-                : "Connection failed. Please try again.",
-            "error"
-        );
-    } finally {
-        hideLoading();
+        console.error("Error connecting wallet:", error);
     }
 }
 
-// Switch to Polygon Network
-async function switchToCorrectNetwork(provider) {
+// Stake Tokens
+async function stakeTokens(amount) {
     try {
-        await provider.send("wallet_switchEthereumChain", [{ 
-            chainId: `0x${CONFIG.NETWORK.chainId.toString(16)}` 
-        }]);
-    } catch (switchError) {
-        if (switchError.code === 4902) {
-            await provider.send("wallet_addEthereumChain", [{
-                chainId: `0x${CONFIG.NETWORK.chainId.toString(16)}`,
-                chainName: CONFIG.NETWORK.name,
-                rpcUrls: [CONFIG.NETWORK.rpcUrl],
-                nativeCurrency: {
-                    name: CONFIG.NETWORK.currency,
-                    symbol: CONFIG.NETWORK.currency,
-                    decimals: 18
-                },
-                blockExplorerUrls: [CONFIG.NETWORK.explorerUrl]
-            }]);
-        } else {
-            throw new Error("Failed to switch network");
-        }
-    }
-}
-
-// Load Balances and Staking Info
-async function loadBalances() {
-    if (!account) return;
-    
-    try {
-        showLoading("Loading data...");
-        
-        const [lqxBalance, lpBalance, stakedAmount, pendingReward, apr] = await Promise.all([
-            contracts.lqx.balanceOf(account),
-            contracts.lp.balanceOf(account),
-            contracts.staking.userStake(account),
-            contracts.staking.earned(account),
-            contracts.staking.getAPR()
-        ]);
-        
-        // Update UI
-        document.getElementById('lqxBalance').textContent = formatUnits(lqxBalance, 18);
-        document.getElementById('lpBalance').textContent = formatUnits(lpBalance, 18);
-        document.getElementById('stakedAmount').textContent = formatUnits(stakedAmount, 18);
-        document.getElementById('pendingReward').textContent = formatUnits(pendingReward, 18);
-        document.getElementById('aprValue').textContent = `${formatUnits(apr, 18)}%`;
-        
-    } catch (error) {
-        console.error("Failed to load balances:", error);
-        showNotification("Failed to load data. Please refresh.", "error");
-    } finally {
-        hideLoading();
-    }
-}
-
-// Stake LP Tokens
-async function stakeTokens() {
-    const amount = stakeAmountInput.value;
-    if (!validateAmount(amount)) return;
-
-    try {
-        showLoading("Staking tokens...");
-
-        // Ensure signer is properly set
-        if (!signer) {
-            signer = provider.getSigner();
+        const availableLQX = await checkStakingBalance();
+        if (availableLQX <= 0) {
+            alert("No LQX tokens available for rewards in the staking contract.");
+            return;
         }
 
-        // 1. Approve tokens
-        const lpContract = new ethers.Contract(
-            CONFIG.LP_TOKEN.address,
-            CONFIG.LP_TOKEN.abi,
-            signer
-        );
-        
-        const approveTx = await lpContract.approve(
-            CONFIG.CONTRACTS.STAKING_CONTRACT.address,
-            ethers.utils.parseUnits(amount, 18)
-        );
+        const parsedAmount = ethers.utils.parseUnits(amount, 18);
+        const approveTx = await contracts.lp.approve(CONFIG.CONTRACTS.STAKING_CONTRACT.address, parsedAmount);
         await approveTx.wait();
 
-        // 2. Stake tokens
-        const stakingContract = new ethers.Contract(
-            CONFIG.CONTRACTS.STAKING_CONTRACT.address,
-            CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
-            signer
-        );
-
-        const stakeTx = await stakingContract.stake(ethers.utils.parseUnits(amount, 18));
-        await stakeTx.wait();
-
-        // 3. Update UI
-        stakeAmountInput.value = "";
-        await loadBalances();
-        showNotification("Tokens staked successfully!", "success");
+        const tx = await contracts.staking.stake(parsedAmount);
+        await tx.wait();
+        alert("Stake successful!");
     } catch (error) {
-        console.error("Staking error:", error);
-        showNotification(`Staking failed: ${error.message.split("(")[0]}`, "error");
-    } finally {
-        hideLoading();
+        console.error("Error staking tokens:", error);
     }
 }
 
-// Unstake LP Tokens
-// Unstake LP Tokens
-async function unstakeTokens() {
-    const amount = unstakeAmountInput.value;
-    if (!validateAmount(amount)) return;
-
+// Unstake Tokens
+async function unstakeTokens(amount) {
     try {
-        showLoading("Unstaking tokens...");
-
-        if (!signer) {
-            signer = provider.getSigner();
-        }
-
-        const stakingContract = new ethers.Contract(
-            CONFIG.CONTRACTS.STAKING_CONTRACT.address,
-            CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
-            signer
-        );
-
-        const tx = await stakingContract.unstake(ethers.utils.parseUnits(amount, 18));
+        const parsedAmount = ethers.utils.parseUnits(amount, 18);
+        const tx = await contracts.staking.unstake(parsedAmount);
         await tx.wait();
-
-        unstakeAmountInput.value = "";
-        await loadBalances();
-        showNotification("Tokens unstaked successfully!", "success");
+        alert("Unstake successful!");
     } catch (error) {
-        console.error("Unstaking error:", error);
-        showNotification(`Unstaking failed: ${error.message.split("(")[0]}`, "error");
-    } finally {
-        hideLoading();
+        console.error("Error unstaking tokens:", error);
     }
 }
 
 // Claim Rewards
 async function claimRewards() {
     try {
-        showLoading("Claiming rewards...");
-
-        if (!signer) {
-            signer = provider.getSigner();
-        }
-
-        const stakingContract = new ethers.Contract(
-            CONFIG.CONTRACTS.STAKING_CONTRACT.address,
-            CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
-            signer
-        );
-
-        const tx = await stakingContract.claimRewards();
+        const tx = await contracts.staking.claimRewards();
         await tx.wait();
-
-        await loadBalances();
-        showNotification("Rewards claimed successfully!", "success");
+        alert("Rewards claimed successfully!");
     } catch (error) {
-        console.error("Claim error:", error);
-        showNotification(`Claim failed: ${error.message.split("(")[0]}`, "error");
-    } finally {
-        hideLoading();
+        console.error("Error claiming rewards:", error);
     }
 }
 
-
-// Helper Functions
-function formatUnits(value, decimals) {
-    return parseFloat(ethers.utils.formatUnits(value, decimals)).toFixed(4);
-}
-
-function parseUnits(value, decimals) {
-    return ethers.utils.parseUnits(value.toString(), decimals);
-}
-
-function validateAmount(amount) {
-    if (!amount || isNaN(amount) || Number(amount) <= 0) {
-        showNotification("Please enter a valid amount", "warning");
-        return false;
-    }
-    return true;
-}
-
-function updateWalletUI(address) {
-    connectButton.innerHTML = `
-        <span class="wallet-icon">🟢</span>
-        ${address.slice(0, 6)}...${address.slice(-4)}
-        <span class="disconnect-icon">✕</span>
-    `;
-    connectButton.onclick = disconnectWallet;
-}
-
-function setupEventListeners(provider) {
-    provider.on("accountsChanged", (accounts) => {
-        if (accounts.length === 0) disconnectWallet();
-        else window.location.reload();
-    });
-    
-    provider.on("chainChanged", () => window.location.reload());
-}
-
-function disconnectWallet() {
-    if (web3Modal.cachedProvider) {
-        web3Modal.clearCachedProvider();
-    }
-    provider = null;
-    account = null;
-    contracts = {};
-    
-    connectButton.innerHTML = `
-        <span class="wallet-icon">🔴</span>
-        Connect Wallet
-    `;
-    connectButton.onclick = connectWallet;
-    
-    // Reset UI
-    document.querySelectorAll('.balance-value').forEach(el => {
-        el.textContent = '0';
-    });
-}
-
-// MAX Button Handlers
-maxStakeBtn.addEventListener('click', () => {
-    stakeAmountInput.value = document.getElementById('lpBalance').textContent;
+// Event Listeners
+document.getElementById("connectButton").addEventListener("click", connectWallet);
+document.getElementById("stakeButton").addEventListener("click", () => {
+    const amount = document.getElementById("stakeAmount").value;
+    if (amount) stakeTokens(amount);
 });
-
-maxUnstakeBtn.addEventListener('click', () => {
-    unstakeAmountInput.value = document.getElementById('stakedAmount').textContent;
+document.getElementById("unstakeButton").addEventListener("click", () => {
+    const amount = document.getElementById("unstakeAmount").value;
+    if (amount) unstakeTokens(amount);
 });
-
-// UI Helpers
-function showLoading(message) {
-    document.getElementById('loadingText').textContent = message;
-    loadingOverlay.style.display = 'flex';
-}
-
-function hideLoading() {
-    loadingOverlay.style.display = 'none';
-}
-
-function showNotification(message, type) {
-    notification.textContent = message;
-    notification.className = `notification show ${type}`;
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 5000);
-}
-
-// Initialize App
-document.addEventListener('DOMContentLoaded', () => {
-    // Event Listeners
-    connectButton.addEventListener('click', connectWallet);
-    stakeButton.addEventListener('click', stakeTokens);
-    unstakeButton.addEventListener('click', unstakeTokens);
-    claimButton.addEventListener('click', claimRewards);
-    
-    // Auto-connect if cached
-    if (web3Modal.cachedProvider) {
-        connectWallet();
-    }
-});
+document.getElementById("claimButton").addEventListener("click", claimRewards);
