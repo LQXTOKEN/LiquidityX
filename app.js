@@ -78,13 +78,16 @@ function initContracts() {
 async function connectWallet() {
     try {
         showLoading("Connecting wallet...");
-        
-        // Check if MetaMask is installed
+        console.log("Attempting to connect wallet...");
+
+        // Σύνδεση μέσω web3Modal
         const instance = await web3Modal.connect();
         provider = new ethers.providers.Web3Provider(instance, "any");
-        
-        // Check network
+
+        // Έλεγχος δικτύου
         const network = await provider.getNetwork();
+        console.log("Connected to network:", network);
+
         if (network.chainId !== CONFIG.NETWORK.chainId) {
             try {
                 await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(CONFIG.NETWORK.chainId) }]);
@@ -106,26 +109,23 @@ async function connectWallet() {
                 }
             }
         }
-        
+
         signer = provider.getSigner();
         account = await signer.getAddress();
-        
-        // Initialize contracts
-        initContracts();
-        
-        // Set up event listeners
-        instance.on("accountsChanged", () => window.location.reload());
-        instance.on("chainChanged", () => window.location.reload());
-        
-        // Update UI
-        updateUI();
+        console.log("Connected wallet address:", account);
+
+        document.getElementById('connectButton').innerText = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
+
+        if (instance.on) {
+            instance.on("accountsChanged", () => window.location.reload());
+            instance.on("chainChanged", () => window.location.reload());
+        }
+
         await loadBalances();
-        
-        showNotification("Wallet connected successfully!", "success");
+        hideLoading();
     } catch (error) {
         console.error("Connection error:", error);
-        showNotification(`Connection failed: ${error.message}`, "error");
-    } finally {
+        alert(`Connection failed: ${error.message}`);
         hideLoading();
     }
 }
