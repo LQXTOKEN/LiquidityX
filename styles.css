@@ -1,34 +1,24 @@
-body {
-    background-color: #1A1A1A;
-    color: white;
-    font-family: 'Roboto', sans-serif;
-    padding: 20px;
-    margin: 0;
-    min-height: 100vh;
+:root {
+  /* Βασικά Χρώματα */
+  --primary: #1fb6ff;       /* Κύριο γαλάζιο */
+  --primary-dark: #15a1d8;  /* Σκούρο γαλάζιο (hover) */
+  --background: #1A1A1A;    /* Σκούρο φόντο */
+  --card: #2A2A2A;          /* Χρώμα καρτών */
+  --text: #FFFFFF;          /* Λευκό κείμενο */
+  
+  /* Accent Χρώματα (προσθήκη για διαφοροποίηση) */
+  --accent: #FFA726;        /* Πορτοκαλί (προσωρινό - θα αλλάξει με βάση το logo) */
+  --accent-light: #FFD180;  /* Ανοιχτό πορτοκαλί */
 }
 
-h1 {
-    text-align: center;
-    color: #1fb6ff;
-    margin-bottom: 30px;
-}
-
+/* Gradient για κουμπιά (προσθήκη βάθους) */
 button {
-    background-color: #1fb6ff;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
-    cursor: pointer;
-    transition: all 0.3s;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Animation για hover */
 button:hover {
-    background-color: #15a1d8;
-}
-
-#balances, #actions {
-    background-color: #2A2A2A;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
