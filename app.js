@@ -20,9 +20,12 @@ const CONFIG = {
             "function stake(uint256 amount) external",
             "function unstake(uint256 amount) external",
             "function claimRewards() external",
-            "function getStakedAmount(address user) external view returns (uint256)",
-            "function earned(address user) external view returns (uint256)",
-            "function getAPR() public view returns (uint256)"
+            "function userStake(address account) external view returns (uint256)",
+            "function earned(address account) external view returns (uint256)",
+            "function getAPR() public view returns (uint256)",
+            "function rewardPerToken() public view returns (uint256)",
+            "function emergencyPause(bool _paused) external",
+            "function setAPR(uint256 apr) public"
         ]
     }
 };
@@ -60,7 +63,7 @@ async function loadBalances() {
         let pendingReward = 0;
 
         try {
-            stakedAmount = await stakingContract.getStakedAmount(account);
+            stakedAmount = await stakingContract.userStake(account);
         } catch (error) {
             console.log('User has no stake, returning 0');
             stakedAmount = 0;
