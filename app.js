@@ -37,212 +37,74 @@ const CONFIG = {
   }
 };
 
-// Web3Modal Setup (για WalletConnect)
-const providerOptions = {
-  walletconnect: {
-    package: WalletConnectProvider,
-    options: {
-      rpc: { 
-        137: CONFIG.NETWORK.rpcUrl 
-      }
-    }
-  }
-};
+// Loading Indicator Elements
+const loadingIndicator = document.createElement('div');
+loadingIndicator.id = 'loadingIndicator';
+loadingIndicator.innerText = 'Loading... Please wait.';
+loadingIndicator.style.display = 'none';
+document.body.appendChild(loadingIndicator);
 
-const web3Modal = new Web3Modal({
-  cacheProvider: false,
-  providerOptions,
-  theme: 'dark'
-});
-
-let provider, signer, account;
-
-// ======================
-// Βοηθητικές Συναρτήσεις
-// ======================
-
-/**
- * Προσθήκη Polygon Network στο MetaMask αν λείπει
- */
-async function addPolygonNetwork() {
-  try {
-    await window.ethereum.request({
-      method: 'wallet_addEthereumChain',
-      params: [{
-        chainId: `0x${CONFIG.NETWORK.chainId.toString(16)}`,
-        chainName: CONFIG.NETWORK.name,
-        nativeCurrency: {
-          name: CONFIG.NETWORK.currency,
-          symbol: CONFIG.NETWORK.currency,
-          decimals: 18
-        },
-        rpcUrls: [CONFIG.NETWORK.rpcUrl],
-        blockExplorerUrls: [CONFIG.NETWORK.explorerUrl]
-      }]
-    });
-    return true;
-  } catch (error) {
-    console.error("Failed to add network:", error);
-    return false;
-  }
+function showLoading() {
+  loadingIndicator.style.display = 'block';
 }
 
-/**
- * Έλεγχος αν ο χρήστης είναι στο σωστό δίκτυο
- */
-async function isCorrectNetwork() {
-  if (!provider) return false;
-  const network = await provider.getNetwork();
-  return network.chainId === CONFIG.NETWORK.chainId;
-}
-
-/**
- * Αποσύνδεση Wallet
- */
-async function disconnectWallet() {
-  if (web3Modal.cachedProvider) {
-    web3Modal.clearCachedProvider();
-  }
-  provider = null;
-  signer = null;
-  account = null;
-  updateUI();
-}
-
-/**
- * Ενημέρωση UI κατάστασης
- */
-function updateUI() {
-  const connectButton = document.getElementById('connectButton');
-  if (account) {
-    connectButton.innerText = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
-    connectButton.onclick = disconnectWallet;
-  } else {
-    connectButton.innerText = "Connect Wallet";
-    connectButton.onclick = connectWallet;
-    document.getElementById('lqxBalance').innerText = "LQX Balance: 0";
-    document.getElementById('lpBalance').innerText = "LP Balance: 0";
-  }
-}
-
-// ======================
-// Κύριες Συναρτήσεις
-// ======================
-
-/**
- * Σύνδεση Wallet (MetaMask ή WalletConnect)
- */
-async function connectWallet() {
-  try {
-    let instance;
-    
-    // Προτεραιότητα στο MetaMask αν υπάρχει
-    if (window.ethereum) {
-      instance = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-    } else {
-      // Fallback στο WalletConnect (Trust Wallet κλπ)
-      instance = await web3Modal.connect();
-      provider = new ethers.providers.Web3Provider(instance, "any");
-    }
-
-    // Έλεγχος δικτύου
-    if (!(await isCorrectNetwork())) {
-      const added = await addPolygonNetwork();
-      if (!added) throw new Error("Wrong network. Please switch to Polygon.");
-    }
-
-    signer = provider.getSigner();
-    account = await signer.getAddress();
-
-    // Ακροατές για αλλαγές
-    if (instance.on) {
-      instance.on("accountsChanged", () => window.location.reload());
-      instance.on("chainChanged", () => window.location.reload());
-    }
-
-    updateUI();
-    await loadBalances();
-  } catch (error) {
-    console.error("Connection error:", error);
-    alert(`Connection failed: ${error.message}`);
-  }
-}
-
-/**
- * Φόρτωση Balances (LQX + LP)
- */
-async function loadBalances() {
-  if (!account) return;
-
-  try {
-    // Έλεγχος δικτύου ξανά
-    if (!(await isCorrectNetwork())) {
-      throw new Error("Wrong network. Please switch to Polygon.");
-    }
-
-    const [lqxBalance, lpBalance] = await Promise.all([
-      getTokenBalance(CONFIG.CONTRACTS.LQX_TOKEN, account),
-      getTokenBalance(CONFIG.CONTRACTS.LP_TOKEN, account)
-    ]);
-
-    document.getElementById('lqxBalance').innerText = `LQX Balance: ${lqxBalance}`;
-    document.getElementById('lpBalance').innerText = `LP Balance: ${lpBalance}`;
-  } catch (error) {
-    console.error("Load balances error:", error);
-    alert(`Failed to load balances: ${error.message}`);
-  }
-}
-
-/**
- * Βοηθητική συνάρτηση για ανάγνωση balance
- */
-async function getTokenBalance(tokenConfig, address) {
-  try {
-    const contract = new ethers.Contract(
-      tokenConfig.address,
-      tokenConfig.abi,
-      provider // Χρήση provider (read-only)
-    );
-    const balance = await contract.balanceOf(address);
-    return ethers.utils.formatUnits(balance, 18);
-  } catch (error) {
-    console.error(`Error fetching ${tokenConfig.address} balance:`, error);
-    return "Error";
-  }
+function hideLoading() {
+  loadingIndicator.style.display = 'none';
 }
 
 // ======================
 // Συμβολαιακές Συναρτήσεις
 // ======================
 
-async function stake(amount) {
+async function unstake(amount) {
   if (!account) return;
 
   try {
+    showLoading();
     const stakingContract = new ethers.Contract(
       CONFIG.CONTRACTS.STAKING_CONTRACT.address,
       CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
       signer
     );
 
-    const tx = await stakingContract.stake(ethers.utils.parseUnits(amount, 18));
+    const tx = await stakingContract.unstake(ethers.utils.parseUnits(amount, 18));
     await tx.wait();
-    await loadBalances(); // Αυτόματη ανανέωση
-    alert("Stake successful!");
+    await loadBalances();
+    alert('Unstake successful!');
   } catch (error) {
-    console.error("Stake error:", error);
-    alert(`Stake failed: ${error.message}`);
+    console.error('Unstake error:', error);
+    alert(`Unstake failed: ${error.message}`);
+  } finally {
+    hideLoading();
   }
 }
 
-// ======================
-// Αρχικοποίηση
-// ======================
+async function claimRewards() {
+  if (!account) return;
 
-document.getElementById('connectButton').addEventListener('click', connectWallet);
+  try {
+    showLoading();
+    const stakingContract = new ethers.Contract(
+      CONFIG.CONTRACTS.STAKING_CONTRACT.address,
+      CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
+      signer
+    );
 
-// Αν ο χρήστης είναι ήδη συνδεδεμένος (π.χ. ανανέωση σελίδας)
-if (web3Modal.cachedProvider) {
-  connectWallet();
+    const tx = await stakingContract.claimRewards();
+    await tx.wait();
+    await loadBalances();
+    alert('Rewards claimed successfully!');
+  } catch (error) {
+    console.error('Claim rewards error:', error);
+    alert(`Claim rewards failed: ${error.message}`);
+  } finally {
+    hideLoading();
+  }
 }
+
+document.getElementById('unstakeButton').addEventListener('click', () => {
+  const amount = document.getElementById('unstakeAmount').value;
+  if (amount && parseFloat(amount) > 0) unstake(amount);
+});
+
+document.getElementById('claimButton').addEventListener('click', claimRewards);
