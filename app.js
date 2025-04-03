@@ -43,6 +43,30 @@ function initContracts() {
         staking: new ethers.Contract(CONFIG.CONTRACTS.STAKING_CONTRACT.address, CONFIG.CONTRACTS.STAKING_CONTRACT.abi, signer)
     };
 }
+// Initialize Web3Modal with proper defaults
+const Web3Modal = window.Web3Modal.default;
+const WalletConnectProvider = window.WalletConnectProvider.default;
+
+const providerOptions = {
+    walletconnect: {
+        package: WalletConnectProvider,
+        options: {
+            rpc: {
+                137: CONFIG.NETWORK.rpcUrl
+            },
+            qrcodeModalOptions: {
+                mobileLinks: ["metamask", "trust"]
+            }
+        }
+    }
+};
+
+const web3Modal = new Web3Modal({
+    cacheProvider: true,
+    providerOptions,
+    theme: 'dark'
+});
+
 
 // Ελεγχος αν το contract έχει LQX tokens για rewards
 async function checkContractBalance() {
