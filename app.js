@@ -47,39 +47,98 @@ const web3Modal = new Web3Modal({
 
 let provider, signer, account;
 
+// Προσθήκη: Έλεγχος αν ο χρήστης είναι στο Polygon Mainnet (chainId: 137)
+async function checkNetwork() {
+    if (!provider) return false;
+    const network = await provider.getNetwork();
+    return network.chainId === 137;
+}
+
+// Προσθήκη: Disconnect wallet
+async function disconnectWallet() {
+    if (web3Modal.cachedProvider) {
+        web3Modal.clearCachedProvider();
+        provider = null;
+        signer = null;
+        account = null;
+        document.getElementById('connectButton').innerText = "Connect Wallet";
+        document.getElementById('lqxBalance').innerText = "LQX Balance: 0";
+        document.getElementById('lpBalance').innerText = "LP Balance: 0";
+    }
+}
+
+// Προσθήκη: Ανανέωση balances μετά από συναλλαγές
+async function refreshBalances() {
+    if (account) await loadBalances();
+}
+
 async function connectWallet() {
-    const instance = await web3Modal.connect();
-    provider = new ethers.providers.Web3Provider(instance, "any");
-    signer = provider.getSigner();
-    account = await signer.getAddress();
-    document.getElementById('connectButton').innerText = `Connected: ${account}`;
-    loadBalances();
+    try {
+        const instance = await web3Modal.connect();
+        provider = new ethers.providers.Web3Provider(instance, "any");
+        
+        // Έλεγχος δικτύου
+        if (!(await checkNetwork())) {
+            alert("Please switch to Polygon Mainnet (ChainID: 137)");
+            await disconnectWallet();
+            return;
+        }
+
+        signer = provider.getSigner();
+        account = await signer.getAddress();
+        document.getElementById('connectButton').innerText = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
+        
+        // Προσθήκη: Ακροατής για αλλαγές λογαριασμού/δικτύου
+        instance.on("accountsChanged", () => window.location.reload());
+        instance.on("chainChanged", () => window.location.reload());
+        
+        await loadBalances();
+    } catch (error) {
+        console.error("Connection error:", error);
+        alert("Failed to connect wallet. Please try again.");
+    }
 }
 
 async function loadBalances() {
     try {
+        if (!(await checkNetwork())) {
+            alert("Please switch to Polygon Mainnet!");
+            return;
+        }
+
         const lqxContract = new ethers.Contract(CONFIG.LQX_TOKEN.address, CONFIG.LQX_TOKEN.abi, signer);
         const lpContract = new ethers.Contract(CONFIG.LP_TOKEN.address, CONFIG.LP_TOKEN.abi, signer);
 
-        let lqxBalance = await lqxContract.balanceOf(account).catch(error => {
-            console.error('Error fetching LQX Balance:', error);
-            alert('Error fetching LQX Balance. Make sure you are on the correct network (Polygon Mainnet).');
-            return 0;
-        });
-
-        let lpBalance = await lpContract.balanceOf(account).catch(error => {
-            console.error('Error fetching LP Balance:', error);
-            alert('Error fetching LP Balance. Make sure you are on the correct network (Polygon Mainnet).');
-            return 0;
-        });
+        const [lqxBalance, lpBalance] = await Promise.all([
+            lqxContract.balanceOf(account).catch(() => ethers.BigNumber.from(0)),
+            lpContract.balanceOf(account).catch(() => ethers.BigNumber.from(0))
+        ]);
 
         document.getElementById('lqxBalance').innerText = `LQX Balance: ${ethers.utils.formatUnits(lqxBalance, 18)}`;
         document.getElementById('lpBalance').innerText = `LP Balance: ${ethers.utils.formatUnits(lpBalance, 18)}`;
-
     } catch (error) {
-        console.error("General Error loading balances:", error);
-        alert('An unexpected error occurred. Please try again.');
+        console.error("Error loading balances:", error);
+        alert("An error occurred. Please refresh the page.");
     }
 }
 
-document.getElementById('connectButton').addEventListener('click', connectWallet);
+// Προσθήκη: Stake function με auto-refresh
+async function stake(amount) {
+    try {
+        const stakingContract = new ethers.Contract(CONFIG.STAKING_CONTRACT.address, CONFIG.STAKING_CONTRACT.abi, signer);
+        const tx = await stakingContract.stake(amount);
+        await tx.wait();
+        await refreshBalances(); // Αυτόματη ανανέωση
+    } catch (error) {
+        console.error("Stake error:", error);
+        alert("Stake failed. Check console for details.");
+    }
+}
+
+// Προσθήκη: Ενημέρωση UI κατά τη φόρτωση της σελίδας
+window.addEventListener('load', () => {
+    document.getElementById('connectButton').addEventListener('click', () => {
+        if (account) disconnectWallet();
+        else connectWallet();
+    });
+});
