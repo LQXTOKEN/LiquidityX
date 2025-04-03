@@ -97,16 +97,22 @@ async function checkStakingBalance() {
     }
 }
 
-// Connect Wallet
+// Connect Wallet (MetaMask + WalletConnect)
 async function connectWallet() {
     try {
         const instance = await web3Modal.connect();
         provider = new ethers.providers.Web3Provider(instance, "any");
-        signer = provider.getSigner();
+        
+        signer = provider.getSigner(); // ΠΑΝΤΑ ορίζουμε το signer μόλις συνδεθούμε
         account = await signer.getAddress();
-        initContracts();
+        
+        initContracts(); // Αρχικοποιούμε τα contracts ΜΕΤΑ το signer
+
+        console.log("Connected Account:", account);
+        showNotification("Wallet connected successfully!", "success");
     } catch (error) {
-        console.error("Error connecting wallet:", error);
+        console.error("Connection error:", error);
+        showNotification("Connection failed. Please try again.", "error");
     }
 }
 
