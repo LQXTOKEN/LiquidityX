@@ -34,19 +34,22 @@ const CONFIG = {
 };
 
 // Initialize Web3Modal
+const Web3Modal = window.Web3Modal.default;
+const WalletConnectProvider = window.WalletConnectProvider.default;
+
 const providerOptions = {
     walletconnect: {
-        package: window.WalletConnectProvider.default,
+        package: WalletConnectProvider,
         options: {
             rpc: {
-                137: CONFIG.NETWORK.rpcUrl
+                137: "https://polygon-rpc.com" // Polygon Mainnet
             }
         }
     }
 };
 
 const web3Modal = new Web3Modal({
-    cacheProvider: true, // Enable cache for auto-reconnect
+    cacheProvider: true,
     providerOptions,
     theme: 'dark'
 });
