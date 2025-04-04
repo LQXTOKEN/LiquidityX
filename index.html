@@ -23,14 +23,9 @@
             </button>
         </header>
 
-        <!-- Mobile Menu Toggle -->
-        <div class="mobile-menu-toggle" id="mobileMenuToggle">
-            <i class="fas fa-bars"></i>
-        </div>
-
         <!-- Main Content -->
         <main class="app-content">
-            <!-- Balance Cards - Stacked on Mobile -->
+            <!-- Balance Cards -->
             <section class="balance-section">
                 <div class="balance-card">
                     <div class="balance-row">
@@ -59,93 +54,19 @@
                 </div>
             </section>
 
-            <!-- Staking Actions - Full Width on Mobile -->
+            <!-- Action Buttons -->
             <section class="action-section">
-                <div class="action-card">
-                    <h3><i class="fas fa-coins"></i> Stake</h3>
-                    <div class="input-group">
-                        <input type="number" id="stakeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
-                        <button id="maxStakeBtn" class="max-btn">MAX</button>
-                    </div>
-                    <button id="stakeBtn" class="action-btn primary">
-                        <span class="btn-text">Stake LP</span>
-                        <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
-                    </button>
-                </div>
-
-                <div class="action-card">
-                    <h3><i class="fas fa-unlock"></i> Unstake</h3>
-                    <div class="input-group">
-                        <input type="number" id="unstakeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
-                        <button id="maxUnstakeBtn" class="max-btn">MAX</button>
-                    </div>
-                    <button id="unstakeBtn" class="action-btn secondary">
-                        <span class="btn-text">Unstake LP</span>
-                        <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
-                    </button>
-                </div>
-
-                <div class="action-card">
-                    <h3><i class="fas fa-gift"></i> Rewards</h3>
-                    <button id="claimBtn" class="action-btn accent">
-                        <span class="btn-text">Claim</span>
-                        <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
-                    </button>
-                    <button id="compoundBtn" class="action-btn">
-                        <span class="btn-text">Compound</span>
-                        <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
-                    </button>
-                </div>
+                <button id="stakeBtn" class="action-btn primary">Stake</button>
+                <button id="unstakeBtn" class="action-btn secondary">Unstake</button>
+                <button id="claimBtn" class="action-btn accent">Claim Rewards</button>
+                <button id="disconnectBtn" class="action-btn disconnect">Disconnect</button>
             </section>
-
-            <!-- Mobile Collapsible Menu -->
-            <nav class="mobile-menu" id="mobileMenu">
-                <a href="#" class="mobile-menu-item active" data-section="staking">
-                    <i class="fas fa-coins"></i> Staking
-                </a>
-                <a href="#" class="mobile-menu-item" data-section="history">
-                    <i class="fas fa-history"></i> History
-                </a>
-                <a href="#" class="mobile-menu-item" data-section="info">
-                    <i class="fas fa-info-circle"></i> Info
-                </a>
-            </nav>
         </main>
-
-        <!-- Wallet Modal - Full Screen on Mobile -->
-        <div class="modal" id="walletModal">
-            <div class="modal-content">
-                <span class="close-modal">&times;</span>
-                <h3>Connect Wallet</h3>
-                <div class="wallet-options">
-                    <button class="wallet-option" data-wallet="metamask">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask">
-                        MetaMask
-                    </button>
-                    <button class="wallet-option" data-wallet="walletconnect">
-                        <img src="https://walletconnect.com/_next/static/media/logo_mark.84dd8525.svg" alt="WalletConnect">
-                        WalletConnect
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Loading Overlay -->
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="loading-content">
-                <div class="spinner"></div>
-                <p id="loadingText">Processing</p>
-                <a href="#" target="_blank" id="txLink" class="tx-link">View Transaction</a>
-            </div>
-        </div>
 
         <!-- Notifications -->
         <div class="notification-container" id="notificationContainer"></div>
     </div>
 
-    <!-- WalletConnect v2 without Project ID -->
-    <script src="https://unpkg.com/@walletconnect/web3-provider@2.8.0/dist/umd/index.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
