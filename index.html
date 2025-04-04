@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content=device-width, initial-scale=1.0">
-    <title>LiquidityX - LP Staking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiquidityX - Complete Staking DApp</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
-    <script src="https://unpkg.com/web3modal@1.9.7/dist/index.js"></script>
-    <script src="https://unpkg.com/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
+    <script src="https://unpkg.com/web3modal@2.0.0/dist/index.js"></script>
+    <script src="https://unpkg.com/@walletconnect/web3-provider@2.0.0/dist/umd/index.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -19,8 +19,7 @@
                 <h1>LiquidityX <span>Staking</span></h1>
             </div>
             <button id="connectButton" class="connect-btn">
-                <span class="btn-text">Connect Wallet</span>
-                <span class="wallet-icon">🦊</span>
+                Connect Wallet
             </button>
         </header>
 
@@ -66,11 +65,6 @@
                 <button id="claimButton" class="action-btn accent">Claim Rewards</button>
             </section>
         </main>
-
-        <div class="network-status">
-            <div class="status-indicator"></div>
-            <span>Polygon Mainnet</span>
-        </div>
 
         <div id="loadingOverlay" class="loading-overlay">
             <div class="loading-content">
