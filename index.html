@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX | Advanced Staking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LiquidityX | Staking Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
@@ -11,97 +11,84 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Header -->
+        <!-- Mobile Header -->
         <header class="app-header">
             <div class="logo-container">
                 <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
-                <h1>LiquidityX <span>Staking Portal</span></h1>
+                <h1>LiquidityX <span class="mobile-hidden">Staking</span></h1>
             </div>
-            <div class="wallet-section">
-                <div class="network-indicator" id="networkIndicator">
-                    <span class="network-name">Polygon</span>
-                </div>
-                <button id="connectButton" class="connect-btn">
-                    <i class="fas fa-wallet"></i> Connect Wallet
-                </button>
-            </div>
+            <button id="connectButton" class="connect-btn">
+                <i class="fas fa-wallet"></i>
+                <span class="btn-text">Connect</span>
+            </button>
         </header>
+
+        <!-- Mobile Menu Toggle -->
+        <div class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </div>
 
         <!-- Main Content -->
         <main class="app-content">
-            <!-- Balance Cards -->
+            <!-- Balance Cards - Stacked on Mobile -->
             <section class="balance-section">
                 <div class="balance-card">
-                    <h3><i class="fas fa-wallet"></i> Your Balances</h3>
-                    <div class="balance-grid">
-                        <div class="balance-item">
-                            <span class="balance-label">LP Balance:</span>
-                            <span id="lpBalance" class="balance-value">0.00</span>
-                        </div>
-                        <div class="balance-item">
-                            <span class="balance-label">Staked:</span>
-                            <span id="stakedBalance" class="balance-value highlight">0.00</span>
-                        </div>
-                        <div class="balance-item">
-                            <span class="balance-label">Rewards:</span>
-                            <span id="rewardsBalance" class="balance-value highlight">0.00</span>
-                        </div>
+                    <div class="balance-row">
+                        <span>LP Balance:</span>
+                        <span id="lpBalance">0.00</span>
+                    </div>
+                    <div class="balance-row highlight">
+                        <span>Staked:</span>
+                        <span id="stakedBalance">0.00</span>
+                    </div>
+                    <div class="balance-row highlight">
+                        <span>Rewards:</span>
+                        <span id="rewardsBalance">0.00</span>
                     </div>
                 </div>
 
                 <div class="info-card">
-                    <h3><i class="fas fa-info-circle"></i> Pool Info</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">APR:</span>
-                            <span id="aprValue" class="info-value">0.00%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Total Staked:</span>
-                            <span id="totalStaked" class="info-value">0.00 LP</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Your Share:</span>
-                            <span id="userShare" class="info-value">0.00%</span>
-                        </div>
+                    <div class="info-row">
+                        <span>APR:</span>
+                        <span id="aprValue">0.00%</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Total Staked:</span>
+                        <span id="totalStaked">0.00 LP</span>
                     </div>
                 </div>
             </section>
 
-            <!-- Staking Actions -->
+            <!-- Staking Actions - Full Width on Mobile -->
             <section class="action-section">
                 <div class="action-card">
-                    <h3><i class="fas fa-coins"></i> Stake LP Tokens</h3>
+                    <h3><i class="fas fa-coins"></i> Stake</h3>
                     <div class="input-group">
-                        <input type="number" id="stakeAmount" placeholder="0.00" min="0" step="0.01">
+                        <input type="number" id="stakeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
                         <button id="maxStakeBtn" class="max-btn">MAX</button>
                     </div>
                     <button id="stakeBtn" class="action-btn primary">
-                        <span class="btn-text">Stake</span>
+                        <span class="btn-text">Stake LP</span>
                         <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
                     </button>
                 </div>
 
                 <div class="action-card">
-                    <h3><i class="fas fa-unlock"></i> Unstake LP Tokens</h3>
+                    <h3><i class="fas fa-unlock"></i> Unstake</h3>
                     <div class="input-group">
-                        <input type="number" id="unstakeAmount" placeholder="0.00" min="0" step="0.01">
+                        <input type="number" id="unstakeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
                         <button id="maxUnstakeBtn" class="max-btn">MAX</button>
                     </div>
                     <button id="unstakeBtn" class="action-btn secondary">
-                        <span class="btn-text">Unstake</span>
+                        <span class="btn-text">Unstake LP</span>
                         <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
                     </button>
                 </div>
 
                 <div class="action-card">
                     <h3><i class="fas fa-gift"></i> Rewards</h3>
-                    <div class="rewards-info">
-                        <span id="dailyRewards">Daily: 0.00 LQX</span>
-                        <span id="weeklyRewards">Weekly: 0.00 LQX</span>
-                    </div>
                     <button id="claimBtn" class="action-btn accent">
-                        <span class="btn-text">Claim Rewards</span>
+                        <span class="btn-text">Claim</span>
                         <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
                     </button>
                     <button id="compoundBtn" class="action-btn">
@@ -111,51 +98,35 @@
                 </div>
             </section>
 
-            <!-- Transaction History -->
-            <section class="history-section">
-                <h3><i class="fas fa-history"></i> Transaction History</h3>
-                <div class="history-container" id="txHistory">
-                    <div class="history-placeholder">
-                        <i class="fas fa-clock"></i>
-                        <p>Your transactions will appear here</p>
-                    </div>
-                </div>
-            </section>
+            <!-- Mobile Collapsible Menu -->
+            <nav class="mobile-menu" id="mobileMenu">
+                <a href="#" class="mobile-menu-item active" data-section="staking">
+                    <i class="fas fa-coins"></i> Staking
+                </a>
+                <a href="#" class="mobile-menu-item" data-section="history">
+                    <i class="fas fa-history"></i> History
+                </a>
+                <a href="#" class="mobile-menu-item" data-section="info">
+                    <i class="fas fa-info-circle"></i> Info
+                </a>
+            </nav>
         </main>
 
-        <!-- Modals -->
+        <!-- Wallet Modal - Full Screen on Mobile -->
         <div class="modal" id="walletModal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
-                <h3>Select Wallet</h3>
+                <h3>Connect Wallet</h3>
                 <div class="wallet-options">
                     <button class="wallet-option" data-wallet="metamask">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask">
                         MetaMask
                     </button>
                     <button class="wallet-option" data-wallet="walletconnect">
-                        <img src="https://walletconnect.com/walletconnect-logo.png" alt="WalletConnect">
+                        <img src="https://walletconnect.com/_next/static/media/logo_mark.84dd8525.svg" alt="WalletConnect">
                         WalletConnect
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <div class="modal" id="txModal">
-            <div class="modal-content">
-                <span class="close-modal">&times;</span>
-                <h3 id="txModalTitle">Confirm Transaction</h3>
-                <div class="tx-details" id="txDetails"></div>
-                <div class="gas-selector">
-                    <span>Gas Priority:</span>
-                    <div class="gas-options">
-                        <button class="gas-option" data-speed="low">Low</button>
-                        <button class="gas-option active" data-speed="medium">Medium</button>
-                        <button class="gas-option" data-speed="high">High</button>
-                    </div>
-                    <div class="gas-estimate" id="gasEstimate">~$0.00</div>
-                </div>
-                <button class="confirm-btn" id="confirmTxBtn">Confirm</button>
             </div>
         </div>
 
@@ -163,8 +134,8 @@
         <div class="loading-overlay" id="loadingOverlay">
             <div class="loading-content">
                 <div class="spinner"></div>
-                <p id="loadingText">Processing Transaction</p>
-                <a href="#" target="_blank" id="txLink" class="tx-link">View on Explorer</a>
+                <p id="loadingText">Processing</p>
+                <a href="#" target="_blank" id="txLink" class="tx-link">View Transaction</a>
             </div>
         </div>
 
@@ -172,9 +143,9 @@
         <div class="notification-container" id="notificationContainer"></div>
     </div>
 
+    <!-- WalletConnect v2 without Project ID -->
+    <script src="https://unpkg.com/@walletconnect/web3-provider@2.8.0/dist/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
-    <script src="https://unpkg.com/web3modal@2.0.0/dist/index.js"></script>
-    <script src="https://unpkg.com/@walletconnect/web3-provider@2.0.0/dist/umd/index.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
