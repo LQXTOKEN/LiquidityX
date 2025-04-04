@@ -43,9 +43,7 @@ const CONFIG = {
         "function claimRewards() external"
       ]
     }
-  },
-  // WalletConnect V2 Project ID (Καλό να το έχετε δικό σας!)
-  WALLETCONNECT_PROJECT_ID: "a85104317e5f3c8096a1a3d1047c1561" // Test ID
+  }
 };
 
 // App State
@@ -72,7 +70,7 @@ let state = {
     balance: '0'
   },
   // UI
-  walletType: null // 'metamask', 'keplr', 'leap', 'walletconnect'
+  walletType: null // 'metamask', 'keplr', 'leap', 'trust'
 };
 
 // DOM Elements
@@ -91,10 +89,10 @@ const elements = {
   claimBtn: document.getElementById('claimBtn')
 };
 
-// Initialize Cosmos-Kit (React-like, but works in vanilla JS)
+// Initialize Cosmos-Kit (Keplr/Leap)
 async function initCosmosKit() {
   const { ChainProvider, useWallet } = await import('@cosmos-kit/react');
-  const { wallets: { keplr, leap, metamask, trust } } = await import('@cosmos-kit/wallets');
+  const { wallets: { keplr, leap } } = await import('@cosmos-kit/wallets');
 
   // Render Cosmos-Kit Provider (dynamically)
   const providerEl = document.createElement('div');
@@ -104,8 +102,7 @@ async function initCosmosKit() {
   ReactDOM.render(
     <ChainProvider
       chains={Object.values(CONFIG.COSMOS)}
-      wallets={[...keplr, ...leap, ...metamask, ...trust]}
-      walletConnectOptions={{ projectId: CONFIG.WALLETCONNECT_PROJECT_ID }}
+      wallets={[...keplr, ...leap]}
     >
       <App />
     </ChainProvider>,
@@ -133,8 +130,6 @@ async function connectWallet(walletType) {
       await connectEVM(walletType);
     } else if (walletType === 'keplr' || walletType === 'leap') {
       await connectCosmos(walletType);
-    } else if (walletType === 'walletconnect') {
-      await connectWalletConnect();
     }
 
     // Save session
@@ -153,7 +148,7 @@ async function connectWallet(walletType) {
   }
 }
 
-// EVM Connection (Polygon)
+// EVM Connection (Polygon) - MetaMask/Trust
 async function connectEVM(walletType) {
   if (!window.ethereum) throw new Error("Install MetaMask/Trust Wallet");
   
@@ -184,20 +179,6 @@ async function connectCosmos(walletType) {
   state.walletType = walletType;
 }
 
-// WalletConnect V2
-async function connectWalletConnect() {
-  const { connect } = window.useWallet();
-  await connect('walletconnect');
-  
-  // For EVM compatibility
-  if (window.walletConnectProvider) {
-    state.provider = new ethers.providers.Web3Provider(window.walletConnectProvider);
-    state.userAddress = (await state.provider.listAccounts())[0];
-    state.walletType = 'walletconnect';
-    initContracts();
-  }
-}
-
 // Initialize EVM Contracts
 function initContracts() {
   if (!state.provider) return;
@@ -217,7 +198,7 @@ function initContracts() {
 
 // Load Balances (EVM + Cosmos)
 async function loadBalances() {
-  if (state.walletType === 'metamask' || state.walletType === 'walletconnect') {
+  if (state.walletType === 'metamask' || state.walletType === 'trust') {
     // EVM Balances
     const [lpBalance, staked] = await Promise.all([
       state.contracts.lpToken.balanceOf(state.userAddress),
