@@ -1,103 +1,373 @@
 :root {
-    /* LiquidityX Color Palette */
-    --primary: #1fb6ff;
-    --primary-dark: #0d8ecf;
-    --accent: #ff7e33;
-    --background: #0f1721;
-    --card-bg: #1a2636;
-    --text-primary: #ffffff;
-    --text-secondary: #b0c4de;
-    --success: #4ade80;
-    --error: #f87171;
-    --warning: #fbbf24;
+    --primary-color: #6a4cff;
+    --secondary-color: #4a6cf7;
+    --accent-color: #ff6b4a;
+    --dark-bg: #1e1e2d;
+    --card-bg: #2a2a3a;
+    --text-color: #ffffff;
+    --text-secondary: #b8b8d2;
+    --success-color: #4caf50;
+    --error-color: #f44336;
+    --warning-color: #ff9800;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif;
 }
 
 body {
-    font-family: 'Montserrat', sans-serif;
-    background: linear-gradient(135deg, var(--background) 0%, #1a2636 100%);
-    color: var(--text-primary);
+    background-color: var(--dark-bg);
+    color: var(--text-color);
     line-height: 1.6;
-    min-height: 100vh;
-    padding: 20px;
-    background-attachment: fixed;
 }
 
 .app-container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
-    position: relative;
+    padding: 20px;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+}
+
+.app-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.app-header h1 span {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.wallet-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.network-indicator {
+    padding: 5px 10px;
+    border-radius: 20px;
+    background-color: var(--card-bg);
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .connect-btn {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background-color: var(--primary-color);
     color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.action-btn {
-    background: var(--primary);
-    color: white;
-    padding: 0.75rem;
     border: none;
+    padding: 10px 20px;
     border-radius: 8px;
     cursor: pointer;
-    width: 100%;
-    margin-top: 0.5rem;
-    transition: background 0.3s;
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
 
-.action-btn:hover {
-    background: var(--primary-dark);
+.connect-btn:hover {
+    background-color: #5a3ce0;
+    transform: translateY(-2px);
+}
+
+.app-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.balance-card, .action-card, .chain-info {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.chain-info {
+    grid-column: span 2;
+}
+
+h2, h3 {
+    margin-bottom: 20px;
+    color: var(--text-color);
+}
+
+.balance-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.balance-row.highlight {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.balance-label {
+    color: var(--text-secondary);
+}
+
+.balance-value {
+    font-weight: 600;
+}
+
+.input-group {
+    display: flex;
+    margin-bottom: 15px;
+    gap: 10px;
 }
 
 .input-group input {
-    padding: 0.75rem;
-    width: calc(100% - 60px);
-    border: 1px solid #333;
+    flex: 1;
+    padding: 12px;
     border-radius: 8px;
-    margin-right: 10px;
-    background: #1a2636;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+    font-size: 16px;
+}
+
+.max-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: none;
+    padding: 0 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.max-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.action-btn {
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.action-btn.primary {
+    background-color: var(--primary-color);
     color: white;
 }
 
-.network-status {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 0.5rem 1rem;
-    background: var(--card-bg);
-    color: var(--text-secondary);
-    border-radius: 8px;
+.action-btn.secondary {
+    background-color: rgba(106, 76, 255, 0.1);
+    color: var(--primary-color);
 }
 
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: var(--card-bg);
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
+.action-btn.accent {
+    background-color: var(--accent-color);
     color: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
-.loading-overlay {
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.chain-data {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+/* Wallet Selector Modal */
+.wallet-selector-modal {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
+    z-index: 1000;
     justify-content: center;
     align-items: center;
+}
+
+.modal-content {
+    background-color: var(--dark-bg);
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.chain-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.chain-tab {
+    padding: 10px 20px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.chain-tab.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.chain-dropdown {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.wallet-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.wallet-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-color);
+}
+
+.wallet-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.wallet-btn img {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 10px;
+    object-fit: contain;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
     z-index: 1000;
+    justify-content: center;
+    align-items: center;
 }
 
 .loading-content {
+    background-color: var(--dark-bg);
+    padding: 30px;
+    border-radius: 12px;
     text-align: center;
+}
+
+.loading-spinner {
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    background-color: var(--primary-color);
     color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1001;
+}
+
+.notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .app-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .wallet-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .wallet-btn {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 15px;
+    }
 }
