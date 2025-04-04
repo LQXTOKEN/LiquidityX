@@ -30,8 +30,7 @@ const CONFIG = {
                 "function userStake(address account) external view returns (uint256)",
                 "function earned(address account) external view returns (uint256)",
                 "function getAPR() public view returns (uint256)",
-                "function totalStaked() public view returns (uint256)",
-                "function paused() public view returns (bool)"
+                "function totalStaked() public view returns (uint256)"
             ]
         }
     }
@@ -42,6 +41,7 @@ let state = {
     provider: null,
     signer: null,
     userAddress: null,
+    walletType: null,
     contracts: {
         lqxToken: null,
         lpToken: null,
@@ -56,22 +56,15 @@ let state = {
     },
     poolInfo: {
         apr: '0',
-        totalStaked: '0',
-        userShare: '0'
+        totalStaked: '0'
     },
-    gasPrices: {
-        low: 0,
-        medium: 0,
-        high: 0
-    },
-    currentGasPrice: 'medium'
+    gasPrice: 'medium'
 };
 
 // DOM Elements
 const elements = {
     connectButton: document.getElementById('connectButton'),
     walletModal: document.getElementById('walletModal'),
-    txModal: document.getElementById('txModal'),
     loadingOverlay: document.getElementById('loadingOverlay'),
     notificationContainer: document.getElementById('notificationContainer'),
     // Balance elements
@@ -81,7 +74,6 @@ const elements = {
     // Pool info elements
     aprValue: document.getElementById('aprValue'),
     totalStaked: document.getElementById('totalStaked'),
-    userShare: document.getElementById('userShare'),
     // Action inputs
     stakeAmount: document.getElementById('stakeAmount'),
     unstakeAmount: document.getElementById('unstakeAmount'),
@@ -92,19 +84,20 @@ const elements = {
     unstakeBtn: document.getElementById('unstakeBtn'),
     claimBtn: document.getElementById('claimBtn'),
     compoundBtn: document.getElementById('compoundBtn'),
-    // Transaction history
-    txHistory: document.getElementById('txHistory'),
+    // Mobile elements
+    mobileMenuToggle: document.getElementById('mobileMenuToggle'),
+    mobileMenu: document.getElementById('mobileMenu'),
     // Modal elements
     confirmTxBtn: document.getElementById('confirmTxBtn'),
     txDetails: document.getElementById('txDetails'),
-    gasEstimate: document.getElementById('gasEstimate')
+    gasEstimate: document.getElementById('gasEstimate'),
+    txLink: document.getElementById('txLink')
 };
 
 // Initialize the app
 async function init() {
     setupEventListeners();
     checkSavedSession();
-    loadGasPrices();
 }
 
 // Set up event listeners
@@ -121,23 +114,20 @@ function setupEventListeners() {
     // Staking actions
     elements.maxStakeBtn.addEventListener('click', setMaxStake);
     elements.maxUnstakeBtn.addEventListener('click', setMaxUnstake);
-    elements.stakeBtn.addEventListener('click', () => prepareStake());
-    elements.unstakeBtn.addEventListener('click', () => prepareUnstake());
-    elements.claimBtn.addEventListener('click', () => prepareClaim());
-    elements.compoundBtn.addEventListener('click', () => prepareCompound());
+    elements.stakeBtn.addEventListener('click', prepareStake);
+    elements.unstakeBtn.addEventListener('click', prepareUnstake);
+    elements.claimBtn.addEventListener('click', prepareClaim);
+    elements.compoundBtn.addEventListener('click', prepareCompound);
 
-    // Gas options
-    document.querySelectorAll('.gas-option').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelector('.gas-option.active').classList.remove('active');
-            btn.classList.add('active');
-            state.currentGasPrice = btn.dataset.speed;
-            updateGasEstimate();
+    // Mobile menu
+    elements.mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+    document.querySelectorAll('.mobile-menu-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = item.dataset.section;
+            navigateToSection(section);
         });
     });
-
-    // Confirm transaction
-    elements.confirmTxBtn.addEventListener('click', confirmTransaction);
 }
 
 // Check for saved session
@@ -147,6 +137,10 @@ async function checkSavedSession() {
         try {
             const { walletType, address } = JSON.parse(savedSession);
             await connectWallet(walletType);
+            state.userAddress = address;
+            initializeContracts();
+            updateUI();
+            loadBalances();
         } catch (error) {
             console.error("Failed to load saved session:", error);
             localStorage.removeItem('lqxStakingSession');
@@ -159,57 +153,15 @@ async function connectWallet(walletType) {
     try {
         showLoading("Connecting wallet...");
         
-        let provider;
         if (walletType === 'metamask') {
-            if (!window.ethereum) throw new Error("MetaMask not installed");
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            
-            // Check network
-            const network = await provider.getNetwork();
-            if (network.chainId !== CONFIG.NETWORK.chainId) {
-                await switchNetwork();
-            }
-            
-            // Get accounts
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            if (accounts.length === 0) throw new Error("No accounts found");
-            
-            state.userAddress = accounts[0];
-            
-            // Set up event listeners
-            window.ethereum.on('accountsChanged', (accounts) => {
-                if (accounts.length === 0) disconnectWallet();
-                else {
-                    state.userAddress = accounts[0];
-                    updateUI();
-                    loadBalances();
-                }
-            });
-            
-            window.ethereum.on('chainChanged', () => {
-                window.location.reload();
-            });
+            await connectMetaMask();
         } else if (walletType === 'walletconnect') {
-            const walletConnectProvider = new WalletConnectProvider({
-                rpc: {
-                    [CONFIG.NETWORK.chainId]: CONFIG.NETWORK.rpcUrl
-                }
-            });
-            
-            await walletConnectProvider.enable();
-            provider = new ethers.providers.Web3Provider(walletConnectProvider);
-            
-            const accounts = await provider.listAccounts();
-            if (accounts.length === 0) throw new Error("No accounts found");
-            state.userAddress = accounts[0];
+            await connectWalletConnect();
         } else {
             throw new Error("Unsupported wallet type");
         }
         
-        state.provider = provider;
-        state.signer = provider.getSigner();
-        
-        // Initialize contracts
+        state.walletType = walletType;
         initializeContracts();
         
         // Save session
@@ -218,7 +170,6 @@ async function connectWallet(walletType) {
             address: state.userAddress
         }));
         
-        // Update UI
         updateUI();
         loadBalances();
         
@@ -232,19 +183,102 @@ async function connectWallet(walletType) {
     }
 }
 
-// Initialize contracts
-function initializeContracts() {
-    state.contracts.lpToken = new ethers.Contract(
-        CONFIG.CONTRACTS.LP_TOKEN.address,
-        CONFIG.CONTRACTS.LP_TOKEN.abi,
-        state.signer
-    );
+// Connect MetaMask
+async function connectMetaMask() {
+    if (!window.ethereum) {
+        throw new Error("MetaMask not installed");
+    }
     
-    state.contracts.staking = new ethers.Contract(
-        CONFIG.CONTRACTS.STAKING_CONTRACT.address,
-        CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
-        state.signer
-    );
+    state.provider = new ethers.providers.Web3Provider(window.ethereum);
+    
+    // Check network
+    const network = await state.provider.getNetwork();
+    if (network.chainId !== CONFIG.NETWORK.chainId) {
+        await switchNetwork();
+    }
+    
+    // Get accounts
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (accounts.length === 0) {
+        throw new Error("No accounts found");
+    }
+    
+    state.userAddress = accounts[0];
+    state.signer = state.provider.getSigner();
+    
+    // Set up event listeners
+    window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length === 0) {
+            disconnectWallet();
+        } else {
+            state.userAddress = accounts[0];
+            updateUI();
+            loadBalances();
+        }
+    });
+    
+    window.ethereum.on('chainChanged', () => {
+        window.location.reload();
+    });
+}
+
+// Connect WalletConnect (v2 without Project ID)
+async function connectWalletConnect() {
+    // Create WalletConnect provider without projectId
+    const provider = new WalletConnectProvider({
+        rpc: {
+            [CONFIG.NETWORK.chainId]: CONFIG.NETWORK.rpcUrl
+        },
+        qrcodeModalOptions: {
+            mobileLinks: [
+                "metamask",
+                "trust",
+                "rainbow",
+                "argent",
+                "imtoken",
+                "pillar"
+            ]
+        }
+    });
+    
+    try {
+        // Enable session (triggers QR Code modal)
+        await provider.enable();
+        
+        state.provider = new ethers.providers.Web3Provider(provider);
+        state.signer = state.provider.getSigner();
+        
+        const accounts = await state.provider.listAccounts();
+        if (accounts.length === 0) {
+            throw new Error("No accounts found");
+        }
+        
+        state.userAddress = accounts[0];
+        
+        // Handle disconnection
+        provider.on("disconnect", (code, reason) => {
+            console.log("WalletConnect disconnected:", code, reason);
+            disconnectWallet();
+        });
+        
+        // Handle session change
+        provider.on("accountsChanged", (accounts) => {
+            if (accounts.length === 0) {
+                disconnectWallet();
+            } else {
+                state.userAddress = accounts[0];
+                updateUI();
+                loadBalances();
+            }
+        });
+        
+        provider.on("chainChanged", () => {
+            window.location.reload();
+        });
+    } catch (error) {
+        console.error("WalletConnect error:", error);
+        throw error;
+    }
 }
 
 // Switch network
@@ -284,6 +318,21 @@ async function switchNetwork() {
     }
 }
 
+// Initialize contracts
+function initializeContracts() {
+    state.contracts.lpToken = new ethers.Contract(
+        CONFIG.CONTRACTS.LP_TOKEN.address,
+        CONFIG.CONTRACTS.LP_TOKEN.abi,
+        state.signer
+    );
+    
+    state.contracts.staking = new ethers.Contract(
+        CONFIG.CONTRACTS.STAKING_CONTRACT.address,
+        CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
+        state.signer
+    );
+}
+
 // Load balances
 async function loadBalances() {
     if (!state.userAddress) return;
@@ -296,8 +345,7 @@ async function loadBalances() {
         state.balances.matic = ethers.utils.formatUnits(maticBalance, 18);
         
         // Load token balances
-        const [lqxBalance, lpBalance, stakedAmount, rewards, apr, totalStaked] = await Promise.all([
-            state.contracts.lqxToken.balanceOf(state.userAddress),
+        const [lpBalance, stakedAmount, rewards, apr, totalStaked] = await Promise.all([
             state.contracts.lpToken.balanceOf(state.userAddress),
             state.contracts.staking.userStake(state.userAddress),
             state.contracts.staking.earned(state.userAddress),
@@ -305,7 +353,6 @@ async function loadBalances() {
             state.contracts.staking.totalStaked()
         ]);
         
-        state.balances.lqx = ethers.utils.formatUnits(lqxBalance, 18);
         state.balances.lp = ethers.utils.formatUnits(lpBalance, 18);
         state.balances.staked = ethers.utils.formatUnits(stakedAmount, 18);
         state.balances.rewards = ethers.utils.formatUnits(rewards, 18);
@@ -313,9 +360,6 @@ async function loadBalances() {
         // Pool info
         state.poolInfo.apr = ethers.utils.formatUnits(apr, 2);
         state.poolInfo.totalStaked = ethers.utils.formatUnits(totalStaked, 18);
-        state.poolInfo.userShare = totalStaked.gt(0) 
-            ? stakedAmount.mul(10000).div(totalStaked).toNumber() / 100 
-            : 0;
         
         updateUI();
     } catch (error) {
@@ -337,12 +381,11 @@ function updateUI() {
         // Update pool info
         elements.aprValue.textContent = `${state.poolInfo.apr}%`;
         elements.totalStaked.textContent = `${state.poolInfo.totalStaked} LP`;
-        elements.userShare.textContent = `${state.poolInfo.userShare}%`;
         
         // Update connect button
         elements.connectButton.innerHTML = `
             <i class="fas fa-wallet"></i>
-            ${state.userAddress.substring(0, 6)}...${state.userAddress.substring(38)}
+            <span class="btn-text">${state.userAddress.substring(0, 6)}...${state.userAddress.substring(38)}</span>
         `;
     } else {
         // Reset UI
@@ -351,116 +394,24 @@ function updateUI() {
         elements.rewardsBalance.textContent = "0.00";
         elements.aprValue.textContent = "0.00%";
         elements.totalStaked.textContent = "0.00 LP";
-        elements.userShare.textContent = "0.00%";
         
         elements.connectButton.innerHTML = `
-            <i class="fas fa-wallet"></i> Connect Wallet
+            <i class="fas fa-wallet"></i>
+            <span class="btn-text">Connect</span>
         `;
     }
 }
 
-// Prepare stake transaction
-async function prepareStake() {
-    const amount = elements.stakeAmount.value;
-    if (!amount || amount <= 0) {
-        showNotification("Please enter a valid amount", "error");
-        return;
-    }
-    
-    const amountWei = ethers.utils.parseUnits(amount, 18);
-    
-    // Check allowance
-    const allowance = await state.contracts.lpToken.allowance(
-        state.userAddress,
-        CONFIG.CONTRACTS.STAKING_CONTRACT.address
-    );
-    
-    if (allowance.lt(amountWei)) {
-        showApprovalModal(amountWei, () => executeStake(amountWei));
-    } else {
-        showStakeModal(amountWei);
-    }
+// Toggle mobile menu
+function toggleMobileMenu() {
+    elements.mobileMenu.classList.toggle('active');
 }
 
-// Execute stake
-async function executeStake(amountWei) {
-    try {
-        showLoading(`Staking ${ethers.utils.formatUnits(amountWei, 18)} LP...`);
-        
-        const tx = await state.contracts.staking.stake(amountWei, {
-            gasPrice: state.gasPrices[state.currentGasPrice]
-        });
-        
-        await handleTransaction(tx, "Stake");
-        await loadBalances();
-    } catch (error) {
-        console.error("Staking error:", error);
-        showNotification(`Staking failed: ${error.message}`, "error");
-    }
-}
-
-// Handle transaction
-async function handleTransaction(tx, action) {
-    try {
-        elements.txLink.href = `${CONFIG.NETWORK.explorerUrl}/tx/${tx.hash}`;
-        elements.txLink.style.display = 'none';
-        
-        const receipt = await tx.wait();
-        if (receipt.status === 1) {
-            showNotification(`${action} successful!`, "success");
-            elements.txLink.style.display = 'inline-block';
-            addTransactionToHistory(tx.hash, action.toLowerCase());
-            return true;
-        } else {
-            throw new Error("Transaction failed");
-        }
-    } catch (error) {
-        console.error("Transaction error:", error);
-        showNotification(`${action} failed: ${error.message}`, "error");
-        return false;
-    } finally {
-        hideLoading();
-    }
-}
-
-// Add transaction to history
-function addTransactionToHistory(txHash, type) {
-    const txElement = document.createElement('div');
-    txElement.className = 'tx-item';
-    txElement.innerHTML = `
-        <span class="tx-type ${type}">${type}</span>
-        <a href="${CONFIG.NETWORK.explorerUrl}/tx/${txHash}" target="_blank" class="tx-link">
-            View <i class="fas fa-external-link-alt"></i>
-        </a>
-    `;
-    
-    if (elements.txHistory.querySelector('.history-placeholder')) {
-        elements.txHistory.innerHTML = '';
-    }
-    
-    elements.txHistory.prepend(txElement);
-}
-
-// Show notification
-function showNotification(message, type = "info") {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 
-                          type === 'success' ? 'check-circle' : 'info-circle'}"></i>
-        ${message}
-    `;
-    
-    elements.notificationContainer.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-    }, 5000);
+// Navigate to section
+function navigateToSection(section) {
+    // Implementation depends on your navigation structure
+    console.log("Navigating to:", section);
+    toggleMobileMenu();
 }
 
 // Initialize the app
