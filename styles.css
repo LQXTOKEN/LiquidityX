@@ -1,57 +1,103 @@
+:root {
+    /* LiquidityX Color Palette */
+    --primary: #1fb6ff;
+    --primary-dark: #0d8ecf;
+    --accent: #ff7e33;
+    --background: #0f1721;
+    --card-bg: #1a2636;
+    --text-primary: #ffffff;
+    --text-secondary: #b0c4de;
+    --success: #4ade80;
+    --error: #f87171;
+    --warning: #fbbf24;
+}
+
 body {
-    background-color: #1A1A1A;
-    color: white;
-    font-family: Arial, sans-serif;
+    font-family: 'Montserrat', sans-serif;
+    background: linear-gradient(135deg, var(--background) 0%, #1a2636 100%);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 20px;
+    background-attachment: fixed;
 }
 
 .app-container {
     max-width: 800px;
-    margin: auto;
-    padding: 20px;
-    border-radius: 8px;
-    background-color: #2A2A2A;
-}
-
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    margin: 0 auto;
+    position: relative;
 }
 
 .connect-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    background-color: #1fb6ff;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    font-weight: bold;
 }
 
-.connect-btn:hover {
-    background-color: #15a1d8;
-}
-
-#balances, #actions {
-    margin-top: 20px;
-}
-
-#actions input {
-    padding: 10px;
-    border: 1px solid #555;
-    border-radius: 5px;
-    margin-right: 10px;
-}
-
-#actions button {
-    padding: 10px 20px;
-    background-color: #1fb6ff;
+.action-btn {
+    background: var(--primary);
+    color: white;
+    padding: 0.75rem;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
+    width: 100%;
+    margin-top: 0.5rem;
+    transition: background 0.3s;
 }
 
-#actions button:hover {
-    background-color: #15a1d8;
+.action-btn:hover {
+    background: var(--primary-dark);
+}
+
+.input-group input {
+    padding: 0.75rem;
+    width: calc(100% - 60px);
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-right: 10px;
+    background: #1a2636;
+    color: white;
+}
+
+.network-status {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 0.5rem 1rem;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    border-radius: 8px;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    color: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-content {
+    text-align: center;
+    color: white;
 }
