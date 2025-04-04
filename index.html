@@ -1,145 +1,180 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiquidityX | Advanced Staking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-container">
+                <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
+                <h1>LiquidityX <span>Staking Portal</span></h1>
+            </div>
+            <div class="wallet-section">
+                <div class="network-indicator" id="networkIndicator">
+                    <span class="network-name">Polygon</span>
+                </div>
+                <button id="connectButton" class="connect-btn">
+                    <i class="fas fa-wallet"></i> Connect Wallet
+                </button>
+            </div>
+        </header>
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/v4.8.0/contracts/proxy/utils/Initializable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/v4.8.0/contracts/access/OwnableUpgradeable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.8.0/contracts/token/ERC20/IERC20.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.8.0/contracts/token/ERC20/utils/SafeERC20.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.8.0/contracts/security/ReentrancyGuard.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.8.0/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.8.0/contracts/utils/math/Math.sol";
+        <!-- Main Content -->
+        <main class="app-content">
+            <!-- Balance Cards -->
+            <section class="balance-section">
+                <div class="balance-card">
+                    <h3><i class="fas fa-wallet"></i> Your Balances</h3>
+                    <div class="balance-grid">
+                        <div class="balance-item">
+                            <span class="balance-label">LP Balance:</span>
+                            <span id="lpBalance" class="balance-value">0.00</span>
+                        </div>
+                        <div class="balance-item">
+                            <span class="balance-label">Staked:</span>
+                            <span id="stakedBalance" class="balance-value highlight">0.00</span>
+                        </div>
+                        <div class="balance-item">
+                            <span class="balance-label">Rewards:</span>
+                            <span id="rewardsBalance" class="balance-value highlight">0.00</span>
+                        </div>
+                    </div>
+                </div>
 
-contract LPStakingContractHybrid is Initializable, ReentrancyGuard, UUPSUpgradeable, OwnableUpgradeable {
-    using SafeERC20 for IERC20;
-    using Math for uint256;
+                <div class="info-card">
+                    <h3><i class="fas fa-info-circle"></i> Pool Info</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">APR:</span>
+                            <span id="aprValue" class="info-value">0.00%</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Total Staked:</span>
+                            <span id="totalStaked" class="info-value">0.00 LP</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Your Share:</span>
+                            <span id="userShare" class="info-value">0.00%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-    IERC20 public lpToken;
-    IERC20 public rewardToken;
+            <!-- Staking Actions -->
+            <section class="action-section">
+                <div class="action-card">
+                    <h3><i class="fas fa-coins"></i> Stake LP Tokens</h3>
+                    <div class="input-group">
+                        <input type="number" id="stakeAmount" placeholder="0.00" min="0" step="0.01">
+                        <button id="maxStakeBtn" class="max-btn">MAX</button>
+                    </div>
+                    <button id="stakeBtn" class="action-btn primary">
+                        <span class="btn-text">Stake</span>
+                        <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
 
-    uint256 public rewardRate; // Reward rate per second (in wei)
-    uint256 public constant SECONDS_IN_A_YEAR = 365 days;
-    uint256 public totalStaked;
-    uint256 public lastUpdateTime;
-    uint256 public rewardPerTokenStored;
-    uint256 public constant DECIMALS = 1e18;
-    uint256 public timelockDuration = 2 days; // To prevent front-running
-    uint256 public lastAPRChange;
+                <div class="action-card">
+                    <h3><i class="fas fa-unlock"></i> Unstake LP Tokens</h3>
+                    <div class="input-group">
+                        <input type="number" id="unstakeAmount" placeholder="0.00" min="0" step="0.01">
+                        <button id="maxUnstakeBtn" class="max-btn">MAX</button>
+                    </div>
+                    <button id="unstakeBtn" class="action-btn secondary">
+                        <span class="btn-text">Unstake</span>
+                        <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
 
-    mapping(address => uint256) public userStake;
-    mapping(address => uint256) public userRewards;
-    mapping(address => uint256) public userRewardPerTokenPaid;
+                <div class="action-card">
+                    <h3><i class="fas fa-gift"></i> Rewards</h3>
+                    <div class="rewards-info">
+                        <span id="dailyRewards">Daily: 0.00 LQX</span>
+                        <span id="weeklyRewards">Weekly: 0.00 LQX</span>
+                    </div>
+                    <button id="claimBtn" class="action-btn accent">
+                        <span class="btn-text">Claim Rewards</span>
+                        <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                    <button id="compoundBtn" class="action-btn">
+                        <span class="btn-text">Compound</span>
+                        <span class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
+            </section>
 
-    event Staked(address indexed user, uint256 amount);
-    event Unstaked(address indexed user, uint256 amount);
-    event RewardClaimed(address indexed user, uint256 amount);
-    event RewardRateChanged(uint256 newRewardRate);
-    event EmergencyWithdrawal(address indexed owner, address token, uint256 amount);
-    event EmergencyPaused(bool status);
+            <!-- Transaction History -->
+            <section class="history-section">
+                <h3><i class="fas fa-history"></i> Transaction History</h3>
+                <div class="history-container" id="txHistory">
+                    <div class="history-placeholder">
+                        <i class="fas fa-clock"></i>
+                        <p>Your transactions will appear here</p>
+                    </div>
+                </div>
+            </section>
+        </main>
 
-    bool public paused;
+        <!-- Modals -->
+        <div class="modal" id="walletModal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Select Wallet</h3>
+                <div class="wallet-options">
+                    <button class="wallet-option" data-wallet="metamask">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask">
+                        MetaMask
+                    </button>
+                    <button class="wallet-option" data-wallet="walletconnect">
+                        <img src="https://walletconnect.com/walletconnect-logo.png" alt="WalletConnect">
+                        WalletConnect
+                    </button>
+                </div>
+            </div>
+        </div>
 
-    function initialize(address _lpToken, address _rewardToken, uint256 apr) external initializer {
-        require(_lpToken != address(0) && _rewardToken != address(0), "Zero address");
-        __Ownable_init();
-        lpToken = IERC20(_lpToken);
-        rewardToken = IERC20(_rewardToken);
-        setAPR(apr);
-        _transferOwnership(msg.sender);
-        lastUpdateTime = block.timestamp;
-        lastAPRChange = block.timestamp;
-        paused = false;
-    }
+        <div class="modal" id="txModal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3 id="txModalTitle">Confirm Transaction</h3>
+                <div class="tx-details" id="txDetails"></div>
+                <div class="gas-selector">
+                    <span>Gas Priority:</span>
+                    <div class="gas-options">
+                        <button class="gas-option" data-speed="low">Low</button>
+                        <button class="gas-option active" data-speed="medium">Medium</button>
+                        <button class="gas-option" data-speed="high">High</button>
+                    </div>
+                    <div class="gas-estimate" id="gasEstimate">~$0.00</div>
+                </div>
+                <button class="confirm-btn" id="confirmTxBtn">Confirm</button>
+            </div>
+        </div>
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loadingText">Processing Transaction</p>
+                <a href="#" target="_blank" id="txLink" class="tx-link">View on Explorer</a>
+            </div>
+        </div>
 
-    function _updateReward(address account) internal {
-        rewardPerTokenStored = rewardPerToken();
-        lastUpdateTime = block.timestamp;
+        <!-- Notifications -->
+        <div class="notification-container" id="notificationContainer"></div>
+    </div>
 
-        if (account != address(0)) {
-            userRewards[account] = earned(account);
-            userRewardPerTokenPaid[account] = rewardPerTokenStored;
-        }
-    }
-
-    modifier notPaused() {
-        require(!paused, "Contract is paused");
-        _;
-    }
-
-    function stake(uint256 amount) external nonReentrant notPaused {
-        require(amount > 0, "Amount must be greater than 0");
-        _updateReward(msg.sender);
-        lpToken.safeTransferFrom(msg.sender, address(this), amount);
-
-        userStake[msg.sender] += amount;
-        totalStaked += amount;
-
-        emit Staked(msg.sender, amount);
-    }
-
-    function unstake(uint256 amount) external nonReentrant notPaused {
-        require(amount > 0, "Amount must be greater than 0");
-        require(userStake[msg.sender] >= amount, "Insufficient stake");
-        _updateReward(msg.sender);
-
-        userStake[msg.sender] -= amount;
-        totalStaked -= amount;
-
-        lpToken.safeTransfer(msg.sender, amount);
-        emit Unstaked(msg.sender, amount);
-    }
-
-    function claimRewards() external nonReentrant notPaused {
-        _updateReward(msg.sender);
-        uint256 reward = userRewards[msg.sender];
-        require(reward > 0, "No rewards to claim");
-        userRewards[msg.sender] = 0;
-        rewardToken.safeTransfer(msg.sender, reward);
-
-        emit RewardClaimed(msg.sender, reward);
-    }
-
-    function rewardPerToken() public view returns (uint256) {
-        if (totalStaked == 0) return rewardPerTokenStored;
-        uint256 timeElapsed = block.timestamp - lastUpdateTime;
-        return rewardPerTokenStored + (timeElapsed * rewardRate * DECIMALS) / totalStaked;
-    }
-
-    function earned(address account) public view returns (uint256) {
-        return (userStake[account] * (rewardPerToken() - userRewardPerTokenPaid[account])) / DECIMALS + userRewards[account];
-    }
-
-    function withdrawERC20(address tokenAddress, uint256 amount) external onlyOwner {
-        require(tokenAddress != address(lpToken) && tokenAddress != address(rewardToken), "Cannot withdraw staking or reward tokens");
-        IERC20(tokenAddress).safeTransfer(msg.sender, amount);
-        emit EmergencyWithdrawal(msg.sender, tokenAddress, amount);
-    }
-
-    function setAPR(uint256 apr) public onlyOwner {
-        require(apr > 0, "APR must be greater than zero");
-
-        if (msg.sender != owner()) {
-            require(block.timestamp >= lastAPRChange + timelockDuration, "Timelock in effect");
-        }
-        _updateReward(address(0));
-        rewardRate = (apr * DECIMALS) / SECONDS_IN_A_YEAR;
-        lastAPRChange = block.timestamp;
-        emit RewardRateChanged(rewardRate);
-    }
-
-    function emergencyPause(bool _paused) external onlyOwner {
-        paused = _paused;
-        emit EmergencyPaused(_paused);
-    }
-
-    function getAPR() public view returns (uint256) {
-        return (rewardRate * SECONDS_IN_A_YEAR * 100) / DECIMALS;
-    }
-}
-
-//_lpToken: 0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E (LP Token Address)
-//_rewardToken: 0x9e27f48659b1005b1abc0f58465137e531430d4b (LQX Token Address)
-//apr: 1000 (Μπορείς να το αλλάξεις αργότερα)
-//[Contract 0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3 Implementation Contract with proxy created]
-//0x8129fc1c000000000000000000000000b2a9d1e702550bf3ac1db105eabc888db64be24e0000000000000000000000009e27f48659b1005b1abc0f58465137e531430d4b00000000000000000000000000000000000000000000000000000000000003e8
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/web3modal@2.0.0/dist/index.js"></script>
+    <script src="https://unpkg.com/@walletconnect/web3-provider@2.0.0/dist/umd/index.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
