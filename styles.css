@@ -1,93 +1,57 @@
 body {
-    font-family: 'Montserrat', sans-serif;
-    background-color: #0f1721;
+    background-color: #1A1A1A;
     color: white;
-    margin: 0;
-    padding: 0;
+    font-family: Arial, sans-serif;
 }
 
 .app-container {
     max-width: 800px;
-    margin: 0 auto;
+    margin: auto;
     padding: 20px;
+    border-radius: 8px;
+    background-color: #2A2A2A;
 }
 
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #1fb6ff;
-}
-
-.logo {
-    width: 50px;
-    border-radius: 50%;
+    margin-bottom: 20px;
 }
 
 .connect-btn {
     padding: 10px 20px;
-    background-color: #1fb6ff;
     border: none;
-    border-radius: 8px;
+    border-radius: 5px;
+    background-color: #1fb6ff;
+    color: white;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background-color 0.3s;
 }
 
 .connect-btn:hover {
-    background-color: #0d8ecf;
+    background-color: #15a1d8;
 }
 
-.balance-card, .action-card {
-    background: #1a2636;
-    padding: 20px;
+#balances, #actions {
     margin-top: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.balance-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-.action-btn {
-    width: 100%;
+#actions input {
     padding: 10px;
-    background-color: #1fb6ff;
-    border: none;
-    border-radius: 8px;
-    margin-top: 10px;
-    cursor: pointer;
-    transition: all 0.3s;
+    border: 1px solid #555;
+    border-radius: 5px;
+    margin-right: 10px;
 }
 
-.action-btn:hover {
-    background-color: #0d8ecf;
-}
-
-input {
-    width: calc(100% - 20px);
-    padding: 10px;
-    margin-top: 10px;
-    border: 1px solid #1fb6ff;
-    border-radius: 8px;
-    background: #0f1721;
-    color: white;
-}
-
-.notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
+#actions button {
     padding: 10px 20px;
     background-color: #1fb6ff;
-    color: white;
-    border-radius: 8px;
-    display: none;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-.notification.show {
-    display: block;
+#actions button:hover {
+    background-color: #15a1d8;
 }
