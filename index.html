@@ -3,49 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX - Staking dApp</title>
+    <title>LiquidityX - LP Staking</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
-    <script src="https://unpkg.com/web3modal@1.9.7/dist/index.js"></script>
-    <script src="https://unpkg.com/@walletconnect/web3-provider@2.0.0/dist/umd/index.min.js"></script>
+    <script src="https://unpkg.com/@walletconnect/client@2.0.0"></script>
+    <script src="https://unpkg.com/@web3modal/standalone@2.0.0"></script>
 </head>
 <body>
     <div class="app-container">
         <header class="app-header">
-            <div class="logo-container">
-                <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
-                <h1>LiquidityX <span>Staking</span></h1>
-            </div>
+            <h1>LiquidityX Staking</h1>
             <button id="connectButton" class="connect-btn">Connect Wallet</button>
+            <button id="disconnectButton" class="connect-btn">Disconnect Wallet</button>
         </header>
-
-        <main class="app-content">
-            <section class="balance-card">
-                <h2>Your Balances</h2>
-                <div class="balance-row">LQX Balance: <span id="lqxBalance">0</span></div>
-                <div class="balance-row">LP Balance: <span id="lpBalance">0</span></div>
-                <div class="balance-row">Staked Amount: <span id="stakedAmount">0</span></div>
-                <div class="balance-row">Pending Reward: <span id="pendingReward">0</span></div>
-                <div class="balance-row">APR: <span id="aprValue">0%</span></div>
-            </section>
-
-            <section class="action-card">
-                <h2>Staking Actions</h2>
-                <input type="number" id="stakeAmount" placeholder="Enter amount to stake">
-                <button id="stakeButton" class="action-btn">Stake Tokens</button>
-                
-                <input type="number" id="unstakeAmount" placeholder="Enter amount to unstake">
-                <button id="unstakeButton" class="action-btn">Unstake Tokens</button>
-                
-                <button id="claimButton" class="action-btn">Claim Rewards</button>
-            </section>
+        <main>
+            <div id="balances">
+                <p id="lqxBalance">LQX Balance: </p>
+                <p id="lpBalance">LP Balance: </p>
+                <p id="stakedAmount">Staked Amount: </p>
+                <p id="pendingReward">Pending Reward: </p>
+                <p id="aprValue">APR: </p>
+            </div>
+            <div id="actions">
+                <input type="text" id="stakeAmount" placeholder="Enter amount to stake">
+                <button id="stakeButton">Stake</button>
+                <input type="text" id="unstakeAmount" placeholder="Enter amount to unstake">
+                <button id="unstakeButton">Unstake</button>
+                <button id="claimButton">Claim Rewards</button>
+            </div>
         </main>
-
-        <div id="notification" class="notification"></div>
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
