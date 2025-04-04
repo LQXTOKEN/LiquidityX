@@ -6,20 +6,28 @@ const CONFIG = {
     name: "Polygon",
     rpcUrl: "https://polygon-rpc.com",
     explorerUrl: "https://polygonscan.com",
-    currency: "MATIC"
+    currency: "MATIC",
+    nativeDecimals: 18
   },
-  // Cosmos Chains (Osmosis example)
+  // Cosmos Chains (Osmosis + Custom wLQX)
   COSMOS: {
     'osmosis-1': {
       chainId: 'osmosis-1',
       chainName: 'Osmosis',
       rpcUrl: 'https://rpc.osmosis.zone',
       restUrl: 'https://lcd.osmosis.zone',
-      stakeCurrency: {
-        coinDenom: 'OSMO',
-        coinMinimalDenom: 'uosmo',
-        coinDecimals: 6
-      }
+      currencies: [
+        {
+          coinDenom: 'OSMO',
+          coinMinimalDenom: 'uosmo',
+          coinDecimals: 6
+        },
+        {
+          coinDenom: 'wLQX',
+          coinMinimalDenom: 'ibc/...', // Add actual IBC denom
+          coinDecimals: 18
+        }
+      ]
     }
   },
   // Contracts (Polygon)
@@ -43,6 +51,12 @@ const CONFIG = {
         "function claimRewards() external"
       ]
     }
+  },
+  // Gas Settings
+  GAS_OPTIONS: {
+    low: { maxFeePerGas: ethers.utils.parseUnits('30', 'gwei'), maxPriorityFeePerGas: ethers.utils.parseUnits('1.5', 'gwei') },
+    medium: { maxFeePerGas: ethers.utils.parseUnits('50', 'gwei'), maxPriorityFeePerGas: ethers.utils.parseUnits('2.5', 'gwei') },
+    high: { maxFeePerGas: ethers.utils.parseUnits('100', 'gwei'), maxPriorityFeePerGas: ethers.utils.parseUnits('5', 'gwei') }
   }
 };
 
@@ -67,101 +81,88 @@ let state = {
     client: null,
     offlineSigner: null,
     chain: null,
-    balance: '0'
+    balances: {
+      osmo: '0',
+      wlqx: '0'
+    },
+    staked: {
+      osmo: '0',
+      wlqx: '0'
+    }
   },
   // UI
-  walletType: null // 'metamask', 'keplr', 'leap', 'trust'
+  walletType: null,
+  gasOption: 'medium'
 };
 
-// DOM Elements
-const elements = {
-  connectButton: document.getElementById('connectButton'),
-  walletModal: document.getElementById('walletModal'),
-  loadingOverlay: document.getElementById('loadingOverlay'),
-  // Balances
-  lpBalance: document.getElementById('lpBalance'),
-  stakedBalance: document.getElementById('stakedBalance'),
-  rewardsBalance: document.getElementById('rewardsBalance'),
-  cosmosBalance: document.getElementById('cosmosBalance'), // New!
-  // Buttons
-  stakeBtn: document.getElementById('stakeBtn'),
-  unstakeBtn: document.getElementById('unstakeBtn'),
-  claimBtn: document.getElementById('claimBtn')
-};
-
-// Initialize Cosmos-Kit (Keplr/Leap)
-async function initCosmosKit() {
-  const { ChainProvider, useWallet } = await import('@cosmos-kit/react');
-  const { wallets: { keplr, leap } } = await import('@cosmos-kit/wallets');
-
-  // Render Cosmos-Kit Provider (dynamically)
-  const providerEl = document.createElement('div');
-  providerEl.id = 'cosmos-kit-provider';
-  document.body.appendChild(providerEl);
-
-  ReactDOM.render(
-    <ChainProvider
-      chains={Object.values(CONFIG.COSMOS)}
-      wallets={[...keplr, ...leap]}
-    >
-      <App />
-    </ChainProvider>,
-    providerEl
-  );
-
-  return { useWallet };
-}
-
-// Main App Initialization
+// Initialize App
 async function init() {
-  const { useWallet } = await initCosmosKit();
-  window.useWallet = useWallet; // Make it global
-
+  await initCosmosKit();
   setupEventListeners();
   checkSavedSession();
+  setupNetworkWatchers();
 }
 
-// Connect Wallet (Unified for EVM + Cosmos)
-async function connectWallet(walletType) {
-  try {
-    showLoading("Connecting...");
+// =====================
+// EVM FUNCTIONALITY
+// =====================
 
-    if (walletType === 'metamask' || walletType === 'trust') {
-      await connectEVM(walletType);
-    } else if (walletType === 'keplr' || walletType === 'leap') {
-      await connectCosmos(walletType);
-    }
-
-    // Save session
-    localStorage.setItem('walletSession', JSON.stringify({
-      walletType,
-      address: state.userAddress
-    }));
-
-    updateUI();
-    showNotification("Connected!", "success");
-  } catch (error) {
-    console.error("Connection error:", error);
-    showNotification(`Failed: ${error.message}`, "error");
-  } finally {
-    hideLoading();
-  }
-}
-
-// EVM Connection (Polygon) - MetaMask/Trust
 async function connectEVM(walletType) {
-  if (!window.ethereum) throw new Error("Install MetaMask/Trust Wallet");
+  if (!window.ethereum) throw new Error("Wallet not installed");
   
+  // Verify network
   state.provider = new ethers.providers.Web3Provider(window.ethereum);
-  await switchNetwork(); // Ensure Polygon
+  await verifyNetwork();
+  
+  // Get accounts
   const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
   state.userAddress = accounts[0];
   state.signer = state.provider.getSigner();
   state.walletType = walletType;
+  
+  // Initialize contracts
   initContracts();
+  
+  // Set up listeners
+  window.ethereum.on('accountsChanged', handleAccountsChanged);
+  window.ethereum.on('chainChanged', handleChainChanged);
 }
 
-// Cosmos Connection (Keplr/Leap)
+async function verifyNetwork() {
+  const network = await state.provider.getNetwork();
+  if (network.chainId !== CONFIG.EVM.chainId) {
+    await switchNetwork();
+  }
+}
+
+async function switchNetwork() {
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: `0x${CONFIG.EVM.chainId.toString(16)}` }],
+    });
+  } catch (switchError) {
+    if (switchError.code === 4902) {
+      await addNetwork();
+    } else {
+      throw switchError;
+    }
+  }
+}
+
+async function stakeOnPolygon(amount) {
+  const gasEstimate = await state.contracts.staking.estimateGas.stake(amount);
+  const tx = await state.contracts.staking.stake(amount, {
+    ...CONFIG.GAS_OPTIONS[state.gasOption],
+    gasLimit: gasEstimate.mul(120).div(100) // 20% buffer
+  });
+  return tx;
+}
+
+// =====================
+// COSMOS FUNCTIONALITY
+// =====================
+
 async function connectCosmos(walletType) {
   const { connect, getOfflineSigner } = window.useWallet();
   await connect(walletType);
@@ -177,66 +178,126 @@ async function connectCosmos(walletType) {
   };
   state.userAddress = accounts[0].address;
   state.walletType = walletType;
+  
+  // Load initial balances
+  await loadCosmosBalances();
 }
 
-// Initialize EVM Contracts
-function initContracts() {
-  if (!state.provider) return;
+async function stakeOnCosmos(amount, denom = 'uosmo') {
+  const { client, address } = state.cosmos;
+  const msg = {
+    typeUrl: '/cosmos.staking.v1beta1.MsgDelegate',
+    value: {
+      delegatorAddress: address,
+      validatorAddress: getValidatorAddress(), // Implement validator selection
+      amount: {
+        denom,
+        amount: amount.toString()
+      }
+    }
+  };
   
-  state.contracts.lpToken = new ethers.Contract(
-    CONFIG.CONTRACTS.LP_TOKEN.address,
-    CONFIG.CONTRACTS.LP_TOKEN.abi,
-    state.signer
-  );
+  const fee = {
+    amount: [{ denom: 'uosmo', amount: '5000' }], // 0.005 OSMO fee
+    gas: '200000'
+  };
   
-  state.contracts.staking = new ethers.Contract(
-    CONFIG.CONTRACTS.STAKING_CONTRACT.address,
-    CONFIG.CONTRACTS.STAKING_CONTRACT.abi,
-    state.signer
-  );
+  const tx = await client.signAndBroadcast(address, [msg], fee);
+  return tx;
 }
 
-// Load Balances (EVM + Cosmos)
-async function loadBalances() {
-  if (state.walletType === 'metamask' || state.walletType === 'trust') {
-    // EVM Balances
-    const [lpBalance, staked] = await Promise.all([
-      state.contracts.lpToken.balanceOf(state.userAddress),
-      state.contracts.staking.userStake(state.userAddress)
-    ]);
-    state.balances.lp = ethers.utils.formatUnits(lpBalance, 18);
-    state.balances.staked = ethers.utils.formatUnits(staked, 18);
-  } else if (state.walletType === 'keplr' || state.walletType === 'leap') {
-    // Cosmos Balances (example for Osmosis)
-    const { client } = state.cosmos;
-    const balance = await client.getBalance(state.userAddress, 'uosmo');
-    state.cosmos.balance = balance.amount / 1e6; // OSMO has 6 decimals
+async function loadCosmosBalances() {
+  const { client, address } = state.cosmos;
+  
+  // Load OSMO and wLQX balances
+  const [osmoBalance, wlqxBalance] = await Promise.all([
+    client.getBalance(address, 'uosmo'),
+    client.getBalance(address, CONFIG.COSMOS['osmosis-1'].currencies[1].coinMinimalDenom)
+  ]);
+  
+  state.cosmos.balances = {
+    osmo: osmoBalance.amount / 1e6,
+    wlqx: wlqxBalance.amount / 1e18
+  };
+  
+  // Load staked amounts
+  const stakingClient = new StakingClient(state.cosmos.client);
+  const [osmoStaked, wlqxStaked] = await Promise.all([
+    stakingClient.getDelegation(address, getValidatorAddress(), 'uosmo'),
+    stakingClient.getDelegation(address, getValidatorAddress(), CONFIG.COSMOS['osmosis-1'].currencies[1].coinMinimalDenom)
+  ]);
+  
+  state.cosmos.staked = {
+    osmo: osmoStaked / 1e6,
+    wlqx: wlqxStaked / 1e18
+  };
+}
+
+// =====================
+// WALLET MANAGEMENT
+// =====================
+
+function disconnectWallet() {
+  // EVM cleanup
+  if (window.ethereum && window.ethereum.removeListener) {
+    window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+    window.ethereum.removeListener('chainChanged', handleChainChanged);
   }
+  
+  // Cosmos cleanup
+  if (state.cosmos.client && state.cosmos.client.disconnect) {
+    state.cosmos.client.disconnect();
+  }
+  
+  // Reset state
+  state = {
+    ...state,
+    provider: null,
+    signer: null,
+    userAddress: null,
+    cosmos: {
+      client: null,
+      offlineSigner: null,
+      chain: null,
+      balances: { osmo: '0', wlqx: '0' },
+      staked: { osmo: '0', wlqx: '0' }
+    }
+  };
+  
+  // Clear storage
+  localStorage.removeItem('walletSession');
+  
+  // Update UI
+  updateUI();
 }
 
-// Update UI
+// =====================
+// UI UPDATES
+// =====================
+
 function updateUI() {
-  if (!state.userAddress) return;
-  
-  // EVM
-  elements.lpBalance.textContent = state.balances.lp || '0';
-  elements.stakedBalance.textContent = state.balances.staked || '0';
-  
-  // Cosmos
-  if (state.cosmos.balance) {
-    elements.cosmosBalance.textContent = `${state.cosmos.balance} OSMO`;
-  }
-  
-  // Wallet Button
-  elements.connectButton.innerHTML = `
-    <i class="fas fa-wallet"></i>
-    ${shortenAddress(state.userAddress)}
-  `;
+  updateEVMBalances();
+  updateCosmosBalances();
+  updateWalletButton();
+  updateGasOptions();
 }
 
-// Helper: Shorten Address
-function shortenAddress(address) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+function updateGasOptions() {
+  const gasOptionsElement = document.getElementById('gasOptions');
+  if (gasOptionsElement) {
+    gasOptionsElement.innerHTML = Object.keys(CONFIG.GAS_OPTIONS)
+      .map(option => `
+        <button class="${state.gasOption === option ? 'active' : ''}" 
+                onclick="setGasOption('${option}')">
+          ${option.toUpperCase()}
+        </button>
+      `).join('');
+  }
+}
+
+function setGasOption(option) {
+  state.gasOption = option;
+  updateGasOptions();
 }
 
 // Initialize on load
