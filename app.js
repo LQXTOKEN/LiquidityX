@@ -264,6 +264,13 @@ function handleWalletError(error) {
 
 // UI Updates
 function updateWalletStatus() {
+    const walletStatus = document.getElementById('walletStatus'); // Πρέπει να υπάρχει στο DOM
+
+    if (!walletStatus) {
+        console.error("Error: 'walletStatus' element not found in the DOM.");
+        return; // Αν δεν υπάρχει το στοιχείο, βγες από τη συνάρτηση.
+    }
+
     if (currentAccount) {
         const shortenedAddress = `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}`;
         walletStatus.textContent = `Connected: ${shortenedAddress}`;
@@ -276,18 +283,6 @@ function updateWalletStatus() {
     }
 }
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.classList.add('fade-out');
-        setTimeout(() => notification.remove(), 500);
-    }, 3000);
-}
 
 // Contract Interactions
 function initContractInteractions() {
