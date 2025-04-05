@@ -1,281 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX Staking DApp</title>
-    
-    <!-- Strict Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" 
-          content="default-src 'self';
-                   script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com;
-                   style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
-                   img-src 'self' data: https://lqxtoken.github.io https://metamask.io https://keplr.app;
-                   font-src 'self' https://cdnjs.cloudflare.com;
-                   connect-src 'self' https://polygon-mainnet.g.alchemy.com https://polygon-rpc.com https://matic-mainnet.chainstacklabs.com https://rpc-osmosis.keplr.app https://osmosis-rpc.polkachu.com https://rpc-osmosis.blockapsis.com https://rpc-cosmoshub.keplr.app https://cosmos-rpc.polkachu.com;
-                   frame-src 'self' https://metamask.io https://www.keplr.app;">
-    
-    <!-- Preconnect to improve performance -->
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://unpkg.com">
-    
-    <!-- Integrity-checked external resources -->
-    <link rel="stylesheet" 
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
-          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
-          crossorigin="anonymous" 
-          referrerpolicy="no-referrer">
-    
-    <link rel="stylesheet" href="styles.css">
-    
-    <!-- Subresource Integrity (SRI) for all external scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"
-            integrity="sha512-UvZCJ5qQvBTfP6QJ4Xz6+X3k6X0aJ8X3HzQ4z8kKXhQyK6R7XqRZx4x4kO4w6KXx7+5X8k6v5E6p2U7k5A5ZQ=="
-            crossorigin="anonymous"></script>
-    
-    <!-- Keplr and Leap with SRI -->
-    <script src="https://unpkg.com/@keplr-wallet/provider@0.1.0/build/provider.js"
-            integrity="sha384-xyz123"
-            crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/@leapwallet/provider@0.1.0/build/provider.js"
-            integrity="sha384-abc456"
-            crossorigin="anonymous"></script>
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="styles.css" as="style">
-    <link rel="preload" href="app.js" as="script">
-    <link rel="preload" href="https://lqxtoken.github.io/LiquidityX/logo.png" as="image">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src 'self';
+                 script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;
+                 style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+                 img-src 'self' data: https://lqxtoken.github.io https://*.alchemy.com;
+                 connect-src 'self' https://*.alchemy.com https://polygon-rpc.com;
+                 frame-src 'self' https://walletconnect.org;">
+  <title>LiquidityX Staking</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <body>
-    <div class="container">
-        <header class="app-header">
-            <div class="header-content">
-                <div class="logo-title">
-                    <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
-                    <h1>LiquidityX Staking</h1>
-                </div>
-                <div class="wallet-section">
-                    <button id="connectButton" class="connect-btn">
-                        <i class="fas fa-wallet"></i> <span id="connectButtonText">Connect Wallet</span>
-                    </button>
-                    <div id="walletInfo" class="wallet-info hidden">
-                        <span id="walletAddress" class="wallet-address"></span>
-                        <span id="networkInfo" class="network-info"></span>
-                        <div class="wallet-actions">
-                            <button id="walletDisconnect" class="wallet-action-btn">
-                                <i class="fas fa-sign-out-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <main class="main-content">
-            <section class="dashboard-section">
-                <div id="walletStatus" class="wallet-status">
-                    <div class="wallet-status-content">
-                        <i class="fas fa-circle-notch status-icon disconnected"></i>
-                        <span class="status-text">Not connected</span>
-                        <span id="walletTypeBadge" class="wallet-type-badge hidden"></span>
-                    </div>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-coins stat-icon"></i>
-                            <h3>LQX Balance</h3>
-                        </div>
-                        <div id="lqxBalance" class="stat-value">0</div>
-                        <div class="chain-badge evm-badge">EVM</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-hand-holding-usd stat-icon"></i>
-                            <h3>LP Balance</h3>
-                        </div>
-                        <div id="lpBalance" class="stat-value">0</div>
-                        <div class="chain-badge evm-badge">EVM</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-lock stat-icon"></i>
-                            <h3>Staked Amount</h3>
-                        </div>
-                        <div id="stakedAmount" class="stat-value">0</div>
-                        <div class="chain-badge evm-badge">EVM</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-gift stat-icon"></i>
-                            <h3>Pending Reward</h3>
-                        </div>
-                        <div id="pendingReward" class="stat-value">0</div>
-                        <div class="chain-badge evm-badge">EVM</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-percentage stat-icon"></i>
-                            <h3>APR</h3>
-                        </div>
-                        <div id="aprValue" class="stat-value">0%</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <i class="fas fa-chart-line stat-icon"></i>
-                            <h3>Total Staked</h3>
-                        </div>
-                        <div id="totalStaked" class="stat-value">0 LP</div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="action-section">
-                <div class="action-card">
-                    <h2><i class="fas fa-lock"></i> Stake LP Tokens</h2>
-                    <div class="input-group">
-                        <input type="number" id="stakeAmount" placeholder="0.0" min="0" step="0.01">
-                        <button id="stakeBtn" class="action-btn primary-btn">Stake</button>
-                    </div>
-                    <div class="balance-info">Available: <span id="availableLpBalance">0</span> LP</div>
-                    <button id="approveLpBtn" class="action-btn tertiary-btn hidden">Approve LP Tokens</button>
-                </div>
-
-                <div class="action-card">
-                    <h2><i class="fas fa-unlock"></i> Unstake LP Tokens</h2>
-                    <div class="input-group">
-                        <input type="number" id="unstakeAmount" placeholder="0.0" min="0" step="0.01">
-                        <button id="unstakeBtn" class="action-btn secondary-btn">Unstake</button>
-                    </div>
-                    <div class="balance-info">Staked: <span id="stakedBalance">0</span> LP</div>
-                </div>
-
-                <div class="action-card">
-                    <h2><i class="fas fa-gift"></i> Claim Rewards</h2>
-                    <div class="rewards-display">
-                        <div class="rewards-amount">Pending: <span id="pendingRewardsDisplay">0</span> LQX</div>
-                        <button id="claimBtn" class="action-btn accent-btn">Claim Now</button>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Enhanced Wallet Connection Modal -->
-        <div id="walletModal" class="modal hidden">
-            <div class="modal-content">
-                <span class="close-modal">&times;</span>
-                <h2>Connect Wallet</h2>
-                <div class="wallet-options">
-                    <div class="wallet-option-group">
-                        <h3 class="wallet-group-title">EVM Wallets</h3>
-                        <div class="wallet-options-row">
-                            <button class="wallet-option" id="metamaskOption">
-                                <div class="wallet-icon"><i class="fab fa-ethereum"></i></div>
-                                <div class="wallet-info">
-                                    <span class="wallet-name">MetaMask</span>
-                                    <span class="wallet-chains">Polygon, Ethereum, BSC</span>
-                                </div>
-                                <div class="wallet-status" id="metamaskStatus"></div>
-                            </button>
-                            <button class="wallet-option" id="trustwalletOption">
-                                <div class="wallet-icon"><i class="fas fa-wallet"></i></div>
-                                <div class="wallet-info">
-                                    <span class="wallet-name">Trust Wallet</span>
-                                    <span class="wallet-chains">Polygon, Ethereum, BSC</span>
-                                </div>
-                                <div class="wallet-status" id="trustwalletStatus"></div>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="wallet-option-group">
-                        <h3 class="wallet-group-title">Cosmos Wallets</h3>
-                        <div class="wallet-options-row">
-                            <button class="wallet-option" id="keplrOption">
-                                <div class="wallet-icon"><i class="fas fa-atom"></i></div>
-                                <div class="wallet-info">
-                                    <span class="wallet-name">Keplr</span>
-                                    <span class="wallet-chains">Osmosis, Cosmos Hub</span>
-                                </div>
-                                <div class="wallet-status" id="keplrStatus"></div>
-                            </button>
-                            <button class="wallet-option" id="leapOption">
-                                <div class="wallet-icon"><i class="fas fa-rocket"></i></div>
-                                <div class="wallet-info">
-                                    <span class="wallet-name">Leap</span>
-                                    <span class="wallet-chains">Osmosis, Cosmos Hub</span>
-                                </div>
-                                <div class="wallet-status" id="leapStatus"></div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="wallet-help">
-                    <p>Don't have a wallet? <a href="#" id="installWalletHelp">Learn how to install</a></p>
-                </div>
-            </div>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <img src="logo.png" alt="LiquidityX" class="logo">
+      <div id="walletConnect">
+        <button id="connectBtn">
+          <i class="fas fa-wallet"></i>
+          <span id="connectText">Connect Wallet</span>
+        </button>
+        <div id="walletInfo" class="hidden">
+          <span id="walletAddress"></span>
+          <span id="networkName"></span>
         </div>
+      </div>
+    </header>
 
-        <!-- Enhanced Transaction Status Elements -->
-        <div id="notificationContainer"></div>
-        <div id="loadingOverlay" class="loading-overlay hidden">
-            <div class="loading-content">
-                <div class="spinner"></div>
-                <div id="loadingText">Processing Transaction...</div>
-                <div id="txDetails" class="tx-details">
-                    <div class="tx-info">
-                        <span class="tx-label">Wallet:</span>
-                        <span id="txWallet" class="tx-value"></span>
-                    </div>
-                    <div class="tx-info">
-                        <span class="tx-label">Network:</span>
-                        <span id="txNetwork" class="tx-value"></span>
-                    </div>
-                    <div class="tx-info">
-                        <span class="tx-label">TX Hash:</span>
-                        <span id="txHash" class="tx-hash"></span>
-                    </div>
-                </div>
-                <a id="txLink" class="tx-link" target="_blank" rel="noopener noreferrer">
-                    <i class="fas fa-external-link-alt"></i> View on Explorer
-                </a>
-                <button id="txCloseBtn" class="tx-close-btn">Close</button>
-            </div>
-        </div>
+    <!-- Main App -->
+    <main>
+      <div class="stats-grid">
+        <!-- Stat cards (lqxBalance, lpBalance, etc.) -->
+      </div>
+      
+      <div class="action-section">
+        <!-- Stake/Unstake forms -->
+      </div>
+    </main>
 
-        <!-- Wallet Install Guide Modal -->
-        <div id="installGuideModal" class="modal hidden">
-            <div class="modal-content">
-                <span class="close-modal">&times;</span>
-                <h2>Install Wallet</h2>
-                <div class="install-options">
-                    <div class="install-option" id="installMetamask">
-                        <img src="https://metamask.io/images/metamask-logo.png" alt="MetaMask" class="install-logo">
-                        <h3>MetaMask</h3>
-                        <p>Browser extension for EVM chains</p>
-                        <a href="https://metamask.io/download.html" target="_blank" class="install-btn">Install MetaMask</a>
-                    </div>
-                    <div class="install-option" id="installKeplr">
-                        <img src="https://keplr.app/images/keplr-logo.png" alt="Keplr" class="install-logo">
-                        <h3>Keplr</h3>
-                        <p>Browser extension for Cosmos chains</p>
-                        <a href="https://www.keplr.app/" target="_blank" class="install-btn">Install Keplr</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Modals -->
+    <div id="walletModal" class="modal hidden">
+      <!-- Wallet options -->
     </div>
-    <!-- Nonce-based script loading for CSP compliance -->
-    <script nonce="2726c7f26c" src="app.js"></script>
-    
-    <!-- Fallback for browsers without CSP support -->
-    <noscript>
-        <div class="noscript-warning">
-            <h2>JavaScript is required for this application</h2>
-            <p>Please enable JavaScript in your browser settings to use the LiquidityX Staking DApp.</p>
-        </div>
-    </noscript>
+
+    <div id="txModal" class="modal hidden">
+      <!-- Transaction confirmations -->
+    </div>
+
+    <div id="notifications"></div>
+  </div>
+
+  <!-- Load ethers from trusted CDN with SRI -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"
+          integrity="sha512-UvZCJ5qQvBTfP6QJ4Xz6+X3k6X0aJ8X3HzQ4z8kKXhQyK6R7XqRZx4x4kO4w6KXx7+5X8k6v5E6p2U7k5A5ZQ=="
+          crossorigin="anonymous"></script>
+  
+  <script src="app.js"></script>
 </body>
 </html>
