@@ -2,71 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LiquidityX | Staking Portal</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiquidityX - Staking DApp</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
 </head>
 <body>
     <div class="app-container">
-        <!-- Mobile Header -->
-        <header class="app-header">
-            <div class="logo-container">
-                <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
-                <h1>LiquidityX <span class="mobile-hidden">Staking</span></h1>
-            </div>
-            <button id="connectButton" class="connect-btn">
-                <i class="fas fa-wallet"></i>
-                <span class="btn-text">Connect</span>
-            </button>
+        <header>
+            <h1>LiquidityX Staking</h1>
+            <button id="connectButton">Connect Wallet</button>
         </header>
 
-        <!-- Main Content -->
-        <main class="app-content">
-            <!-- Balance Cards -->
-            <section class="balance-section">
-                <div class="balance-card">
-                    <div class="balance-row">
-                        <span>LP Balance:</span>
-                        <span id="lpBalance">0.00</span>
-                    </div>
-                    <div class="balance-row highlight">
-                        <span>Staked:</span>
-                        <span id="stakedBalance">0.00</span>
-                    </div>
-                    <div class="balance-row highlight">
-                        <span>Rewards:</span>
-                        <span id="rewardsBalance">0.00</span>
-                    </div>
-                </div>
+        <main>
+            <div class="card">
+                <h2>Your Wallet Info</h2>
+                <div id="walletInfo">Not connected</div>
+            </div>
 
-                <div class="info-card">
-                    <div class="info-row">
-                        <span>APR:</span>
-                        <span id="aprValue">0.00%</span>
-                    </div>
-                    <div class="info-row">
-                        <span>Total Staked:</span>
-                        <span id="totalStaked">0.00 LP</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Action Buttons -->
-            <section class="action-section">
-                <button id="stakeBtn" class="action-btn primary">Stake</button>
-                <button id="unstakeBtn" class="action-btn secondary">Unstake</button>
-                <button id="claimBtn" class="action-btn accent">Claim Rewards</button>
-                <button id="disconnectBtn" class="action-btn disconnect">Disconnect</button>
-            </section>
+            <div class="card">
+                <h2>Staking Actions</h2>
+                <button id="stakeBtn">Stake</button>
+                <button id="unstakeBtn">Unstake</button>
+                <button id="claimBtn">Claim Rewards</button>
+            </div>
         </main>
 
-        <!-- Notifications -->
-        <div class="notification-container" id="notificationContainer"></div>
+        <footer>
+            <p>Powered by LiquidityX</p>
+        </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
