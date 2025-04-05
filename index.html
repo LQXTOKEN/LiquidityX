@@ -3,41 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX Staking dApp</title>
+    <title>LiquidityX Staking DApp</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png">
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <h1>LiquidityX Staking dApp</h1>
-            <button id="connectButton" class="connect-btn">Connect Wallet</button>
+    <div id="app" class="app-container">
+        <header>
+            <h1>LiquidityX Staking DApp</h1>
+            <button id="connectButton">Connect Wallet</button>
+            <div id="walletStatus"></div>
         </header>
 
-        <main class="app-main">
-            <section class="balances">
+        <main>
+            <div class="balance-section">
                 <div>LP Balance: <span id="lpBalance">0.00</span></div>
                 <div>LQX Balance: <span id="lqxBalance">0.00</span></div>
                 <div>Staked Amount: <span id="stakedAmount">0.00</span></div>
                 <div>Pending Rewards: <span id="pendingReward">0.00</span></div>
                 <div>Total Staked: <span id="totalStaked">0.00</span></div>
                 <div>APR: <span id="aprValue">0.00%</span></div>
-            </section>
+            </div>
 
-            <section class="actions">
-                <input type="number" id="stakeAmount" placeholder="Enter amount to stake">
+            <div class="staking-controls">
+                <input type="number" id="stakeAmount" placeholder="Amount to Stake">
                 <button id="stakeBtn">Stake</button>
+
+                <input type="number" id="unstakeAmount" placeholder="Amount to Unstake">
                 <button id="unstakeBtn">Unstake</button>
+
                 <button id="claimBtn">Claim Rewards</button>
-            </section>
+            </div>
         </main>
 
-        <div id="loadingOverlay" class="loading-overlay hidden">
-            <div id="loadingText">Loading...</div>
-        </div>
+        <div id="notificationContainer" class="notification-container"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
