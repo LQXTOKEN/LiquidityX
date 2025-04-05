@@ -2,33 +2,98 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX | Staking dApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LiquidityX | Staking Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>LiquidityX Staking dApp</h1>
-            <button id="connectButton">Connect Wallet</button>
-            <p id="walletStatus">Not Connected</p>
+    <div class="app-container">
+        <!-- Mobile Header -->
+        <header class="app-header">
+            <div class="logo-container">
+                <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
+                <h1>LiquidityX <span class="mobile-hidden">Staking</span></h1>
+            </div>
+            <button id="connectButton" class="connect-btn">
+                <i class="fas fa-wallet"></i>
+                <span class="btn-text">Connect</span>
+            </button>
         </header>
 
-        <section id="networkSelection">
-            <button id="polygonNetwork">Polygon Network</button>
-            <button id="osmosisNetwork">Osmosis Network</button>
-        </section>
+        <!-- Main Content -->
+        <main class="app-content">
+            <!-- Balance Cards -->
+            <section class="balance-section">
+                <div class="balance-card">
+                    <div class="balance-row">
+                        <span>LP Balance:</span>
+                        <span id="lpBalance">0.00</span>
+                    </div>
+                    <div class="balance-row highlight">
+                        <span>Staked:</span>
+                        <span id="stakedBalance">0.00</span>
+                    </div>
+                    <div class="balance-row highlight">
+                        <span>Rewards:</span>
+                        <span id="rewardsBalance">0.00</span>
+                    </div>
+                </div>
 
-        <section id="actions">
-            <button id="stakeBtn">Stake</button>
-            <button id="unstakeBtn">Unstake</button>
-            <button id="claimBtn">Claim Rewards</button>
-        </section>
+                <div class="info-card">
+                    <div class="info-row">
+                        <span>APR:</span>
+                        <span id="aprValue">0.00%</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Total Staked:</span>
+                        <span id="totalStaked">0.00 LP</span>
+                    </div>
+                </div>
+            </section>
 
-        <div id="results"></div>
+            <!-- Staking Actions -->
+            <section class="action-section">
+                <div class="action-card">
+                    <h3><i class="fas fa-coins"></i> Stake</h3>
+                    <div class="input-group">
+                        <input type="number" id="stakeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+                        <button id="maxStakeBtn" class="max-btn">MAX</button>
+                    </div>
+                    <button id="stakeBtn" class="action-btn primary">
+                        <span class="btn-text">Stake LP</span>
+                    </button>
+                </div>
+
+                <div class="action-card">
+                    <h3><i class="fas fa-unlock"></i> Unstake</h3>
+                    <div class="input-group">
+                        <input type="number" id="unstakeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+                        <button id="maxUnstakeBtn" class="max-btn">MAX</button>
+                    </div>
+                    <button id="unstakeBtn" class="action-btn secondary">
+                        <span class="btn-text">Unstake LP</span>
+                    </button>
+                </div>
+
+                <div class="action-card">
+                    <h3><i class="fas fa-gift"></i> Rewards</h3>
+                    <button id="claimBtn" class="action-btn accent">
+                        <span class="btn-text">Claim</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Wallet Status -->
+            <div id="walletStatus" style="text-align: center; margin-top: 20px; color: var(--text-secondary);"></div>
+        </main>
     </div>
 
+    <!-- WalletConnect v1 -->
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.1/dist/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
