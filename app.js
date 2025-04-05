@@ -1,296 +1,51 @@
 // Configuration
 const CONFIG = {
-  lqxToken: {
-    address: "0x9e27f48659b1005b1abc0f58465137e531430d4b",
-    abi: await fetch('./abis/LQXToken.json').then(res => res.json())
-  },
-  lpStaking: {
-    address: "0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3",
-    abi: await fetch('./abis/LPStaking.json').then(res => res.json())
-  },
-  lpToken: {
-    address: "0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E",
-    abi: await fetch('./abis/LPToken.json').then(res => res.json())
-  }
+    NETWORK: {
+        polygon: '0x89',
+        osmosis: 'osmosis-1'
+    },
+    CONTRACTS: {
+        staking: 'abis/LPStaking.json',
+        lpToken: 'abis/LPToken.json',
+        lqxToken: 'abis/LQXToken.json'
+    }
 };
 
-// State Management
-let state = {
-  provider: null,
-  signer: null,
-  contracts: {},
-  user: {
-    address: null,
-    lqxBalance: "0",
-    lpBalance: "0",
-    stakedLp: "0",
-    pendingRewards: "0",
-    apr: "0"
-  }
+let selectedWallet = null;
+let selectedNetwork = null;
+
+// Load ABI Files
+async function loadABI(filePath) {
+    const response = await fetch(filePath);
+    return await response.json();
+}
+
+document.getElementById('connectButton').onclick = async () => {
+    if (window.ethereum) {
+        selectedWallet = 'metamask';
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        document.getElementById('walletStatus').innerText = 'Connected with MetaMask';
+    } else {
+        alert('MetaMask not installed!');
+    }
 };
 
-// DOM Elements
-const elements = {
-  walletStatus: document.getElementById("walletStatus"),
-  dashboard: document.getElementById("dashboard"),
-  txStatus: document.getElementById("txStatus"),
-  txStatusText: document.getElementById("txStatusText"),
-  lqxBalance: document.getElementById("lqxBalance"),
-  lpBalance: document.getElementById("lpBalance"),
-  stakedAmount: document.getElementById("stakedAmount"),
-  pendingRewards: document.getElementById("pendingRewards"),
-  currentApr: document.getElementById("currentApr"),
-  actionAmount: document.getElementById("actionAmount"),
-  stakeBtn: document.getElementById("stakeBtn"),
-  unstakeBtn: document.getElementById("unstakeBtn"),
-  claimBtn: document.getElementById("claimBtn"),
-  metamaskBtn: document.getElementById("metamaskBtn"),
-  keplrBtn: document.getElementById("keplrBtn"),
-  errorModal: document.getElementById("errorModal"),
-  errorMessage: document.getElementById("errorMessage"),
-  closeErrorBtn: document.getElementById("closeErrorBtn")
+document.getElementById('polygonNetwork').onclick = () => {
+    selectedNetwork = 'polygon';
+    document.getElementById('walletStatus').innerText = 'Polygon Network Selected';
 };
 
-// Initialize Application
-async function init() {
-  setupEventListeners();
-  
-  // Auto-connect if wallet is already connected
-  if (window.ethereum?.selectedAddress) {
-    await connectEVMWallet();
-  }
-}
+document.getElementById('osmosisNetwork').onclick = () => {
+    selectedNetwork = 'osmosis';
+    document.getElementById('walletStatus').innerText = 'Osmosis Network Selected';
+};
 
-// Event Listeners Setup
-function setupEventListeners() {
-  elements.metamaskBtn.addEventListener("click", connectEVMWallet);
-  elements.keplrBtn.addEventListener("click", connectCosmosWallet);
-  
-  elements.stakeBtn.addEventListener("click", stake);
-  elements.unstakeBtn.addEventListener("click", unstake);
-  elements.claimBtn.addEventListener("click", claim);
-  
-  elements.closeErrorBtn.addEventListener("click", () => {
-    elements.errorModal.classList.add("hidden");
-  });
-}
-
-// EVM Wallet Connection
-async function connectEVMWallet() {
-  try {
-    if (!window.ethereum) throw new Error("EVM wallet not detected");
-    
-    showTxStatus("Connecting wallet...");
-    
-    // Initialize provider and signer
-    state.provider = new ethers.providers.Web3Provider(window.ethereum);
-    await state.provider.send("eth_requestAccounts", []);
-    state.signer = state.provider.getSigner();
-    state.user.address = await state.signer.getAddress();
-    
-    // Initialize contracts
-    state.contracts = {
-      lqxToken: new ethers.Contract(
-        CONFIG.lqxToken.address,
-        CONFIG.lqxToken.abi,
-        state.signer
-      ),
-      lpStaking: new ethers.Contract(
-        CONFIG.lpStaking.address,
-        CONFIG.lpStaking.abi,
-        state.signer
-      ),
-      lpToken: new ethers.Contract(
-        CONFIG.lpToken.address,
-        CONFIG.lpToken.abi,
-        state.signer
-      )
-    };
-    
-    // Update UI
-    updateWalletStatus("metamask");
-    await refreshData();
-    
-    // Set up listeners
-    window.ethereum.on("accountsChanged", handleAccountsChanged);
-    window.ethereum.on("chainChanged", handleChainChanged);
-    
-    hideTxStatus();
-  } catch (error) {
-    showError(error);
-  }
-}
-
-// Cosmos Wallet Connection
-async function connectCosmosWallet() {
-  try {
-    if (!window.keplr) throw new Error("Keplr wallet not detected");
-    
-    showTxStatus("Connecting Keplr...");
-    
-    await window.keplr.enable("osmosis-1");
-    const offlineSigner = window.keplr.getOfflineSigner("osmosis-1");
-    const accounts = await offlineSigner.getAccounts();
-    
-    state.user.address = accounts[0].address;
-    updateWalletStatus("keplr");
-    
-    // For demo purposes - in production you'd need Cosmos-specific contract interactions
-    showError("For full functionality with LP Staking, please use MetaMask with Polygon");
-    
-    hideTxStatus();
-  } catch (error) {
-    showError(error);
-  }
-}
-
-// Core Functions
+// Example functions to interact with contracts
 async function stake() {
-  try {
-    const amount = ethers.utils.parseUnits(elements.actionAmount.value || "0", 18);
-    if (amount.lte(0)) throw new Error("Invalid amount");
-    
-    showTxStatus("Approving LP tokens...");
-    
-    // Approve
-    const approveTx = await state.contracts.lpToken.approve(
-      CONFIG.lpStaking.address,
-      amount
-    );
-    await approveTx.wait();
-    
-    showTxStatus("Staking LP tokens...");
-    
-    // Stake
-    const stakeTx = await state.contracts.lpStaking.stake(amount);
-    await stakeTx.wait();
-    
-    await refreshData();
-    hideTxStatus();
-    alert("Successfully staked LP tokens!");
-  } catch (error) {
-    showError(error);
-  }
+    const stakingAbi = await loadABI(CONFIG.CONTRACTS.staking);
+    console.log('Loaded Staking ABI:', stakingAbi);
 }
 
-async function unstake() {
-  try {
-    const amount = ethers.utils.parseUnits(elements.actionAmount.value || "0", 18);
-    if (amount.lte(0)) throw new Error("Invalid amount");
-    
-    showTxStatus("Unstaking LP tokens...");
-    
-    const tx = await state.contracts.lpStaking.unstake(amount);
-    await tx.wait();
-    
-    await refreshData();
-    hideTxStatus();
-    alert("Successfully unstaked LP tokens!");
-  } catch (error) {
-    showError(error);
-  }
-}
-
-async function claim() {
-  try {
-    showTxStatus("Claiming rewards...");
-    
-    const tx = await state.contracts.lpStaking.claimRewards();
-    await tx.wait();
-    
-    await refreshData();
-    hideTxStatus();
-    alert("Rewards claimed successfully!");
-  } catch (error) {
-    showError(error);
-  }
-}
-
-// Data Management
-async function refreshData() {
-  try {
-    if (!state.user.address) return;
-    
-    showTxStatus("Loading data...");
-    
-    const [lqxBalance, lpBalance, stakedLp, pendingRewards, apr] = await Promise.all([
-      state.contracts.lqxToken.balanceOf(state.user.address),
-      state.contracts.lpToken.balanceOf(state.user.address),
-      state.contracts.lpStaking.userStake(state.user.address),
-      state.contracts.lpStaking.earned(state.user.address),
-      state.contracts.lpStaking.getAPR()
-    ]);
-    
-    state.user = {
-      ...state.user,
-      lqxBalance: ethers.utils.formatUnits(lqxBalance, 18),
-      lpBalance: ethers.utils.formatUnits(lpBalance, 18),
-      stakedLp: ethers.utils.formatUnits(stakedLp, 18),
-      pendingRewards: ethers.utils.formatUnits(pendingRewards, 18),
-      apr: apr.toString()
-    };
-    
-    updateUI();
-    hideTxStatus();
-  } catch (error) {
-    showError(error);
-  }
-}
-
-// UI Updates
-function updateUI() {
-  elements.lqxBalance.textContent = state.user.lqxBalance;
-  elements.lpBalance.textContent = state.user.lpBalance;
-  elements.stakedAmount.textContent = state.user.stakedLp;
-  elements.pendingRewards.textContent = state.user.pendingRewards;
-  elements.currentApr.textContent = state.user.apr;
-  
-  elements.dashboard.classList.remove("hidden");
-}
-
-function updateWalletStatus(walletType) {
-  const walletName = walletType === "metamask" ? "MetaMask" : "Keplr";
-  const icon = walletType === "metamask" ? "fab fa-metamask" : "fas fa-wallet";
-  
-  elements.walletStatus.innerHTML = `
-    <i class="${icon}"></i>
-    <span>Connected with ${walletName}</span>
-  `;
-}
-
-// Helpers
-function showTxStatus(message) {
-  elements.txStatusText.textContent = message;
-  elements.txStatus.classList.remove("hidden");
-}
-
-function hideTxStatus() {
-  elements.txStatus.classList.add("hidden");
-}
-
-function showError(error) {
-  console.error(error);
-  elements.errorMessage.textContent = error.message;
-  elements.errorModal.classList.remove("hidden");
-  hideTxStatus();
-}
-
-// Event Handlers
-function handleAccountsChanged(accounts) {
-  if (accounts.length === 0) {
-    // Wallet disconnected
-    location.reload();
-  } else {
-    // Account changed
-    state.user.address = accounts[0];
-    refreshData();
-  }
-}
-
-function handleChainChanged(chainId) {
-  // Chain changed - reload app
-  location.reload();
-}
-
-// Initialize
-window.addEventListener("load", init);
+document.getElementById('stakeBtn').onclick = stake;
+document.getElementById('unstakeBtn').onclick = () => alert('Unstake button clicked!');
+document.getElementById('claimBtn').onclick = () => alert('Claim button clicked!');
