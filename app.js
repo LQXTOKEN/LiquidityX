@@ -2,15 +2,15 @@
 const CONFIG = {
   lqxToken: {
     address: "0x9e27f48659b1005b1abc0f58465137e531430d4b",
-    abi: require("./abis/LQXToken.json")
+    abi: await fetch('./abis/LQXToken.json').then(res => res.json())
   },
   lpStaking: {
     address: "0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3",
-    abi: require("./abis/LPStaking.json")
+    abi: await fetch('./abis/LPStaking.json').then(res => res.json())
   },
   lpToken: {
     address: "0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E",
-    abi: require("./abis/LPToken.json")
+    abi: await fetch('./abis/LPToken.json').then(res => res.json())
   }
 };
 
@@ -45,7 +45,10 @@ const elements = {
   unstakeBtn: document.getElementById("unstakeBtn"),
   claimBtn: document.getElementById("claimBtn"),
   metamaskBtn: document.getElementById("metamaskBtn"),
-  keplrBtn: document.getElementById("keplrBtn")
+  keplrBtn: document.getElementById("keplrBtn"),
+  errorModal: document.getElementById("errorModal"),
+  errorMessage: document.getElementById("errorMessage"),
+  closeErrorBtn: document.getElementById("closeErrorBtn")
 };
 
 // Initialize Application
@@ -66,6 +69,10 @@ function setupEventListeners() {
   elements.stakeBtn.addEventListener("click", stake);
   elements.unstakeBtn.addEventListener("click", unstake);
   elements.claimBtn.addEventListener("click", claim);
+  
+  elements.closeErrorBtn.addEventListener("click", () => {
+    elements.errorModal.classList.add("hidden");
+  });
 }
 
 // EVM Wallet Connection
@@ -129,7 +136,7 @@ async function connectCosmosWallet() {
     updateWalletStatus("keplr");
     
     // For demo purposes - in production you'd need Cosmos-specific contract interactions
-    alert("For full functionality with LP Staking, please use MetaMask with Polygon");
+    showError("For full functionality with LP Staking, please use MetaMask with Polygon");
     
     hideTxStatus();
   } catch (error) {
@@ -263,8 +270,9 @@ function hideTxStatus() {
 
 function showError(error) {
   console.error(error);
+  elements.errorMessage.textContent = error.message;
+  elements.errorModal.classList.remove("hidden");
   hideTxStatus();
-  alert(`Error: ${error.message}`);
 }
 
 // Event Handlers
