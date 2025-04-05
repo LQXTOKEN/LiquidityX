@@ -1,84 +1,67 @@
-body {
-  font-family: 'Montserrat', sans-serif;
-  background-color: #1e1e2d;
-  color: white;
-  margin: 0;
-  padding: 0;
+body, html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    background-color: #1a1a1a;
+    color: white;
 }
 
 .app-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
 }
 
-.connect-btn {
-  background-color: #6a4cff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+.app-header h1 {
+    color: #6a4cff;
+    margin-bottom: 20px;
 }
 
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  justify-content: center;
-  align-items: center;
+.wallet-connect {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
-.modal-content {
-  background-color: #2a2a3a;
-  padding: 20px;
-  border-radius: 8px;
-  width: 80%;
-  max-width: 400px;
+.wallet-btn {
+    background-color: #6a4cff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-.close-modal {
-  float: right;
-  cursor: pointer;
-  color: white;
+.wallet-btn:hover {
+    background-color: #4a3cff;
 }
 
-.wallet-options {
-  display: grid;
-  gap: 10px;
+.account-info {
+    background-color: #2a2a2a;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 20px;
+    width: 300px;
+    text-align: center;
 }
 
-.wallet-option {
-  background-color: #6a4cff;
-  color: white;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  text-align: center;
+.notification-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 300px;
+    z-index: 1000;
 }
 
-.wallet-option:hover {
-  background-color: #4a6cf7;
-}
-
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading-content {
-  text-align: center;
-  color: white;
+.notification {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #6a4cff;
+    transition: all 0.3s ease;
 }
