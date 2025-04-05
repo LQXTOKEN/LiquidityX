@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LiquidityX | Production</title>
+  <title>LiquidityX | Hybrid DeFi Platform</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -20,26 +20,28 @@
     <main>
       <!-- Wallet Connection -->
       <div class="card connection-card">
-        <h2><i class="fas fa-plug"></i> Connection</h2>
-        <div class="wallet-buttons">
+        <h2><i class="fas fa-plug"></i> Connect Wallet</h2>
+        <div class="wallet-grid">
           <button id="metamaskBtn" class="wallet-btn">
-            <img src="https://cryptologos.cc/logos/metamask-logo.png" alt="MetaMask"> MetaMask
+            <img src="https://cryptologos.cc/logos/metamask-logo.png" alt="MetaMask">
+            <span>MetaMask</span>
           </button>
           <button id="keplrBtn" class="wallet-btn">
-            <img src="https://cryptologos.cc/logos/keplr-keplr-logo.png" alt="Keplr"> Keplr
+            <img src="https://cryptologos.cc/logos/keplr-keplr-logo.png" alt="Keplr">
+            <span>Keplr</span>
           </button>
         </div>
       </div>
 
-      <!-- Dashboard -->
+      <!-- Dashboard (Hidden Initially) -->
       <div id="dashboard" class="hidden">
         <!-- Balances -->
         <div class="card-grid">
-          <div class="card">
+          <div class="card balance-card">
             <h3><i class="fas fa-coins"></i> LQX Balance</h3>
             <div class="balance" id="lqxBalance">0.00</div>
           </div>
-          <div class="card">
+          <div class="card balance-card">
             <h3><i class="fas fa-hand-holding-usd"></i> LP Balance</h3>
             <div class="balance" id="lpBalance">0.00</div>
           </div>
@@ -51,7 +53,7 @@
           
           <div class="staking-info">
             <div class="info-row">
-              <span>Staked Amount:</span>
+              <span>Your Stake:</span>
               <span id="stakedAmount">0.00 LP</span>
             </div>
             <div class="info-row">
@@ -85,6 +87,15 @@
       <div id="txStatus" class="tx-status hidden">
         <div class="spinner"></div>
         <span id="txStatusText">Processing transaction...</span>
+      </div>
+
+      <!-- Error Modal -->
+      <div id="errorModal" class="modal hidden">
+        <div class="modal-content">
+          <h3><i class="fas fa-exclamation-triangle"></i> Error</h3>
+          <p id="errorMessage"></p>
+          <button id="closeErrorBtn" class="btn-primary">Close</button>
+        </div>
       </div>
     </main>
   </div>
