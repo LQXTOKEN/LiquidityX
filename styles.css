@@ -1,94 +1,51 @@
-// Configuration (EVM + Cosmos)
-const CONFIG = {
-  network: {
-    chainId: 137,
-    name: 'Polygon',
-    rpcUrl: 'https://polygon-rpc.com',
-    explorerUrl: 'https://polygonscan.com',
-    currency: 'MATIC'
-  },
-  contracts: {
-    staking: {
-      address: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
-      abi: [
-        "function stake(uint256 amount) external",
-        "function unstake(uint256 amount) external",
-        "function claimRewards() external",
-        "function getAPR() view returns (uint256)",
-        "function totalStaked() view returns (uint256)",
-        "function userStake(address account) view returns (uint256)",
-        "function earned(address account) view returns (uint256)"
-      ]
-    }
-  }
-};
-
-let provider, signer, stakingContract;
-
-async function init() {
-  if (window.ethereum || window.trustwallet || window.leap) {
-    provider = new ethers.providers.Web3Provider(window.ethereum || window.trustwallet || window.leap);
-    signer = provider.getSigner();
-    stakingContract = new ethers.Contract(CONFIG.contracts.staking.address, CONFIG.contracts.staking.abi, signer);
-    console.log('Initialization complete');
-  } else {
-    alert('Please install MetaMask, Trust Wallet, or Leap!');
-  }
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e2d;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
 }
 
-async function connectWallet() {
-  try {
-    await provider.send("eth_requestAccounts", []);
-    const address = await signer.getAddress();
-    document.getElementById('connectButton').innerText = `Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-    console.log('Wallet connected');
-  } catch (error) {
-    alert('Failed to connect wallet. Please try again.');
-    console.error(error);
-  }
+.app-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
 }
 
-async function stake() {
-  const amount = prompt('Enter amount to stake:');
-  if (amount) {
-    try {
-      const tx = await stakingContract.stake(ethers.utils.parseUnits(amount, 18));
-      await tx.wait();
-      alert('Stake successful!');
-    } catch (error) {
-      alert('Stake failed. Please try again.');
-      console.error(error);
-    }
-  }
+header {
+    margin-bottom: 30px;
 }
 
-async function unstake() {
-  const amount = prompt('Enter amount to unstake:');
-  if (amount) {
-    try {
-      const tx = await stakingContract.unstake(ethers.utils.parseUnits(amount, 18));
-      await tx.wait();
-      alert('Unstake successful!');
-    } catch (error) {
-      alert('Unstake failed. Please try again.');
-      console.error(error);
-    }
-  }
+h1 {
+    color: #6a4cff;
 }
 
-async function claimRewards() {
-  try {
-    const tx = await stakingContract.claimRewards();
-    await tx.wait();
-    alert('Rewards claimed!');
-  } catch (error) {
-    alert('Claim failed. Please try again.');
-    console.error(error);
-  }
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #6a4cff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-window.addEventListener('DOMContentLoaded', init);
-document.getElementById('connectButton').addEventListener('click', connectWallet);
-document.getElementById('stakeBtn').addEventListener('click', stake);
-document.getElementById('unstakeBtn').addEventListener('click', unstake);
-document.getElementById('claimBtn').addEventListener('click', claimRewards);
+button:hover {
+    background-color: #5740c9;
+}
+
+.card {
+    background-color: #2a2a3a;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    width: 300px;
+}
+
+footer {
+    margin-top: 20px;
+    color: #666;
+}
