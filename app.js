@@ -76,6 +76,8 @@ const WALLETS = Object.freeze({
 // Global State
 let currentAccount = null;
 let currentChainId = null;
+let provider = null;
+let signer = null;
 
 // DOM Elements
 const connectButton = document.getElementById('connectButton');
@@ -84,16 +86,21 @@ const walletStatus = document.getElementById('walletStatus');
 // Initialize the application
 async function initApp() {
     try {
+        // Check if MetaMask is installed
+        if (typeof window.ethereum === 'undefined') {
+            showNotification('MetaMask is not installed!', 'error');
+            connectButton.disabled = true;
+            return;
+        }
+
         // Load ABIs first
         const configWithABIs = await loadABIs();
         
         // Check if wallet is already connected
-        if (window.ethereum) {
-            await checkWalletConnection();
-            
-            // Set up event listeners
-            setupWalletEventListeners();
-        }
+        await checkWalletConnection();
+        
+        // Set up event listeners
+        setupWalletEventListeners();
         
         // Initialize wallet connection button
         connectButton.addEventListener('click', handleWalletConnection);
@@ -105,13 +112,13 @@ async function initApp() {
     }
 }
 
-// Secure ABI Loader
+// Secure ABI Loader with CORS handling
 async function loadABIs() {
     try {
         const [stakingABI, lpTokenABI, lqxTokenABI] = await Promise.all([
-            fetchABI('abis/LPStaking.json'),
-            fetchABI('abis/LPToken.json'),
-            fetchABI('abis/LQXToken.json')
+            fetchWithCORS('abis/LPStaking.json'),
+            fetchWithCORS('abis/LPToken.json'),
+            fetchWithCORS('abis/LQXToken.json')
         ]);
 
         return {
@@ -132,32 +139,53 @@ async function loadABIs() {
     }
 }
 
-async function fetchABI(path) {
-    const response = await fetch(path);
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+async function fetchWithCORS(path) {
+    try {
+        const response = await fetch(path, {
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return response.json();
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
     }
-    return response.json();
 }
 
 // Wallet Connection Handler
 async function handleWalletConnection() {
-    if (!window.ethereum) {
-        showNotification('Please install MetaMask!', 'error');
-        window.open('https://metamask.io/download.html', '_blank');
-        return;
+    if (!currentAccount) {
+        await connectWallet();
+    } else {
+        await disconnectWallet();
     }
+}
 
+async function connectWallet() {
     try {
         // Request account access
         const accounts = await window.ethereum.request({ 
             method: 'eth_requestAccounts' 
         });
 
-        // Check network
+        // Initialize provider and signer
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+
+        // Check and switch network
         await checkAndSwitchNetwork();
 
         currentAccount = accounts[0];
+        currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+        
         updateWalletStatus();
         showNotification('Wallet connected successfully!', 'success');
 
@@ -168,11 +196,30 @@ async function handleWalletConnection() {
     }
 }
 
+async function disconnectWallet() {
+    try {
+        // In MetaMask, there's no direct disconnect, so we just reset state
+        currentAccount = null;
+        currentChainId = null;
+        provider = null;
+        signer = null;
+        
+        updateWalletStatus();
+        showNotification('Wallet disconnected', 'info');
+    } catch (error) {
+        console.error('Disconnect error:', error);
+        showNotification('Error disconnecting wallet', 'error');
+    }
+}
+
 // Check if wallet is already connected
 async function checkWalletConnection() {
     try {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+            
             currentAccount = accounts[0];
             currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
             updateWalletStatus();
@@ -223,11 +270,15 @@ async function checkAndSwitchNetwork() {
 
 // Event Listeners
 function setupWalletEventListeners() {
+    if (!window.ethereum) return;
+
     window.ethereum.on('accountsChanged', (accounts) => {
         if (accounts.length === 0) {
+            // Wallet disconnected
             currentAccount = null;
             showNotification('Wallet disconnected', 'warning');
         } else {
+            // Account changed
             currentAccount = accounts[0];
             showNotification('Account changed', 'info');
         }
@@ -264,11 +315,9 @@ function handleWalletError(error) {
 
 // UI Updates
 function updateWalletStatus() {
-    const walletStatus = document.getElementById('walletStatus'); // Πρέπει να υπάρχει στο DOM
-
     if (!walletStatus) {
-        console.error("Error: 'walletStatus' element not found in the DOM.");
-        return; // Αν δεν υπάρχει το στοιχείο, βγες από τη συνάρτηση.
+        console.error('Wallet status element not found');
+        return;
     }
 
     if (currentAccount) {
@@ -283,13 +332,46 @@ function updateWalletStatus() {
     }
 }
 
+function showNotification(message, type = 'info') {
+    const notificationContainer = document.getElementById('notificationContainer');
+    if (!notificationContainer) {
+        console.error('Notification container not found');
+        return;
+    }
+
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <span>${message}</span>
+        <button class="close-notification">&times;</button>
+    `;
+    
+    notificationContainer.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+
+    // Manual close
+    notification.querySelector('.close-notification').addEventListener('click', () => {
+        notification.remove();
+    });
+}
 
 // Contract Interactions
 function initContractInteractions() {
-    if (!currentAccount) return;
+    if (!currentAccount || !signer) return;
     
-    // Initialize your contract interactions here
     console.log('Initializing contracts for account:', currentAccount);
+    // Here you would initialize your contract instances
+    // Example:
+    // const stakingContract = new ethers.Contract(
+    //     CONFIG.POLYGON.contracts.staking.address,
+    //     CONFIG.POLYGON.contracts.staking.abi,
+    //     signer
+    // );
 }
 
 // Initialize the app when DOM is loaded
