@@ -1,134 +1,113 @@
 'use strict';
 
-// Enhanced Configuration Object
+/**
+ * LiquidityX Staking DApp - Hybrid Secure Implementation
+ * @file app.js
+ * @version 2.0.0
+ * @license MIT
+ */
+
+// Configuration
 const CONFIG = {
-    POLYGON: {
-        network: {
-            chainId: 137,
-            name: 'Polygon Mainnet',
-            rpcUrls: [
-                'https://polygon-rpc.com',
-                'https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY',
-                'https://matic-mainnet.chainstacklabs.com'
-            ],
-            explorerUrl: 'https://polygonscan.com',
-            currency: 'MATIC',
-            type: 'EVM'
-        },
-        contracts: {
-            staking: {
-                address: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
-                abi: []
-            },
-            lpToken: {
-                address: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
-                abi: []
-            },
-            lqxToken: {
-                address: '0x9e27f48659b1005b1abc0f58465137e531430d4b',
-                abi: []
-            }
-        }
-    },
-    OSMOSIS: {
-        network: {
-            chainId: 'osmosis-1',
-            name: 'Osmosis',
-            rpcUrls: [
-                'https://rpc-osmosis.keplr.app',
-                'https://osmosis-rpc.polkachu.com',
-                'https://rpc-osmosis.blockapsis.com'
-            ],
-            explorerUrl: 'https://www.mintscan.io/osmosis',
-            currency: 'OSMO',
-            type: 'COSMOS'
-        }
+  POLYGON: {
+    chainId: 137,
+    name: 'Polygon Mainnet',
+    rpcUrls: [
+      'https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY',
+      'https://polygon-rpc.com',
+      'https://matic-mainnet.chainstacklabs.com'
+    ],
+    explorerUrl: 'https://polygonscan.com',
+    contracts: {
+      staking: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
+      lpToken: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
+      lqxToken: '0x9e27f48659b1005b1abc0f58465137e531430d4b'
     }
+  },
+  OSMOSIS: {
+    chainId: 'osmosis-1',
+    name: 'Osmosis',
+    rpcUrls: [
+      'https://rpc-osmosis.keplr.app',
+      'https://osmosis-rpc.polkachu.com',
+      'https://rpc-osmosis.blockapsis.com'
+    ],
+    explorerUrl: 'https://www.mintscan.io/osmosis'
+  }
 };
 
-// State Management
 const state = {
-    currentAccount: null,
-    provider: null,
-    signer: null,
-    walletType: null,
-    network: null,
-    contracts: {}
+  currentAccount: null,
+  provider: null,
+  signer: null,
+  contracts: {},
+  walletType: null,
 };
 
-// Initialize
-async function init() {
-    console.log('Initializing application...');
-    await loadABIs();
-    setupEventListeners();
-    console.log('Initialization complete.');
+// Helper Functions
+async function fetchABI(name) {
+  const response = await fetch(`https://lqxtoken.github.io/LiquidityX/abis/${name}.json`, {
+    mode: 'cors'
+  });
+  if (!response.ok) throw new Error(`Failed to fetch ABI: ${name}`);
+  return response.json();
 }
 
-async function loadABIs() {
-    try {
-        const [stakingABI, lpTokenABI, lqxTokenABI] = await Promise.all([
-            fetch('/abis/LPStaking.json').then(res => res.json()),
-            fetch('/abis/LPToken.json').then(res => res.json()),
-            fetch('/abis/LQXToken.json').then(res => res.json())
-        ]);
+async function initContracts() {
+  const stakingABI = await fetchABI('LPStaking');
+  const lpTokenABI = await fetchABI('LPToken');
+  const lqxTokenABI = await fetchABI('LQXToken');
 
-        CONFIG.POLYGON.contracts.staking.abi = stakingABI;
-        CONFIG.POLYGON.contracts.lpToken.abi = lpTokenABI;
-        CONFIG.POLYGON.contracts.lqxToken.abi = lqxTokenABI;
+  state.contracts = {
+    staking: new ethers.Contract(CONFIG.POLYGON.contracts.staking, stakingABI, state.signer),
+    lpToken: new ethers.Contract(CONFIG.POLYGON.contracts.lpToken, lpTokenABI, state.signer),
+    lqxToken: new ethers.Contract(CONFIG.POLYGON.contracts.lqxToken, lqxTokenABI, state.signer),
+  };
+}
 
-        console.log('ABIs loaded successfully.');
-    } catch (error) {
-        console.error('Failed to load ABIs:', error);
+async function connectWallet(walletType) {
+  try {
+    if (walletType === 'metamask') {
+      if (!window.ethereum) throw new Error('MetaMask not found');
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      state.currentAccount = accounts[0];
+      state.provider = new ethers.providers.Web3Provider(window.ethereum);
+      state.signer = state.provider.getSigner();
+      state.walletType = 'metamask';
+      await initContracts();
+    } else if (walletType === 'keplr') {
+      if (!window.keplr) throw new Error('Keplr Wallet not found');
+      await window.keplr.enable('osmosis-1');
+      const offlineSigner = window.keplr.getOfflineSigner('osmosis-1');
+      const accounts = await offlineSigner.getAccounts();
+      state.currentAccount = accounts[0].address;
+      state.walletType = 'keplr';
+    } else if (walletType === 'trustwallet') {
+      if (!window.ethereum || !window.ethereum.isTrust) throw new Error('Trust Wallet not found');
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      state.currentAccount = accounts[0];
+      state.provider = new ethers.providers.Web3Provider(window.ethereum);
+      state.signer = state.provider.getSigner();
+      state.walletType = 'trustwallet';
+      await initContracts();
+    } else if (walletType === 'leap') {
+      if (!window.leap) throw new Error('Leap Wallet not found');
+      await window.leap.enable('osmosis-1');
+      const offlineSigner = window.leap.getOfflineSigner('osmosis-1');
+      const accounts = await offlineSigner.getAccounts();
+      state.currentAccount = accounts[0].address;
+      state.walletType = 'leap';
     }
+    alert(`Connected: ${state.currentAccount}`);
+  } catch (error) {
+    alert(error.message);
+    console.error(error);
+  }
 }
 
-// Event Listeners
-function setupEventListeners() {
-    document.getElementById('connectButton').addEventListener('click', connectWallet);
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-    window.ethereum.on('chainChanged', handleChainChanged);
-}
-
-async function connectWallet() {
-    if (!window.ethereum) {
-        alert('Please install MetaMask!');
-        return;
-    }
-
-    try {
-        state.provider = new ethers.providers.Web3Provider(window.ethereum);
-        await state.provider.send('eth_requestAccounts', []);
-        state.signer = state.provider.getSigner();
-        state.currentAccount = await state.signer.getAddress();
-        state.walletType = 'MetaMask';
-
-        console.log('Connected account:', state.currentAccount);
-        updateUI();
-    } catch (error) {
-        console.error('Failed to connect wallet:', error);
-    }
-}
-
-function handleAccountsChanged(accounts) {
-    if (accounts.length === 0) {
-        console.log('Please connect to MetaMask.');
-    } else {
-        state.currentAccount = accounts[0];
-        updateUI();
-    }
-}
-
-function handleChainChanged(_chainId) {
-    window.location.reload();
-}
-
-function updateUI() {
-    if (state.currentAccount) {
-        document.getElementById('walletAddress').textContent = `Connected: ${state.currentAccount}`;
-    } else {
-        document.getElementById('walletAddress').textContent = 'Not connected';
-    }
-}
-
-// Initialize the application when the DOM is fully loaded
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('connectButton').addEventListener('click', () => connectWallet('metamask'));
+  document.getElementById('keplrOption').addEventListener('click', () => connectWallet('keplr'));
+  document.getElementById('trustwalletOption').addEventListener('click', () => connectWallet('trustwallet'));
+  document.getElementById('leapOption').addEventListener('click', () => connectWallet('leap'));
+});
