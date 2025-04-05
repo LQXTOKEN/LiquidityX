@@ -5,9 +5,9 @@ const CONFIG = Object.freeze({
             chainId: 137,
             name: 'Polygon',
             rpcUrls: Object.freeze([
-                'https://polygon-rpc.com',
-                'https://rpc-mainnet.matic.quiknode.pro',
-                'https://polygon-rpc.com'
+                'https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY',
+                'https://polygon-rpc.com/',
+                'https://matic-mainnet.chainstacklabs.com'
             ]),
             explorerUrl: 'https://polygonscan.com',
             currency: 'MATIC',
@@ -73,7 +73,39 @@ const WALLETS = Object.freeze({
     })
 });
 
-// Secure ABI Loader with Error Handling
+// Global State
+let currentAccount = null;
+let currentChainId = null;
+
+// DOM Elements
+const connectButton = document.getElementById('connectButton');
+const walletStatus = document.getElementById('walletStatus');
+
+// Initialize the application
+async function initApp() {
+    try {
+        // Load ABIs first
+        const configWithABIs = await loadABIs();
+        
+        // Check if wallet is already connected
+        if (window.ethereum) {
+            await checkWalletConnection();
+            
+            // Set up event listeners
+            setupWalletEventListeners();
+        }
+        
+        // Initialize wallet connection button
+        connectButton.addEventListener('click', handleWalletConnection);
+        
+        console.log('Application initialized successfully');
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showNotification('Failed to initialize application', 'error');
+    }
+}
+
+// Secure ABI Loader
 async function loadABIs() {
     try {
         const [stakingABI, lpTokenABI, lqxTokenABI] = await Promise.all([
@@ -82,8 +114,7 @@ async function loadABIs() {
             fetchABI('abis/LQXToken.json')
         ]);
 
-        // Create new config object instead of modifying original
-        const updatedConfig = {
+        return {
             ...CONFIG,
             POLYGON: {
                 ...CONFIG.POLYGON,
@@ -94,13 +125,10 @@ async function loadABIs() {
                 }
             }
         };
-
-        console.log('ABIs loaded successfully');
-        return updatedConfig;
     } catch (error) {
         console.error('Failed to load ABIs:', error);
-        showErrorToUser('Failed to load contract data. Please refresh the page.');
-        return CONFIG; // Return original config if loading fails
+        showNotification('Failed to load contract data', 'error');
+        return CONFIG;
     }
 }
 
@@ -112,17 +140,162 @@ async function fetchABI(path) {
     return response.json();
 }
 
-// Secure Initialization
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const configWithABIs = await loadABIs();
-        initializeApp(configWithABIs);
-    } catch (error) {
-        console.error('Initialization error:', error);
+// Wallet Connection Handler
+async function handleWalletConnection() {
+    if (!window.ethereum) {
+        showNotification('Please install MetaMask!', 'error');
+        window.open('https://metamask.io/download.html', '_blank');
+        return;
     }
-});
 
-function initializeApp(config) {
-    // App initialization logic here
-    // Use the config object with ABIs loaded
+    try {
+        // Request account access
+        const accounts = await window.ethereum.request({ 
+            method: 'eth_requestAccounts' 
+        });
+
+        // Check network
+        await checkAndSwitchNetwork();
+
+        currentAccount = accounts[0];
+        updateWalletStatus();
+        showNotification('Wallet connected successfully!', 'success');
+
+        // Initialize contract interactions
+        initContractInteractions();
+    } catch (error) {
+        handleWalletError(error);
+    }
 }
+
+// Check if wallet is already connected
+async function checkWalletConnection() {
+    try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+            currentAccount = accounts[0];
+            currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+            updateWalletStatus();
+            initContractInteractions();
+        }
+    } catch (error) {
+        console.error('Error checking wallet connection:', error);
+    }
+}
+
+// Network Handling
+async function checkAndSwitchNetwork() {
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    
+    if (chainId !== '0x89') { // 0x89 = Polygon in hex
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x89' }],
+            });
+        } catch (switchError) {
+            // This error code indicates that the chain has not been added to MetaMask
+            if (switchError.code === 4902) {
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0x89',
+                            chainName: 'Polygon Mainnet',
+                            nativeCurrency: {
+                                name: 'MATIC',
+                                symbol: 'MATIC',
+                                decimals: 18
+                            },
+                            rpcUrls: CONFIG.POLYGON.network.rpcUrls,
+                            blockExplorerUrls: [CONFIG.POLYGON.network.explorerUrl]
+                        }],
+                    });
+                } catch (addError) {
+                    throw new Error('Failed to add Polygon network to MetaMask');
+                }
+            } else {
+                throw switchError;
+            }
+        }
+    }
+}
+
+// Event Listeners
+function setupWalletEventListeners() {
+    window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length === 0) {
+            currentAccount = null;
+            showNotification('Wallet disconnected', 'warning');
+        } else {
+            currentAccount = accounts[0];
+            showNotification('Account changed', 'info');
+        }
+        updateWalletStatus();
+    });
+
+    window.ethereum.on('chainChanged', (chainId) => {
+        currentChainId = chainId;
+        window.location.reload();
+    });
+
+    window.ethereum.on('disconnect', (error) => {
+        currentAccount = null;
+        showNotification(`Wallet disconnected: ${error.message}`, 'error');
+        updateWalletStatus();
+    });
+}
+
+// Error Handling
+function handleWalletError(error) {
+    console.error('Wallet error:', error);
+    
+    let message = 'Wallet connection error';
+    if (error.code === 4001) {
+        message = 'Connection rejected by user';
+    } else if (error.code === -32002) {
+        message = 'Connection request already pending';
+    } else if (error.message.includes('Network changed')) {
+        message = 'Please switch to Polygon network';
+    }
+    
+    showNotification(message, 'error');
+}
+
+// UI Updates
+function updateWalletStatus() {
+    if (currentAccount) {
+        const shortenedAddress = `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}`;
+        walletStatus.textContent = `Connected: ${shortenedAddress}`;
+        walletStatus.style.color = '#4CAF50';
+        connectButton.textContent = 'Disconnect';
+    } else {
+        walletStatus.textContent = 'Not connected';
+        walletStatus.style.color = '#f44336';
+        connectButton.textContent = 'Connect Wallet';
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+
+// Contract Interactions
+function initContractInteractions() {
+    if (!currentAccount) return;
+    
+    // Initialize your contract interactions here
+    console.log('Initializing contracts for account:', currentAccount);
+}
+
+// Initialize the app when DOM is loaded
+document.addEventListener('DOMContentLoaded', initApp);
