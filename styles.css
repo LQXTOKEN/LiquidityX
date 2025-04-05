@@ -1,67 +1,46 @@
-body, html {
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e2d;
+    color: #ffffff;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-    background-color: #1a1a1a;
-    color: white;
-}
-
-.app-container {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    height: 100vh;
+}
+
+.container {
+    text-align: center;
+    background: #2e2e3d;
     padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-.app-header h1 {
-    color: #6a4cff;
-    margin-bottom: 20px;
-}
-
-.wallet-connect {
-    display: grid;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.wallet-btn {
+button {
     background-color: #6a4cff;
     color: white;
-    padding: 10px 20px;
     border: none;
+    padding: 10px 20px;
+    margin: 10px;
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s;
 }
 
-.wallet-btn:hover {
-    background-color: #4a3cff;
+button:hover {
+    background-color: #4a6cf7;
 }
 
-.account-info {
-    background-color: #2a2a2a;
-    padding: 10px;
-    border-radius: 8px;
+.hidden {
+    display: none;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+h3 {
     margin-top: 20px;
-    width: 300px;
-    text-align: center;
-}
-
-.notification-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    max-width: 300px;
-    z-index: 1000;
-}
-
-.notification {
-    background-color: #333;
-    color: white;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    border-left: 4px solid #6a4cff;
-    transition: all 0.3s ease;
 }
