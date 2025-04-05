@@ -37,9 +37,9 @@
                         <i class="fas fa-wallet"></i>
                         <span>Trust Wallet</span>
                     </div>
-                    <div class="wallet-option" data-wallet="walletconnect">
-                        <i class="fas fa-link"></i>
-                        <span>WalletConnect</span>
+                    <div class="wallet-option" data-wallet="keplr">
+                        <i class="fas fa-atom"></i>
+                        <span>Keplr</span>
                     </div>
                 </div>
             </div>
@@ -62,6 +62,10 @@
                     <div class="balance-row">
                         <span>LP Balance:</span>
                         <span id="lpBalance">0.00</span>
+                    </div>
+                    <div class="balance-row">
+                        <span>LQX Balance:</span>
+                        <span id="lqxBalance">0.00</span>
                     </div>
                     <div class="balance-row highlight">
                         <span>Staked:</span>
@@ -128,8 +132,8 @@
         <div id="transactionToast" class="toast hidden"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.1/dist/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/@keplr-wallet/provider@0.1.1/dist/provider.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
