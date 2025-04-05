@@ -1,80 +1,106 @@
-:root {
-    --primary-color: #6a4cff;
-    --secondary-color: #4a6cf7;
-    --accent-color: #ff6b4a;
-    --dark-bg: #1e1e2d;
-    --card-bg: #2a2a3a;
-    --text-primary: #ffffff;
-    --text-secondary: #b8b8d2;
-    --border-color: rgba(255, 255, 255, 0.1);
+// Configuration
+const CONFIG = {
+    POLYGON: {
+        network: {
+            chainId: 137,
+            name: 'Polygon',
+            rpcUrls: [
+                'https://polygon-rpc.com',
+                'https://rpc-mainnet.matic.quiknode.pro',
+                'https://polygon-rpc.com'
+            ],
+            explorerUrl: 'https://polygonscan.com',
+            currency: 'MATIC',
+            type: 'EVM'
+        },
+        contracts: {
+            staking: {
+                address: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
+                abi: []
+            },
+            lpToken: {
+                address: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
+                abi: []
+            },
+            lqxToken: {
+                address: '0x9e27f48659b1005b1abc0f58465137e531430d4b',
+                abi: []
+            }
+        }
+    },
+    OSMOSIS: {
+        network: {
+            chainId: 'osmosis-1',
+            name: 'Osmosis',
+            rpcUrls: [
+                'https://rpc-osmosis.keplr.app',
+                'https://osmosis-rpc.polkachu.com',
+                'https://rpc-osmosis.blockapsis.com'
+            ],
+            explorerUrl: 'https://www.mintscan.io/osmosis',
+            currency: 'OSMO',
+            type: 'COSMOS'
+        }
+    }
+};
+
+// Wallet Definitions
+const WALLETS = {
+    METAMASK: 'metamask',
+    TRUSTWALLET: 'trustwallet',
+    KEPLR: 'keplr',
+    LEAP: 'leap'
+};
+
+// Contract ABIs
+const ABIS = {
+    staking: 'abis/LPStaking.json',
+    lpToken: 'abis/LPToken.json',
+    lqxToken: 'abis/LQXToken.json'
+};
+
+// Helper Functions
+async function fetchABI(path) {
+    const response = await fetch(path);
+    return await response.json();
 }
 
-body {
-    font-family: 'Montserrat', sans-serif;
-    background-color: var(--dark-bg);
-    color: var(--text-primary);
-    margin: 0;
-    padding: 0;
+async function loadContracts(provider) {
+    const [stakingABI, lpTokenABI, lqxTokenABI] = await Promise.all([
+        fetchABI(ABIS.staking),
+        fetchABI(ABIS.lpToken),
+        fetchABI(ABIS.lqxToken)
+    ]);
+
+    return {
+        staking: new ethers.Contract(CONFIG.POLYGON.contracts.staking.address, stakingABI, provider),
+        lpToken: new ethers.Contract(CONFIG.POLYGON.contracts.lpToken.address, lpTokenABI, provider),
+        lqxToken: new ethers.Contract(CONFIG.POLYGON.contracts.lqxToken.address, lqxTokenABI, provider)
+    };
 }
 
-.app-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
+// Initialize Application
+async function init() {
+    if (!window.ethereum) {
+        alert('Please install MetaMask or Trust Wallet!');
+        return;
+    }
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const contracts = await loadContracts(signer);
+
+    // Fetch balances
+    const userAddress = await signer.getAddress();
+    const lqxBalance = await contracts.lqxToken.balanceOf(userAddress);
+    const lpBalance = await contracts.lpToken.balanceOf(userAddress);
+    const stakedAmount = await contracts.staking.userStake(userAddress);
+    const pendingReward = await contracts.staking.earned(userAddress);
+
+    console.log(`LQX Balance: ${ethers.utils.formatUnits(lqxBalance, 18)}`);
+    console.log(`LP Balance: ${ethers.utils.formatUnits(lpBalance, 18)}`);
+    console.log(`Staked Amount: ${ethers.utils.formatUnits(stakedAmount, 18)}`);
+    console.log(`Pending Reward: ${ethers.utils.formatUnits(pendingReward, 18)}`);
 }
 
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    padding: 10px;
-    background-color: var(--card-bg);
-    border-radius: 8px;
-}
-
-.connect-btn {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.balances {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
-    padding: 20px;
-    background-color: var(--card-bg);
-    border-radius: 8px;
-}
-
-.actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
-    padding: 20px;
-    background-color: var(--card-bg);
-    border-radius: 8px;
-}
-
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.hidden {
-    display: none;
-}
+init();
