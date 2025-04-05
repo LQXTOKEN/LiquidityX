@@ -1,133 +1,169 @@
-/* Wallet Modal */
-.wallet-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="LiquidityX Staking Portal - Stake your LP tokens to earn rewards">
+    <title>LiquidityX | Staking Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Mobile Header -->
+        <header class="app-header">
+            <div class="logo-container">
+                <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo" width="40" height="40">
+                <h1>LiquidityX <span class="mobile-hidden">Staking</span></h1>
+            </div>
+            <button id="connectButton" class="connect-btn" aria-label="Connect Wallet">
+                <i class="fas fa-wallet" aria-hidden="true"></i>
+                <span class="btn-text">Connect</span>
+            </button>
+        </header>
 
-.wallet-modal.hidden {
-  display: none;
-}
+        <!-- Network Indicator -->
+        <div id="networkIndicator" class="network-indicator hidden">
+            <span id="networkStatusText"></span>
+            <button id="switchNetworkBtn" class="switch-network-btn">Switch Network</button>
+            <button id="disconnectBtn" class="disconnect-btn">Disconnect</button>
+        </div>
 
-.modal-content {
-  background-color: var(--card-bg);
-  border-radius: 12px;
-  padding: 20px;
-  width: 90%;
-  max-width: 400px;
-}
+        <!-- Wallet Modal -->
+        <div id="walletModal" class="wallet-modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Connect Wallet</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="wallet-options">
+                    <div class="wallet-option" data-wallet="METAMASK">
+                        <i class="fab fa-ethereum"></i>
+                        <span>MetaMask</span>
+                    </div>
+                    <div class="wallet-option" data-wallet="TRUSTWALLET">
+                        <i class="fas fa-wallet"></i>
+                        <span>Trust Wallet</span>
+                    </div>
+                    <div class="wallet-option" data-wallet="KEPLR">
+                        <i class="fas fa-atom"></i>
+                        <span>Keplr</span>
+                    </div>
+                    <div class="wallet-option" data-wallet="LEAP">
+                        <i class="fas fa-rocket"></i>
+                        <span>Leap</span>
+                    </div>
+                </div>
+                <div class="network-selection">
+                    <h4>Select Network</h4>
+                    <div class="network-options">
+                        <button class="network-option active" data-network="POLYGON">Polygon</button>
+                        <button class="network-option" data-network="OSMOSIS">Osmosis</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <span id="loadingText">Processing Transaction...</span>
+        </div>
 
-.close-modal {
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
+        <!-- Main Content -->
+        <main class="app-content">
+            <!-- Balance Cards -->
+            <section class="balance-section" aria-labelledby="balanceSectionTitle">
+                <h2 id="balanceSectionTitle" class="visually-hidden">Balance Information</h2>
+                <div class="balance-card">
+                    <div class="balance-row">
+                        <span>LP Balance:</span>
+                        <span id="lpBalance" aria-live="polite">0.00</span>
+                    </div>
+                    <div class="balance-row highlight">
+                        <span>Staked:</span>
+                        <span id="stakedBalance" aria-live="polite">0.00</span>
+                    </div>
+                    <div class="balance-row highlight">
+                        <span>Rewards:</span>
+                        <span id="rewardsBalance" aria-live="polite">0.00</span>
+                    </div>
+                </div>
 
-.wallet-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
-}
+                <div class="info-card">
+                    <div class="info-row">
+                        <span>APR:</span>
+                        <span id="aprValue">0.00%</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Total Staked:</span>
+                        <span id="totalStaked">0.00 LP</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Your Share:</span>
+                        <span id="userShare">0.00%</span>
+                    </div>
+                </div>
+            </section>
 
-.wallet-option {
-  background-color: var(--dark-bg);
-  border-radius: 8px;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
+            <!-- Staking Actions -->
+            <section class="action-section" aria-labelledby="actionSectionTitle">
+                <h2 id="actionSectionTitle" class="visually-hidden">Staking Actions</h2>
+                
+                <div class="action-card">
+                    <h3><i class="fas fa-coins" aria-hidden="true"></i> Stake</h3>
+                    <div class="input-group">
+                        <label for="stakeAmount" class="visually-hidden">Amount to stake</label>
+                        <input type="number" id="stakeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal" aria-describedby="stakeMaxBtn">
+                        <button id="maxStakeBtn" class="max-btn" aria-label="Use maximum LP tokens">MAX</button>
+                    </div>
+                    <button id="stakeBtn" class="action-btn primary" disabled>
+                        <span class="btn-text">Stake LP</span>
+                    </button>
+                </div>
 
-.wallet-option:hover {
-  transform: translateY(-3px);
-}
+                <div class="action-card">
+                    <h3><i class="fas fa-unlock" aria-hidden="true"></i> Unstake</h3>
+                    <div class="input-group">
+                        <label for="unstakeAmount" class="visually-hidden">Amount to unstake</label>
+                        <input type="number" id="unstakeAmount" placeholder="0.00" min="0" step="0.01" inputmode="decimal" aria-describedby="unstakeMaxBtn">
+                        <button id="maxUnstakeBtn" class="max-btn" aria-label="Use maximum staked LP tokens">MAX</button>
+                    </div>
+                    <button id="unstakeBtn" class="action-btn secondary" disabled>
+                        <span class="btn-text">Unstake LP</span>
+                    </button>
+                </div>
 
-.wallet-option i {
-  font-size: 1.5rem;
-}
+                <div class="action-card">
+                    <h3><i class="fas fa-gift" aria-hidden="true"></i> Rewards</h3>
+                    <button id="claimBtn" class="action-btn accent" disabled>
+                        <span class="btn-text">Claim</span>
+                    </button>
+                    <div id="claimableInfo" class="info-text">Next reward distribution in: <span id="nextRewardTime">--</span></div>
+                </div>
+            </section>
 
-.network-options {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
+            <!-- Transaction History -->
+            <section class="history-section" aria-labelledby="historySectionTitle">
+                <h2 id="historySectionTitle">Recent Transactions</h2>
+                <div id="transactionHistory" class="transaction-list">
+                    <div class="empty-state">No transactions yet</div>
+                </div>
+            </section>
 
-.network-option {
-  background-color: var(--dark-bg);
-  border: none;
-  border-radius: 6px;
-  padding: 8px 15px;
-  color: var(--text-primary);
-  cursor: pointer;
-}
+            <!-- Wallet Status -->
+            <div id="walletStatus" class="wallet-status" aria-live="polite"></div>
 
-.network-option.active {
-  background-color: var(--primary-color);
-}
+            <!-- Transaction Status Toast -->
+            <div id="transactionToast" class="toast hidden" aria-live="assertive"></div>
+        </main>
+    </div>
 
-/* Notification System */
-.notification {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--card-bg);
-  color: white;
-  padding: 15px 25px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 90%;
-  animation: slideUp 0.3s ease-out;
-}
-
-.notification.success {
-  border-left: 4px solid var(--success-color);
-}
-
-.notification.error {
-  border-left: 4px solid var(--error-color);
-}
-
-.notification.info {
-  border-left: 4px solid var(--secondary-color);
-}
-
-@keyframes slideUp {
-  from { transform: translate(-50%, 20px); opacity: 0; }
-  to { transform: translate(-50%, 0); opacity: 1; }
-}
-
-/* Responsive Adjustments */
-@media (max-width: 480px) {
-  .wallet-options {
-    grid-template-columns: 1fr;
-  }
-  
-  .network-options {
-    flex-direction: column;
-  }
-}
+    <!-- Web3 Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.1/dist/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
