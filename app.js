@@ -1,4 +1,4 @@
-// Secure Configuration Object
+// Enhanced Secure Configuration Object
 const CONFIG = Object.freeze({
     POLYGON: Object.freeze({
         network: Object.freeze({
@@ -42,62 +42,113 @@ const CONFIG = Object.freeze({
             type: 'COSMOS'
         }),
         contracts: Object.freeze({})
+    }),
+    COSMOS_HUB: Object.freeze({
+        network: Object.freeze({
+            chainId: 'cosmoshub-4',
+            name: 'Cosmos Hub',
+            rpcUrls: Object.freeze([
+                'https://rpc-cosmoshub.keplr.app',
+                'https://cosmos-rpc.polkachu.com'
+            ]),
+            explorerUrl: 'https://www.mintscan.io/cosmos',
+            currency: 'ATOM',
+            type: 'COSMOS'
+        }),
+        contracts: Object.freeze({})
     })
 });
 
-// Wallet Definitions
+// Enhanced Wallet Definitions with detection methods
 const WALLETS = Object.freeze({
     METAMASK: Object.freeze({
         id: 'metamask',
         name: 'MetaMask',
         icon: 'fab fa-ethereum',
-        supportedChains: Object.freeze(['EVM'])
+        supportedChains: Object.freeze(['EVM']),
+        detect: () => typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask,
+        connect: async () => {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            return new ethers.providers.Web3Provider(window.ethereum);
+        }
     }),
     TRUSTWALLET: Object.freeze({
         id: 'trustwallet',
         name: 'Trust Wallet',
         icon: 'fas fa-wallet',
-        supportedChains: Object.freeze(['EVM'])
+        supportedChains: Object.freeze(['EVM']),
+        detect: () => typeof window.ethereum !== 'undefined' && window.ethereum.isTrust,
+        connect: async () => {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            return new ethers.providers.Web3Provider(window.ethereum);
+        }
     }),
     KEPLR: Object.freeze({
         id: 'keplr',
         name: 'Keplr',
         icon: 'fas fa-atom',
-        supportedChains: Object.freeze(['COSMOS'])
+        supportedChains: Object.freeze(['COSMOS']),
+        detect: () => typeof window.keplr !== 'undefined',
+        connect: async (chainId) => {
+            if (!window.keplr) throw new Error('Keplr extension not found');
+            
+            await window.keplr.enable(chainId);
+            const offlineSigner = window.keplr.getOfflineSigner(chainId);
+            const accounts = await offlineSigner.getAccounts();
+            
+            return {
+                provider: window.keplr,
+                signer: offlineSigner,
+                account: accounts[0].address
+            };
+        }
     }),
     LEAP: Object.freeze({
         id: 'leap',
         name: 'Leap',
         icon: 'fas fa-rocket',
-        supportedChains: Object.freeze(['COSMOS'])
+        supportedChains: Object.freeze(['COSMOS']),
+        detect: () => typeof window.leap !== 'undefined',
+        connect: async (chainId) => {
+            if (!window.leap) throw new Error('Leap extension not found');
+            
+            await window.leap.enable(chainId);
+            const offlineSigner = window.leap.getOfflineSigner(chainId);
+            const accounts = await offlineSigner.getAccounts();
+            
+            return {
+                provider: window.leap,
+                signer: offlineSigner,
+                account: accounts[0].address
+            };
+        }
     })
 });
 
 // Global State
 let currentAccount = null;
 let currentChainId = null;
+let currentWallet = null;
 let provider = null;
 let signer = null;
+let cosmosProvider = null;
 
 // DOM Elements
 const connectButton = document.getElementById('connectButton');
 const walletStatus = document.getElementById('walletStatus');
+const walletSelector = document.getElementById('walletSelector');
 
 // Initialize the application
 async function initApp() {
     try {
-        // Check if MetaMask is installed
-        if (typeof window.ethereum === 'undefined') {
-            showNotification('MetaMask is not installed!', 'error');
-            connectButton.disabled = true;
-            return;
-        }
-
+        // Initialize wallet selector dropdown
+        initWalletSelector();
+        
         // Load ABIs first
         const configWithABIs = await loadABIs();
         
-        // Check if wallet is already connected
-        await checkWalletConnection();
+        // Check if wallet is already connected from localStorage
+        await checkPersistedWalletConnection();
         
         // Set up event listeners
         setupWalletEventListeners();
@@ -112,98 +163,126 @@ async function initApp() {
     }
 }
 
-// Secure ABI Loader with CORS handling
-async function loadABIs() {
-    try {
-        const [stakingABI, lpTokenABI, lqxTokenABI] = await Promise.all([
-            fetchWithCORS('abis/LPStaking.json'),
-            fetchWithCORS('abis/LPToken.json'),
-            fetchWithCORS('abis/LQXToken.json')
-        ]);
+// Initialize wallet selector dropdown
+function initWalletSelector() {
+    if (!walletSelector) return;
+    
+    // Clear existing options
+    walletSelector.innerHTML = '';
+    
+    // Add default option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Select Wallet';
+    walletSelector.appendChild(defaultOption);
+    
+    // Add detected wallets
+    for (const [key, wallet] of Object.entries(WALLETS)) {
+        if (wallet.detect()) {
+            const option = document.createElement('option');
+            option.value = wallet.id;
+            option.textContent = wallet.name;
+            walletSelector.appendChild(option);
+        }
+    }
+    
+    // Add wallet change handler
+    walletSelector.addEventListener('change', async (e) => {
+        if (e.target.value) {
+            await selectWallet(e.target.value);
+        }
+    });
+}
 
-        return {
-            ...CONFIG,
-            POLYGON: {
-                ...CONFIG.POLYGON,
-                contracts: {
-                    staking: { ...CONFIG.POLYGON.contracts.staking, abi: stakingABI },
-                    lpToken: { ...CONFIG.POLYGON.contracts.lpToken, abi: lpTokenABI },
-                    lqxToken: { ...CONFIG.POLYGON.contracts.lqxToken, abi: lqxTokenABI }
-                }
-            }
-        };
+// Select and connect to a specific wallet
+async function selectWallet(walletId) {
+    try {
+        const wallet = Object.values(WALLETS).find(w => w.id === walletId);
+        if (!wallet) throw new Error('Wallet not found');
+        
+        currentWallet = wallet;
+        
+        if (wallet.supportedChains.includes('EVM')) {
+            // EVM wallet connection
+            provider = await wallet.connect();
+            signer = provider.getSigner();
+            currentAccount = await signer.getAddress();
+            currentChainId = await provider.getNetwork().then(network => network.chainId);
+            
+            // Check and switch network if needed
+            await checkAndSwitchNetwork();
+        } else if (wallet.supportedChains.includes('COSMOS')) {
+            // Cosmos wallet connection (default to Osmosis)
+            const chainId = CONFIG.OSMOSIS.network.chainId;
+            const connection = await wallet.connect(chainId);
+            
+            cosmosProvider = connection.provider;
+            signer = connection.signer;
+            currentAccount = connection.account;
+            currentChainId = chainId;
+        }
+        
+        // Persist wallet selection
+        localStorage.setItem('selectedWallet', walletId);
+        
+        updateWalletStatus();
+        showNotification(`${wallet.name} connected successfully!`, 'success');
+        
+        // Initialize contract interactions
+        initContractInteractions();
     } catch (error) {
-        console.error('Failed to load ABIs:', error);
-        showNotification('Failed to load contract data', 'error');
-        return CONFIG;
+        handleWalletError(error);
+        walletSelector.value = '';
     }
 }
 
-async function fetchWithCORS(path) {
-    try {
-        const response = await fetch(path, {
-            mode: 'cors',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+// Check persisted wallet connection from localStorage
+async function checkPersistedWalletConnection() {
+    const selectedWalletId = localStorage.getItem('selectedWallet');
+    if (selectedWalletId) {
+        const wallet = Object.values(WALLETS).find(w => w.id === selectedWalletId);
+        if (wallet && wallet.detect()) {
+            walletSelector.value = selectedWalletId;
+            await selectWallet(selectedWalletId);
+        } else {
+            localStorage.removeItem('selectedWallet');
         }
-        
-        return response.json();
-    } catch (error) {
-        console.error('Fetch error:', error);
-        throw error;
     }
 }
 
 // Wallet Connection Handler
 async function handleWalletConnection() {
+    if (!currentWallet && walletSelector.value) {
+        await selectWallet(walletSelector.value);
+        return;
+    }
+    
     if (!currentAccount) {
-        await connectWallet();
+        if (currentWallet) {
+            await selectWallet(currentWallet.id);
+        } else {
+            showNotification('Please select a wallet first', 'warning');
+        }
     } else {
         await disconnectWallet();
     }
 }
 
-async function connectWallet() {
-    try {
-        // Request account access
-        const accounts = await window.ethereum.request({ 
-            method: 'eth_requestAccounts' 
-        });
-
-        // Initialize provider and signer
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        signer = provider.getSigner();
-
-        // Check and switch network
-        await checkAndSwitchNetwork();
-
-        currentAccount = accounts[0];
-        currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-        
-        updateWalletStatus();
-        showNotification('Wallet connected successfully!', 'success');
-
-        // Initialize contract interactions
-        initContractInteractions();
-    } catch (error) {
-        handleWalletError(error);
-    }
-}
-
 async function disconnectWallet() {
     try {
-        // In MetaMask, there's no direct disconnect, so we just reset state
+        // Reset all wallet-related state
         currentAccount = null;
         currentChainId = null;
+        currentWallet = null;
         provider = null;
         signer = null;
+        cosmosProvider = null;
         
+        // Remove persisted wallet
+        localStorage.removeItem('selectedWallet');
+        
+        // Reset UI
+        if (walletSelector) walletSelector.value = '';
         updateWalletStatus();
         showNotification('Wallet disconnected', 'info');
     } catch (error) {
@@ -212,33 +291,18 @@ async function disconnectWallet() {
     }
 }
 
-// Check if wallet is already connected
-async function checkWalletConnection() {
-    try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            signer = provider.getSigner();
-            
-            currentAccount = accounts[0];
-            currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-            updateWalletStatus();
-            initContractInteractions();
-        }
-    } catch (error) {
-        console.error('Error checking wallet connection:', error);
-    }
-}
-
-// Network Handling
+// Enhanced Network Handling
 async function checkAndSwitchNetwork() {
-    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    if (!currentWallet || !currentWallet.supportedChains.includes('EVM')) return;
     
-    if (chainId !== '0x89') { // 0x89 = Polygon in hex
+    const targetChainId = `0x${CONFIG.POLYGON.network.chainId.toString(16)}`;
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+    
+    if (currentChainId !== targetChainId) {
         try {
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
-                params: [{ chainId: '0x89' }],
+                params: [{ chainId: targetChainId }],
             });
         } catch (switchError) {
             // This error code indicates that the chain has not been added to MetaMask
@@ -247,11 +311,11 @@ async function checkAndSwitchNetwork() {
                     await window.ethereum.request({
                         method: 'wallet_addEthereumChain',
                         params: [{
-                            chainId: '0x89',
-                            chainName: 'Polygon Mainnet',
+                            chainId: targetChainId,
+                            chainName: CONFIG.POLYGON.network.name,
                             nativeCurrency: {
-                                name: 'MATIC',
-                                symbol: 'MATIC',
+                                name: CONFIG.POLYGON.network.currency,
+                                symbol: CONFIG.POLYGON.network.currency,
                                 decimals: 18
                             },
                             rpcUrls: CONFIG.POLYGON.network.rpcUrls,
@@ -259,7 +323,7 @@ async function checkAndSwitchNetwork() {
                         }],
                     });
                 } catch (addError) {
-                    throw new Error('Failed to add Polygon network to MetaMask');
+                    throw new Error(`Failed to add ${CONFIG.POLYGON.network.name} network to wallet`);
                 }
             } else {
                 throw switchError;
@@ -268,52 +332,97 @@ async function checkAndSwitchNetwork() {
     }
 }
 
-// Event Listeners
-function setupWalletEventListeners() {
-    if (!window.ethereum) return;
-
-    window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
-            // Wallet disconnected
-            currentAccount = null;
-            showNotification('Wallet disconnected', 'warning');
-        } else {
-            // Account changed
-            currentAccount = accounts[0];
-            showNotification('Account changed', 'info');
-        }
-        updateWalletStatus();
-    });
-
-    window.ethereum.on('chainChanged', (chainId) => {
-        currentChainId = chainId;
-        window.location.reload();
-    });
-
-    window.ethereum.on('disconnect', (error) => {
-        currentAccount = null;
-        showNotification(`Wallet disconnected: ${error.message}`, 'error');
-        updateWalletStatus();
-    });
-}
-
-// Error Handling
-function handleWalletError(error) {
-    console.error('Wallet error:', error);
-    
-    let message = 'Wallet connection error';
-    if (error.code === 4001) {
-        message = 'Connection rejected by user';
-    } else if (error.code === -32002) {
-        message = 'Connection request already pending';
-    } else if (error.message.includes('Network changed')) {
-        message = 'Please switch to Polygon network';
+// Enhanced Signing Functions
+async function signMessage(message) {
+    if (!currentAccount || !signer) {
+        throw new Error('Wallet not connected');
     }
     
-    showNotification(message, 'error');
+    if (currentWallet.supportedChains.includes('EVM')) {
+        // EVM wallet signing
+        return await signer.signMessage(message);
+    } else if (currentWallet.supportedChains.includes('COSMOS')) {
+        // Cosmos wallet signing
+        const chainInfo = getChainInfo(currentChainId);
+        const signDoc = {
+            chain_id: chainInfo.chainId,
+            account_number: '0',
+            sequence: '0',
+            fee: {
+                gas: '200000',
+                amount: []
+            },
+            msgs: [{
+                type: 'sign/MsgSignData',
+                value: {
+                    signer: currentAccount,
+                    data: Buffer.from(message).toString('base64')
+                }
+            }],
+            memo: ''
+        };
+        
+        if (currentWallet.id === 'keplr') {
+            return await window.keplr.signArbitrary(
+                chainInfo.chainId,
+                currentAccount,
+                message
+            );
+        } else if (currentWallet.id === 'leap') {
+            return await window.leap.signArbitrary(
+                chainInfo.chainId,
+                currentAccount,
+                message
+            );
+        }
+    }
 }
 
-// UI Updates
+async function approveTransaction(transaction) {
+    if (!currentAccount || !signer) {
+        throw new Error('Wallet not connected');
+    }
+    
+    if (currentWallet.supportedChains.includes('EVM')) {
+        // EVM wallet transaction approval
+        return await signer.sendTransaction(transaction);
+    } else if (currentWallet.supportedChains.includes('COSMOS')) {
+        // Cosmos wallet transaction approval
+        const chainInfo = getChainInfo(currentChainId);
+        const { account_number, sequence } = await cosmosProvider.getAccount(currentAccount);
+        
+        const fee = {
+            amount: [],
+            gas: transaction.gasLimit || '200000'
+        };
+        
+        const signedTx = await signer.sign(
+            currentAccount,
+            transaction.msgs,
+            fee,
+            transaction.memo || '',
+            {
+                accountNumber: account_number,
+                sequence,
+                chainId: chainInfo.chainId
+            }
+        );
+        
+        return await cosmosProvider.broadcastTx(signedTx);
+    }
+}
+
+function getChainInfo(chainId) {
+    for (const [_, config] of Object.entries(CONFIG)) {
+        if (config.network.chainId === chainId || 
+            (typeof chainId === 'string' && config.network.chainId.toString() === chainId)) {
+            return config.network;
+        }
+    }
+    throw new Error('Chain not supported');
+}
+
+// Enhanced UI Updates
 function updateWalletStatus() {
     if (!walletStatus) {
         console.error('Wallet status element not found');
@@ -321,8 +430,8 @@ function updateWalletStatus() {
     }
 
     if (currentAccount) {
-        const shortenedAddress = `${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}`;
-        walletStatus.textContent = `Connected: ${shortenedAddress}`;
+        const shortenedAddress = `${currentAccount.substring(0, 6)}...${currentAccount.substring(currentAccount.length - 4)}`;
+        walletStatus.textContent = `${currentWallet.name}: ${shortenedAddress}`;
         walletStatus.style.color = '#4CAF50';
         connectButton.textContent = 'Disconnect';
     } else {
@@ -330,48 +439,6 @@ function updateWalletStatus() {
         walletStatus.style.color = '#f44336';
         connectButton.textContent = 'Connect Wallet';
     }
-}
-
-function showNotification(message, type = 'info') {
-    const notificationContainer = document.getElementById('notificationContainer');
-    if (!notificationContainer) {
-        console.error('Notification container not found');
-        return;
-    }
-
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <span>${message}</span>
-        <button class="close-notification">&times;</button>
-    `;
-    
-    notificationContainer.appendChild(notification);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        notification.classList.add('fade-out');
-        setTimeout(() => notification.remove(), 300);
-    }, 5000);
-
-    // Manual close
-    notification.querySelector('.close-notification').addEventListener('click', () => {
-        notification.remove();
-    });
-}
-
-// Contract Interactions
-function initContractInteractions() {
-    if (!currentAccount || !signer) return;
-    
-    console.log('Initializing contracts for account:', currentAccount);
-    // Here you would initialize your contract instances
-    // Example:
-    // const stakingContract = new ethers.Contract(
-    //     CONFIG.POLYGON.contracts.staking.address,
-    //     CONFIG.POLYGON.contracts.staking.abi,
-    //     signer
-    // );
 }
 
 // Initialize the app when DOM is loaded
