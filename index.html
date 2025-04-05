@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';
+  style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
+  img-src 'self' https://lqxtoken.github.io data:;
+  font-src 'self' https://cdnjs.cloudflare.com;
+  connect-src 'self' https://polygon-rpc.com https://rpc-mainnet.matic.quiknode.pro https://rpc-osmosis.keplr.app https://osmosis-rpc.polkachu.com https://rpc-osmosis.blockapsis.com;
+  frame-src 'none';
+  object-src 'none';
+">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX Staking DApp</title>
