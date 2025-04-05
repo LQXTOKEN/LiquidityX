@@ -4,42 +4,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX Staking DApp</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <div id="app" class="app-container">
-        <header>
-            <h1>LiquidityX Staking DApp</h1>
-            <button id="connectButton">Connect Wallet</button>
-            <div id="walletStatus"></div>
+    <div class="container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-title">
+                    <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
+                    <h1>LiquidityX Staking</h1>
+                </div>
+                <div class="wallet-section">
+                    <button id="connectButton" class="connect-btn">
+                        <i class="fas fa-wallet"></i> Connect Wallet
+                    </button>
+                    <div id="walletInfo" class="wallet-info hidden">
+                        <span id="walletAddress" class="wallet-address"></span>
+                        <span id="networkInfo" class="network-info"></span>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <main>
-            <div class="balance-section">
-                <div>LP Balance: <span id="lpBalance">0.00</span></div>
-                <div>LQX Balance: <span id="lqxBalance">0.00</span></div>
-                <div>Staked Amount: <span id="stakedAmount">0.00</span></div>
-                <div>Pending Rewards: <span id="pendingReward">0.00</span></div>
-                <div>Total Staked: <span id="totalStaked">0.00</span></div>
-                <div>APR: <span id="aprValue">0.00%</span></div>
-            </div>
+        <main class="main-content">
+            <section class="dashboard-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <i class="fas fa-coins stat-icon"></i>
+                            <h3>LQX Balance</h3>
+                        </div>
+                        <div id="lqxBalance" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <i class="fas fa-hand-holding-usd stat-icon"></i>
+                            <h3>LP Balance</h3>
+                        </div>
+                        <div id="lpBalance" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <i class="fas fa-lock stat-icon"></i>
+                            <h3>Staked Amount</h3>
+                        </div>
+                        <div id="stakedAmount" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <i class="fas fa-gift stat-icon"></i>
+                            <h3>Pending Reward</h3>
+                        </div>
+                        <div id="pendingReward" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <i class="fas fa-percentage stat-icon"></i>
+                            <h3>APR</h3>
+                        </div>
+                        <div id="aprValue" class="stat-value">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <i class="fas fa-chart-line stat-icon"></i>
+                            <h3>Total Staked</h3>
+                        </div>
+                        <div id="totalStaked" class="stat-value">0 LP</div>
+                    </div>
+                </div>
+            </section>
 
-            <div class="staking-controls">
-                <input type="number" id="stakeAmount" placeholder="Amount to Stake">
-                <button id="stakeBtn">Stake</button>
+            <section class="action-section">
+                <div class="action-card">
+                    <h2><i class="fas fa-lock"></i> Stake LP Tokens</h2>
+                    <div class="input-group">
+                        <input type="number" id="stakeAmount" placeholder="0.0" min="0" step="0.01">
+                        <button id="stakeBtn" class="action-btn primary-btn">
+                            Stake
+                        </button>
+                    </div>
+                    <div class="balance-info">Available: <span id="availableLpBalance">0</span> LP</div>
+                </div>
 
-                <input type="number" id="unstakeAmount" placeholder="Amount to Unstake">
-                <button id="unstakeBtn">Unstake</button>
+                <div class="action-card">
+                    <h2><i class="fas fa-unlock"></i> Unstake LP Tokens</h2>
+                    <div class="input-group">
+                        <input type="number" id="unstakeAmount" placeholder="0.0" min="0" step="0.01">
+                        <button id="unstakeBtn" class="action-btn secondary-btn">
+                            Unstake
+                        </button>
+                    </div>
+                    <div class="balance-info">Staked: <span id="stakedBalance">0</span> LP</div>
+                </div>
 
-                <button id="claimBtn">Claim Rewards</button>
-            </div>
+                <div class="action-card">
+                    <h2><i class="fas fa-gift"></i> Claim Rewards</h2>
+                    <div class="rewards-display">
+                        <div class="rewards-amount">Pending: <span id="pendingRewardsDisplay">0</span> LQX</div>
+                        <button id="claimBtn" class="action-btn accent-btn">
+                            Claim Now
+                        </button>
+                    </div>
+                </div>
+            </section>
         </main>
 
-        <div id="notificationContainer" class="notification-container"></div>
+        <!-- Wallet Connection Modal -->
+        <div id="walletModal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>Connect Wallet</h2>
+                <div class="wallet-options">
+                    <button class="wallet-option" id="metamaskOption">
+                        <i class="fab fa-ethereum"></i> MetaMask
+                    </button>
+                    <button class="wallet-option" id="trustwalletOption">
+                        <i class="fas fa-wallet"></i> Trust Wallet
+                    </button>
+                    <button class="wallet-option" id="keplrOption">
+                        <i class="fas fa-atom"></i> Keplr
+                    </button>
+                    <button class="wallet-option" id="leapOption">
+                        <i class="fas fa-rocket"></i> Leap
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Status Elements -->
+        <div id="notification" class="notification hidden"></div>
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <div id="loadingText">Processing Transaction...</div>
+                <div id="txHash" class="tx-hash"></div>
+                <a id="txLink" class="tx-link" target="_blank" rel="noopener noreferrer">View on Explorer</a>
+            </div>
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
