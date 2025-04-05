@@ -1,135 +1,134 @@
 'use strict';
 
-// Configuration
+// Enhanced Configuration Object
 const CONFIG = {
-  CONTRACTS: {
-    STAKING: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
-    RPC_URLS: [
-      'https://polygon-mainnet.g.alchemy.com/v2/YOUR_KEY',
-      'https://polygon-rpc.com'
-    ]
-  },
-  MAX_GAS: '500000', // Prevent gas wars
-  GAS_PRICE_BUFFER: 1.2 // 20% buffer
+    POLYGON: {
+        network: {
+            chainId: 137,
+            name: 'Polygon Mainnet',
+            rpcUrls: [
+                'https://polygon-rpc.com',
+                'https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY',
+                'https://matic-mainnet.chainstacklabs.com'
+            ],
+            explorerUrl: 'https://polygonscan.com',
+            currency: 'MATIC',
+            type: 'EVM'
+        },
+        contracts: {
+            staking: {
+                address: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
+                abi: []
+            },
+            lpToken: {
+                address: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
+                abi: []
+            },
+            lqxToken: {
+                address: '0x9e27f48659b1005b1abc0f58465137e531430d4b',
+                abi: []
+            }
+        }
+    },
+    OSMOSIS: {
+        network: {
+            chainId: 'osmosis-1',
+            name: 'Osmosis',
+            rpcUrls: [
+                'https://rpc-osmosis.keplr.app',
+                'https://osmosis-rpc.polkachu.com',
+                'https://rpc-osmosis.blockapsis.com'
+            ],
+            explorerUrl: 'https://www.mintscan.io/osmosis',
+            currency: 'OSMO',
+            type: 'COSMOS'
+        }
+    }
 };
 
-// State
-let state = {
-  user: null,
-  provider: null,
-  contracts: {},
-  walletType: null
-};
-
-// DOM Elements
-const elements = {
-  connectBtn: document.getElementById('connectBtn'),
-  walletModal: document.getElementById('walletModal'),
-  txModal: document.getElementById('txModal'),
-  notifications: document.getElementById('notifications')
+// State Management
+const state = {
+    currentAccount: null,
+    provider: null,
+    signer: null,
+    walletType: null,
+    network: null,
+    contracts: {}
 };
 
 // Initialize
 async function init() {
-  // Remove debug logs in production
-  if (window.location.hostname !== 'localhost') {
-    console.log = () => {};
-  }
-
-  // Event listeners
-  elements.connectBtn.addEventListener('click', toggleWalletModal);
-  
-  // Auto-connect if previously connected
-  const savedWallet = localStorage.getItem('connectedWallet');
-  if (savedWallet) connectWallet(savedWallet);
+    console.log('Initializing application...');
+    await loadABIs();
+    setupEventListeners();
+    console.log('Initialization complete.');
 }
 
-// Wallet Connection
-async function connectWallet(walletType) {
-  try {
-    // MetaMask
-    if (walletType === 'metamask') {
-      if (!window.ethereum) throw new Error('MetaMask not installed');
-      
-      state.provider = new ethers.providers.Web3Provider(window.ethereum);
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
-      state.user = await state.provider.getSigner().getAddress();
-      state.walletType = 'metamask';
+async function loadABIs() {
+    try {
+        const [stakingABI, lpTokenABI, lqxTokenABI] = await Promise.all([
+            fetch('/abis/LPStaking.json').then(res => res.json()),
+            fetch('/abis/LPToken.json').then(res => res.json()),
+            fetch('/abis/LQXToken.json').then(res => res.json())
+        ]);
+
+        CONFIG.POLYGON.contracts.staking.abi = stakingABI;
+        CONFIG.POLYGON.contracts.lpToken.abi = lpTokenABI;
+        CONFIG.POLYGON.contracts.lqxToken.abi = lqxTokenABI;
+
+        console.log('ABIs loaded successfully.');
+    } catch (error) {
+        console.error('Failed to load ABIs:', error);
     }
-    // WalletConnect fallback
-    else if (walletType === 'walletconnect') {
-      // WalletConnect implementation
+}
+
+// Event Listeners
+function setupEventListeners() {
+    document.getElementById('connectButton').addEventListener('click', connectWallet);
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
+}
+
+async function connectWallet() {
+    if (!window.ethereum) {
+        alert('Please install MetaMask!');
+        return;
     }
 
-    localStorage.setItem('connectedWallet', walletType);
-    updateUI();
-    showNotification('Wallet connected', 'success');
-  } catch (error) {
-    showNotification(`Connection failed: ${error.message}`, 'error');
-  }
+    try {
+        state.provider = new ethers.providers.Web3Provider(window.ethereum);
+        await state.provider.send('eth_requestAccounts', []);
+        state.signer = state.provider.getSigner();
+        state.currentAccount = await state.signer.getAddress();
+        state.walletType = 'MetaMask';
+
+        console.log('Connected account:', state.currentAccount);
+        updateUI();
+    } catch (error) {
+        console.error('Failed to connect wallet:', error);
+    }
 }
 
-// Transaction Handling
-async function stake(amount) {
-  if (!state.user) {
-    showNotification('Please connect wallet first', 'error');
-    return;
-  }
-
-  try {
-    // Show confirmation modal
-    showTxModal({
-      title: 'Confirm Stake',
-      details: `Amount: ${amount} LP`,
-      onConfirm: async () => {
-        const contract = new ethers.Contract(
-          CONFIG.CONTRACTS.STAKING,
-          STAKING_ABI,
-          state.provider.getSigner()
-        );
-
-        const tx = await contract.stake(
-          ethers.utils.parseUnits(amount, 18),
-          { gasLimit: CONFIG.MAX_GAS }
-        );
-
-        await tx.wait();
-        showNotification('Stake successful!', 'success');
-      }
-    });
-  } catch (error) {
-    showNotification(`Stake failed: ${error.message}`, 'error');
-  }
+function handleAccountsChanged(accounts) {
+    if (accounts.length === 0) {
+        console.log('Please connect to MetaMask.');
+    } else {
+        state.currentAccount = accounts[0];
+        updateUI();
+    }
 }
 
-// UI Updates
+function handleChainChanged(_chainId) {
+    window.location.reload();
+}
+
 function updateUI() {
-  if (state.user) {
-    elements.connectText.textContent = shortenAddress(state.user);
-    elements.walletInfo.classList.remove('hidden');
-    elements.walletAddress.textContent = shortenAddress(state.user);
-  } else {
-    elements.connectText.textContent = 'Connect Wallet';
-    elements.walletInfo.classList.add('hidden');
-  }
+    if (state.currentAccount) {
+        document.getElementById('walletAddress').textContent = `Connected: ${state.currentAccount}`;
+    } else {
+        document.getElementById('walletAddress').textContent = 'Not connected';
+    }
 }
 
-// Helpers
-function shortenAddress(address) {
-  return `${address.substring(0, 6)}...${address.slice(-4)}`;
-}
-
-function showNotification(message, type) {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.innerHTML = `
-    <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i>
-    ${message}
-  `;
-  elements.notifications.appendChild(notification);
-  setTimeout(() => notification.remove(), 5000);
-}
-
-// Initialize when DOM loads
-document.addEventListener('DOMContentLoaded', init);
+// Initialize the application when the DOM is fully loaded
+window.addEventListener('DOMContentLoaded', init);
