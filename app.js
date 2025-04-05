@@ -32,7 +32,7 @@ async function init() {
     stakingContract = new ethers.Contract(CONFIG.contracts.staking.address, CONFIG.contracts.staking.abi, signer);
     console.log('Initialization complete');
   } else {
-    alert('Please install MetaMask!');
+    alert('Please install MetaMask or Trust Wallet!');
   }
 }
 
