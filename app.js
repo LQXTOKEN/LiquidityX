@@ -1,74 +1,92 @@
-// Configuration
+// Configuration (EVM + Cosmos)
 const CONFIG = {
-  network: {
+  // Polygon Mainnet
+  EVM: {
     chainId: 137,
-    name: 'Polygon',
-    rpcUrl: 'https://polygon-rpc.com',
-    explorerUrl: 'https://polygonscan.com',
-    currency: 'MATIC'
+    name: "Polygon",
+    rpcUrl: "https://polygon-rpc.com",
+    explorerUrl: "https://polygonscan.com",
+    currency: "MATIC",
+    nativeDecimals: 18
   },
-  contracts: {
-    staking: {
-      address: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
-      abi: [
-        "function stake(uint256 amount) external",
-        "function unstake(uint256 amount) external",
-        "function claimRewards() external",
-        "function getAPR() view returns (uint256)",
-        "function totalStaked() view returns (uint256)",
-        "function userStake(address account) view returns (uint256)",
-        "function earned(address account) view returns (uint256)"
+  // Cosmos Chains (Osmosis + Custom wLQX)
+  COSMOS: {
+    'osmosis-1': {
+      chainId: 'osmosis-1',
+      chainName: 'Osmosis',
+      rpcUrl: 'https://rpc.osmosis.zone',
+      restUrl: 'https://lcd.osmosis.zone',
+      currencies: [
+        {
+          coinDenom: 'OSMO',
+          coinMinimalDenom: 'uosmo',
+          coinDecimals: 6
+        },
+        {
+          coinDenom: 'wLQX',
+          coinMinimalDenom: 'ibc/...', // Add actual IBC denom
+          coinDecimals: 18
+        }
       ]
     }
   }
 };
 
-let provider, signer, stakingContract;
+// Wallet Selection Logic
+function openWalletModal() {
+  const modal = document.getElementById('walletModal');
+  modal.style.display = 'block';
+}
 
-async function init() {
-  if (window.ethereum) {
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
-    stakingContract = new ethers.Contract(CONFIG.contracts.staking.address, CONFIG.contracts.staking.abi, signer);
-    console.log('Initialization complete');
-  } else {
-    alert('Please install MetaMask or Trust Wallet!');
+function closeWalletModal() {
+  const modal = document.getElementById('walletModal');
+  modal.style.display = 'none';
+}
+
+async function connectWallet(walletType) {
+  if (walletType === 'metamask') {
+    if (window.ethereum) {
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        const address = accounts[0];
+        document.getElementById('connectButton').innerText = `Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+      } catch (error) {
+        console.error('Failed to connect MetaMask', error);
+      }
+    } else {
+      alert('MetaMask is not installed');
+    }
+  } else if (walletType === 'keplr') {
+    if (window.keplr) {
+      await window.keplr.enable('osmosis-1');
+      const offlineSigner = window.getOfflineSigner('osmosis-1');
+      const accounts = await offlineSigner.getAccounts();
+      const address = accounts[0].address;
+      document.getElementById('connectButton').innerText = `Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    } else {
+      alert('Keplr is not installed');
+    }
+  } else if (walletType === 'leap') {
+    if (window.leap) {
+      await window.leap.enable('osmosis-1');
+      const offlineSigner = window.leap.getOfflineSigner('osmosis-1');
+      const accounts = await offlineSigner.getAccounts();
+      const address = accounts[0].address;
+      document.getElementById('connectButton').innerText = `Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    } else {
+      alert('Leap Wallet is not installed');
+    }
+  } else if (walletType === 'trust') {
+    alert('Trust Wallet support coming soon!');
   }
+  closeWalletModal();
 }
 
-async function connectWallet() {
-  await provider.send("eth_requestAccounts", []);
-  const address = await signer.getAddress();
-  document.getElementById('connectButton').innerText = `Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  console.log('Wallet connected');
-}
-
-async function stake() {
-  const amount = prompt('Enter amount to stake:');
-  if (amount) {
-    const tx = await stakingContract.stake(ethers.utils.parseUnits(amount, 18));
-    await tx.wait();
-    alert('Stake successful!');
-  }
-}
-
-async function unstake() {
-  const amount = prompt('Enter amount to unstake:');
-  if (amount) {
-    const tx = await stakingContract.unstake(ethers.utils.parseUnits(amount, 18));
-    await tx.wait();
-    alert('Unstake successful!');
-  }
-}
-
-async function claimRewards() {
-  const tx = await stakingContract.claimRewards();
-  await tx.wait();
-  alert('Rewards claimed!');
-}
-
-window.addEventListener('DOMContentLoaded', init);
-document.getElementById('connectButton').addEventListener('click', connectWallet);
-document.getElementById('stakeBtn').addEventListener('click', stake);
-document.getElementById('unstakeBtn').addEventListener('click', unstake);
-document.getElementById('claimBtn').addEventListener('click', claimRewards);
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('connectButton').addEventListener('click', openWalletModal);
+  document.getElementById('connectMetaMask').addEventListener('click', () => connectWallet('metamask'));
+  document.getElementById('connectKeplr').addEventListener('click', () => connectWallet('keplr'));
+  document.getElementById('connectLeap').addEventListener('click', () => connectWallet('leap'));
+  document.getElementById('connectTrust').addEventListener('click', () => connectWallet('trust'));
+});
