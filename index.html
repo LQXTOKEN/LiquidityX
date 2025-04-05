@@ -5,24 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX DApp</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>LiquidityX Staking DApp</h1>
-        <button id="connectButton">Connect Wallet</button>
-        <button id="trustButton">Connect Trust Wallet</button>
-        <button id="keplrButton">Connect Keplr</button>
-        <button id="leapButton">Connect Leap</button>
-        
-        <div id="networkSelection" class="hidden">
-            <h3>Select Network:</h3>
-            <button id="polygonNetwork">Polygon</button>
-            <button id="osmosisNetwork">Osmosis</button>
+        <header>
+            <h1>LiquidityX</h1>
+            <div id="walletStatus">Disconnected</div>
+            <button id="connectButton">Connect Wallet</button>
+        </header>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2>LQX Token</h2>
+                <div class="balance">Balance: <span id="lqxBalance">0</span> LQX</div>
+            </div>
+
+            <div class="card">
+                <h2>LP Staking</h2>
+                <div class="info-row">
+                    <span>Your Stake:</span>
+                    <span id="userStake">0</span> LP
+                </div>
+                <div class="info-row">
+                    <span>Pending Rewards:</span>
+                    <span id="pendingRewards">0</span> LQX
+                </div>
+                <div class="info-row">
+                    <span>Current APR:</span>
+                    <span id="currentAPR">0</span>%
+                </div>
+
+                <div class="action-section">
+                    <input type="number" id="stakeAmount" placeholder="LP amount">
+                    <button id="stakeButton">Stake</button>
+                    <button id="unstakeButton">Unstake</button>
+                    <button id="claimButton">Claim Rewards</button>
+                </div>
+            </div>
         </div>
-        
-        <div id="walletStatus"></div>
     </div>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
