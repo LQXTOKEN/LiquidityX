@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';
-  style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
-  img-src 'self' https://lqxtoken.github.io data:;
-  font-src 'self' https://cdnjs.cloudflare.com;
-  connect-src 'self' https://polygon-rpc.com https://rpc-mainnet.matic.quiknode.pro https://rpc-osmosis.keplr.app https://osmosis-rpc.polkachu.com https://rpc-osmosis.blockapsis.com;
-  frame-src 'none';
-  object-src 'none';
-">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX Staking DApp</title>
@@ -40,6 +30,7 @@
 
         <main class="main-content">
             <section class="dashboard-section">
+                <div id="walletStatus">Not connected</div> <!-- Wallet Status Element -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-header">
@@ -91,9 +82,7 @@
                     <h2><i class="fas fa-lock"></i> Stake LP Tokens</h2>
                     <div class="input-group">
                         <input type="number" id="stakeAmount" placeholder="0.0" min="0" step="0.01">
-                        <button id="stakeBtn" class="action-btn primary-btn">
-                            Stake
-                        </button>
+                        <button id="stakeBtn" class="action-btn primary-btn">Stake</button>
                     </div>
                     <div class="balance-info">Available: <span id="availableLpBalance">0</span> LP</div>
                 </div>
@@ -102,9 +91,7 @@
                     <h2><i class="fas fa-unlock"></i> Unstake LP Tokens</h2>
                     <div class="input-group">
                         <input type="number" id="unstakeAmount" placeholder="0.0" min="0" step="0.01">
-                        <button id="unstakeBtn" class="action-btn secondary-btn">
-                            Unstake
-                        </button>
+                        <button id="unstakeBtn" class="action-btn secondary-btn">Unstake</button>
                     </div>
                     <div class="balance-info">Staked: <span id="stakedBalance">0</span> LP</div>
                 </div>
@@ -113,9 +100,7 @@
                     <h2><i class="fas fa-gift"></i> Claim Rewards</h2>
                     <div class="rewards-display">
                         <div class="rewards-amount">Pending: <span id="pendingRewardsDisplay">0</span> LQX</div>
-                        <button id="claimBtn" class="action-btn accent-btn">
-                            Claim Now
-                        </button>
+                        <button id="claimBtn" class="action-btn accent-btn">Claim Now</button>
                     </div>
                 </div>
             </section>
@@ -127,24 +112,16 @@
                 <span class="close-modal">&times;</span>
                 <h2>Connect Wallet</h2>
                 <div class="wallet-options">
-                    <button class="wallet-option" id="metamaskOption">
-                        <i class="fab fa-ethereum"></i> MetaMask
-                    </button>
-                    <button class="wallet-option" id="trustwalletOption">
-                        <i class="fas fa-wallet"></i> Trust Wallet
-                    </button>
-                    <button class="wallet-option" id="keplrOption">
-                        <i class="fas fa-atom"></i> Keplr
-                    </button>
-                    <button class="wallet-option" id="leapOption">
-                        <i class="fas fa-rocket"></i> Leap
-                    </button>
+                    <button class="wallet-option" id="metamaskOption"><i class="fab fa-ethereum"></i> MetaMask</button>
+                    <button class="wallet-option" id="trustwalletOption"><i class="fas fa-wallet"></i> Trust Wallet</button>
+                    <button class="wallet-option" id="keplrOption"><i class="fas fa-atom"></i> Keplr</button>
+                    <button class="wallet-option" id="leapOption"><i class="fas fa-rocket"></i> Leap</button>
                 </div>
             </div>
         </div>
 
         <!-- Transaction Status Elements -->
-        <div id="notification" class="notification hidden"></div>
+        <div id="notificationContainer"></div>
         <div id="loadingOverlay" class="loading-overlay hidden">
             <div class="loading-content">
                 <div class="spinner"></div>
