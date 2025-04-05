@@ -1,64 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" 
-        content="default-src 'self';
-                 script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;
-                 style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
-                 img-src 'self' data: https://lqxtoken.github.io https://*.alchemy.com;
-                 connect-src 'self' https://*.alchemy.com https://polygon-rpc.com;
-                 frame-src 'self' https://walletconnect.org;">
-  <title>LiquidityX Staking</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiquidityX Staking DApp</title>
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self';
+                   script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com;
+                   style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+                   img-src 'self' data: https://lqxtoken.github.io;
+                   connect-src 'self' https://polygon-mainnet.g.alchemy.com https://polygon-rpc.com https://matic-mainnet.chainstacklabs.com;
+                   frame-src 'self';
+                   font-src 'self' https://cdnjs.cloudflare.com;">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="app">
-    <!-- Header -->
-    <header class="app-header">
-      <img src="logo.png" alt="LiquidityX" class="logo">
-      <div id="walletConnect">
-        <button id="connectBtn">
-          <i class="fas fa-wallet"></i>
-          <span id="connectText">Connect Wallet</span>
-        </button>
-        <div id="walletInfo" class="hidden">
-          <span id="walletAddress"></span>
-          <span id="networkName"></span>
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-title">
+                    <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
+                    <h1>LiquidityX Staking</h1>
+                </div>
+                <div class="wallet-section">
+                    <button id="connectButton" class="connect-btn">
+                        <i class="fas fa-wallet"></i> Connect Wallet
+                    </button>
+                    <div id="walletInfo" class="wallet-info hidden">
+                        <span id="walletAddress" class="wallet-address"></span>
+                        <span id="networkInfo" class="network-info"></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>LQX Balance</h3>
+                    <div id="lqxBalance">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>LP Balance</h3>
+                    <div id="lpBalance">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Staked Amount</h3>
+                    <div id="stakedAmount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending Reward</h3>
+                    <div id="pendingReward">0</div>
+                </div>
+            </div>
+
+            <div class="action-section">
+                <div>
+                    <input type="number" id="stakeAmount" placeholder="Amount to Stake">
+                    <button id="stakeBtn">Stake</button>
+                </div>
+                <div>
+                    <input type="number" id="unstakeAmount" placeholder="Amount to Unstake">
+                    <button id="unstakeBtn">Unstake</button>
+                </div>
+                <div>
+                    <button id="claimBtn">Claim Rewards</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notificationContainer"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div id="loadingText">Processing Transaction...</div>
         </div>
-      </div>
-    </header>
-
-    <!-- Main App -->
-    <main>
-      <div class="stats-grid">
-        <!-- Stat cards (lqxBalance, lpBalance, etc.) -->
-      </div>
-      
-      <div class="action-section">
-        <!-- Stake/Unstake forms -->
-      </div>
-    </main>
-
-    <!-- Modals -->
-    <div id="walletModal" class="modal hidden">
-      <!-- Wallet options -->
     </div>
 
-    <div id="txModal" class="modal hidden">
-      <!-- Transaction confirmations -->
-    </div>
-
-    <div id="notifications"></div>
-  </div>
-
-  <!-- Load ethers from trusted CDN with SRI -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"
-          integrity="sha512-UvZCJ5qQvBTfP6QJ4Xz6+X3k6X0aJ8X3HzQ4z8kKXhQyK6R7XqRZx4x4kO4w6KXx7+5X8k6v5E6p2U7k5A5ZQ=="
-          crossorigin="anonymous"></script>
-  
-  <script src="app.js"></script>
+    <!-- Include app.js -->
+    <script src="app.js"></script>
 </body>
 </html>
