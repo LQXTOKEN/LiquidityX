@@ -3,34 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX - Multichain Wallet Integration</title>
+    <title>LiquidityX DApp</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <h1>LiquidityX - Multichain Wallet Integration</h1>
-        </header>
-
-        <!-- Wallet Connect Buttons -->
-        <div class="wallet-connect">
-            <button id="connectMetamask" class="wallet-btn">Connect MetaMask</button>
-            <button id="connectTrust" class="wallet-btn">Connect Trust Wallet</button>
-            <button id="connectKeplr" class="wallet-btn">Connect Keplr</button>
-            <button id="connectLeap" class="wallet-btn">Connect Leap</button>
+    <div class="container">
+        <h1>LiquidityX Staking DApp</h1>
+        <button id="connectButton">Connect Wallet</button>
+        <button id="trustButton">Connect Trust Wallet</button>
+        <button id="keplrButton">Connect Keplr</button>
+        <button id="leapButton">Connect Leap</button>
+        
+        <div id="networkSelection" class="hidden">
+            <h3>Select Network:</h3>
+            <button id="polygonNetwork">Polygon</button>
+            <button id="osmosisNetwork">Osmosis</button>
         </div>
-
-        <!-- Connected Account -->
-        <div id="connectedAccount" class="account-info">Not connected</div>
-
-        <!-- Notification Container -->
-        <div class="notification-container" id="notificationContainer"></div>
+        
+        <div id="walletStatus"></div>
     </div>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
