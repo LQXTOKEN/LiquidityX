@@ -7,7 +7,6 @@
  * @license MIT
  */
 
-// Configuration
 const CONFIG = {
   POLYGON: {
     chainId: 137,
@@ -17,42 +16,29 @@ const CONFIG = {
       'https://polygon-rpc.com',
       'https://matic-mainnet.chainstacklabs.com'
     ],
-    explorerUrl: 'https://polygonscan.com',
     contracts: {
       staking: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
       lpToken: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
       lqxToken: '0x9e27f48659b1005b1abc0f58465137e531430d4b'
     }
-  },
-  OSMOSIS: {
-    chainId: 'osmosis-1',
-    name: 'Osmosis',
-    rpcUrls: [
-      'https://rpc-osmosis.keplr.app',
-      'https://osmosis-rpc.polkachu.com',
-      'https://rpc-osmosis.blockapsis.com'
-    ],
-    explorerUrl: 'https://www.mintscan.io/osmosis'
   }
 };
 
-const state = {
+let state = {
   currentAccount: null,
   provider: null,
   signer: null,
   contracts: {},
-  walletType: null,
 };
 
-// Helper Functions
+// Load ABIs securely
 async function fetchABI(name) {
-  const response = await fetch(`https://lqxtoken.github.io/LiquidityX/abis/${name}.json`, {
-    mode: 'cors'
-  });
+  const response = await fetch(`https://lqxtoken.github.io/LiquidityX/abis/${name}.json`);
   if (!response.ok) throw new Error(`Failed to fetch ABI: ${name}`);
-  return response.json();
+  return await response.json();
 }
 
+// Initialize Contracts
 async function initContracts() {
   const stakingABI = await fetchABI('LPStaking');
   const lpTokenABI = await fetchABI('LPToken');
@@ -65,49 +51,78 @@ async function initContracts() {
   };
 }
 
-async function connectWallet(walletType) {
-  try {
-    if (walletType === 'metamask') {
-      if (!window.ethereum) throw new Error('MetaMask not found');
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      state.currentAccount = accounts[0];
-      state.provider = new ethers.providers.Web3Provider(window.ethereum);
-      state.signer = state.provider.getSigner();
-      state.walletType = 'metamask';
-      await initContracts();
-    } else if (walletType === 'keplr') {
-      if (!window.keplr) throw new Error('Keplr Wallet not found');
-      await window.keplr.enable('osmosis-1');
-      const offlineSigner = window.keplr.getOfflineSigner('osmosis-1');
-      const accounts = await offlineSigner.getAccounts();
-      state.currentAccount = accounts[0].address;
-      state.walletType = 'keplr';
-    } else if (walletType === 'trustwallet') {
-      if (!window.ethereum || !window.ethereum.isTrust) throw new Error('Trust Wallet not found');
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      state.currentAccount = accounts[0];
-      state.provider = new ethers.providers.Web3Provider(window.ethereum);
-      state.signer = state.provider.getSigner();
-      state.walletType = 'trustwallet';
-      await initContracts();
-    } else if (walletType === 'leap') {
-      if (!window.leap) throw new Error('Leap Wallet not found');
-      await window.leap.enable('osmosis-1');
-      const offlineSigner = window.leap.getOfflineSigner('osmosis-1');
-      const accounts = await offlineSigner.getAccounts();
-      state.currentAccount = accounts[0].address;
-      state.walletType = 'leap';
-    }
-    alert(`Connected: ${state.currentAccount}`);
-  } catch (error) {
-    alert(error.message);
-    console.error(error);
+// Connect Wallet
+async function connectWallet() {
+  if (window.ethereum) {
+    state.provider = new ethers.providers.Web3Provider(window.ethereum);
+    state.signer = state.provider.getSigner();
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    state.currentAccount = accounts[0];
+    await initContracts();
+    updateUI();
+  } else {
+    alert('Please install MetaMask or use a compatible wallet.');
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('connectButton').addEventListener('click', () => connectWallet('metamask'));
-  document.getElementById('keplrOption').addEventListener('click', () => connectWallet('keplr'));
-  document.getElementById('trustwalletOption').addEventListener('click', () => connectWallet('trustwallet'));
-  document.getElementById('leapOption').addEventListener('click', () => connectWallet('leap'));
+// Update UI with User Information
+function updateUI() {
+  if (state.currentAccount) {
+    document.getElementById('walletInfo').classList.remove('hidden');
+    document.getElementById('walletAddress').textContent = state.currentAccount;
+  }
+}
+
+// Stake Function
+async function stake() {
+  const amount = document.getElementById('stakeAmount').value;
+  if (amount <= 0) return alert('Enter a valid amount.');
+
+  const amountInWei = ethers.utils.parseUnits(amount, 18);
+
+  try {
+    const tx = await state.contracts.staking.connect(state.signer).stake(amountInWei);
+    await tx.wait();
+    alert('Stake Successful!');
+  } catch (error) {
+    console.error(error);
+    alert('Stake failed!');
+  }
+}
+
+// Unstake Function
+async function unstake() {
+  const amount = document.getElementById('unstakeAmount').value;
+  if (amount <= 0) return alert('Enter a valid amount.');
+
+  const amountInWei = ethers.utils.parseUnits(amount, 18);
+
+  try {
+    const tx = await state.contracts.staking.connect(state.signer).unstake(amountInWei);
+    await tx.wait();
+    alert('Unstake Successful!');
+  } catch (error) {
+    console.error(error);
+    alert('Unstake failed!');
+  }
+}
+
+// Claim Rewards Function
+async function claimRewards() {
+  try {
+    const tx = await state.contracts.staking.connect(state.signer).claimRewards();
+    await tx.wait();
+    alert('Rewards Claimed Successfully!');
+  } catch (error) {
+    console.error(error);
+    alert('Claim Rewards failed!');
+  }
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('connectButton').addEventListener('click', connectWallet);
+  document.getElementById('stakeBtn').addEventListener('click', stake);
+  document.getElementById('unstakeBtn').addEventListener('click', unstake);
+  document.getElementById('claimBtn').addEventListener('click', claimRewards);
 });
