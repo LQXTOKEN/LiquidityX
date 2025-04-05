@@ -3,53 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LiquidityX | Hybrid Wallet Connection</title>
+  <title>LiquidityX | Production</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>LiquidityX</h1>
-      <div id="walletStatus">Disconnected</div>
+      <h1><i class="fas fa-water"></i> LiquidityX</h1>
+      <div id="walletStatus" class="wallet-status">
+        <i class="fas fa-wallet"></i>
+        <span>Disconnected</span>
+      </div>
     </header>
 
     <main>
-      <div id="walletSelector" class="card">
-        <h2>Select Wallet</h2>
+      <!-- Wallet Connection -->
+      <div class="card connection-card">
+        <h2><i class="fas fa-plug"></i> Connection</h2>
         <div class="wallet-buttons">
           <button id="metamaskBtn" class="wallet-btn">
-            <img src="assets/metamask.png" alt="MetaMask"> MetaMask
-          </button>
-          <button id="trustBtn" class="wallet-btn">
-            <img src="assets/trust.png" alt="Trust Wallet"> Trust Wallet
+            <img src="https://cryptologos.cc/logos/metamask-logo.png" alt="MetaMask"> MetaMask
           </button>
           <button id="keplrBtn" class="wallet-btn">
-            <img src="assets/keplr.png" alt="Keplr"> Keplr
-          </button>
-          <button id="leapBtn" class="wallet-btn">
-            <img src="assets/leap.png" alt="Leap"> Leap
+            <img src="https://cryptologos.cc/logos/keplr-keplr-logo.png" alt="Keplr"> Keplr
           </button>
         </div>
       </div>
 
-      <div id="networkSelector" class="card hidden">
-        <h2>Select Network</h2>
-        <div class="network-buttons">
-          <button id="osmosisBtn" class="network-btn">Osmosis</button>
-          <button id="polygonBtn" class="network-btn">Polygon</button>
+      <!-- Dashboard -->
+      <div id="dashboard" class="hidden">
+        <!-- Balances -->
+        <div class="card-grid">
+          <div class="card">
+            <h3><i class="fas fa-coins"></i> LQX Balance</h3>
+            <div class="balance" id="lqxBalance">0.00</div>
+          </div>
+          <div class="card">
+            <h3><i class="fas fa-hand-holding-usd"></i> LP Balance</h3>
+            <div class="balance" id="lpBalance">0.00</div>
+          </div>
+        </div>
+
+        <!-- Staking Interface -->
+        <div class="card staking-card">
+          <h2><i class="fas fa-lock"></i> LP Staking</h2>
+          
+          <div class="staking-info">
+            <div class="info-row">
+              <span>Staked Amount:</span>
+              <span id="stakedAmount">0.00 LP</span>
+            </div>
+            <div class="info-row">
+              <span>Pending Rewards:</span>
+              <span id="pendingRewards">0.00 LQX</span>
+            </div>
+            <div class="info-row highlight">
+              <span>Current APR:</span>
+              <span id="currentApr">0.00%</span>
+            </div>
+          </div>
+
+          <div class="action-panel">
+            <input type="number" id="actionAmount" placeholder="0.00" step="0.01" min="0">
+            <div class="action-buttons">
+              <button id="stakeBtn" class="btn-primary">
+                <i class="fas fa-arrow-up"></i> Stake
+              </button>
+              <button id="unstakeBtn" class="btn-secondary">
+                <i class="fas fa-arrow-down"></i> Unstake
+              </button>
+              <button id="claimBtn" class="btn-tertiary">
+                <i class="fas fa-gift"></i> Claim
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div id="connectionDetails" class="card hidden">
-        <h2>Connection Info</h2>
-        <p>Wallet: <span id="connectedWallet">-</span></p>
-        <p>Network: <span id="connectedNetwork">-</span></p>
-        <p>Address: <span id="connectedAddress">-</span></p>
+      <!-- Transaction Status -->
+      <div id="txStatus" class="tx-status hidden">
+        <div class="spinner"></div>
+        <span id="txStatusText">Processing transaction...</span>
       </div>
     </main>
   </div>
 
-  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
-  <script src="app.js"></script>
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <script src="app.js" type="module"></script>
 </body>
 </html>
