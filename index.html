@@ -4,89 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiquidityX Staking DApp</title>
-    
-    <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" 
-          content="default-src 'self';
-                   script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com;
-                   style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
-                   img-src 'self' data: https://lqxtoken.github.io;
-                   connect-src 'self' https://polygon-mainnet.g.alchemy.com https://polygon-rpc.com https://matic-mainnet.chainstacklabs.com;
-                   frame-src 'self';
-                   font-src 'self' https://cdnjs.cloudflare.com;">
-    
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" 
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Link to Stylesheet -->
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Ethers.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
+        <!-- Header Section -->
         <header class="app-header">
-            <div class="header-content">
-                <div class="logo-title">
-                    <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
-                    <h1>LiquidityX Staking</h1>
-                </div>
-                <div class="wallet-section">
-                    <button id="connectButton" class="connect-btn">
-                        <i class="fas fa-wallet"></i> Connect Wallet
-                    </button>
-                    <div id="walletInfo" class="wallet-info hidden">
-                        <span id="walletAddress" class="wallet-address"></span>
-                        <span id="networkInfo" class="network-info"></span>
-                    </div>
-                </div>
-            </div>
+            <h1>LiquidityX Staking</h1>
+            <button id="connectButton" class="connect-btn">Connect Wallet</button>
         </header>
 
-        <!-- Main Content -->
-        <main>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>LQX Balance</h3>
-                    <div id="lqxBalance">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>LP Balance</h3>
-                    <div id="lpBalance">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Staked Amount</h3>
-                    <div id="stakedAmount">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Pending Reward</h3>
-                    <div id="pendingReward">0</div>
-                </div>
+        <!-- Wallet Information -->
+        <div id="walletInfo" class="wallet-info hidden">
+            <p><strong>Connected Wallet:</strong> <span id="walletAddress"></span></p>
+            <p><strong>Network:</strong> <span id="networkInfo"></span></p>
+        </div>
+
+        <!-- Main Content Section -->
+        <main class="main-content">
+            <!-- Statistics Cards -->
+            <div class="stat-card">
+                <h2>LQX Balance</h2>
+                <div id="lqxBalance" class="stat-value">0</div>
             </div>
 
-            <div class="action-section">
-                <div>
-                    <input type="number" id="stakeAmount" placeholder="Amount to Stake">
-                    <button id="stakeBtn">Stake</button>
-                </div>
-                <div>
-                    <input type="number" id="unstakeAmount" placeholder="Amount to Unstake">
-                    <button id="unstakeBtn">Unstake</button>
-                </div>
-                <div>
-                    <button id="claimBtn">Claim Rewards</button>
-                </div>
+            <div class="stat-card">
+                <h2>LP Balance</h2>
+                <div id="lpBalance" class="stat-value">0</div>
+            </div>
+
+            <div class="stat-card">
+                <h2>Staked Amount</h2>
+                <div id="stakedAmount" class="stat-value">0</div>
+            </div>
+
+            <div class="stat-card">
+                <h2>Pending Rewards</h2>
+                <div id="pendingReward" class="stat-value">0</div>
             </div>
         </main>
-    </div>
 
-    <!-- Notifications Container -->
-    <div id="notificationContainer"></div>
+        <!-- Action Section -->
+        <section class="action-section">
+            <!-- Stake Tokens -->
+            <div class="stat-card">
+                <h2>Stake LP Tokens</h2>
+                <div class="input-group">
+                    <input type="number" id="stakeAmount" placeholder="Enter amount" />
+                    <button id="stakeButton" class="action-btn">Stake</button>
+                </div>
+            </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay hidden">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <div id="loadingText">Processing Transaction...</div>
-        </div>
+            <!-- Unstake Tokens -->
+            <div class="stat-card">
+                <h2>Unstake LP Tokens</h2>
+                <div class="input-group">
+                    <input type="number" id="unstakeAmount" placeholder="Enter amount" />
+                    <button id="unstakeButton" class="action-btn">Unstake</button>
+                </div>
+            </div>
+
+            <!-- Claim Rewards -->
+            <div class="stat-card">
+                <h2>Claim Rewards</h2>
+                <button id="claimButton" class="action-btn">Claim Rewards</button>
+            </div>
+        </section>
+
+        <!-- Notifications -->
+        <div id="notificationContainer"></div>
     </div>
 
     <!-- Include app.js -->
