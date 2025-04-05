@@ -2,38 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX - Staking DApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LiquidityX | Staking Portal</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap">
     <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
 </head>
 <body>
     <div class="app-container">
-        <header>
-            <h1>LiquidityX Staking</h1>
-            <button id="connectButton">Connect Wallet</button>
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-container">
+                <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
+                <h1>LiquidityX <span>Staking</span></h1>
+            </div>
+            <button id="connectButton" class="connect-btn">Connect Wallet</button>
         </header>
 
-        <main>
-            <div class="card">
-                <h2>Your Wallet Info</h2>
-                <div id="walletInfo">Not connected</div>
+        <!-- Wallet Modal -->
+        <div class="modal" id="walletModal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Select Wallet</h3>
+                <div class="wallet-options">
+                    <button class="wallet-option" data-wallet="metamask">MetaMask</button>
+                    <button class="wallet-option" data-wallet="trust">Trust Wallet</button>
+                    <button class="wallet-option" data-wallet="keplr">Keplr</button>
+                    <button class="wallet-option" data-wallet="leap">Leap</button>
+                </div>
             </div>
+        </div>
 
-            <div class="card">
-                <h2>Staking Actions</h2>
-                <button id="stakeBtn">Stake</button>
-                <button id="unstakeBtn">Unstake</button>
-                <button id="claimBtn">Claim Rewards</button>
-            </div>
+        <!-- Content Area -->
+        <main class="app-content">
+            <div id="output"></div>
+            <button id="stakeBtn">Stake</button>
+            <button id="unstakeBtn">Unstake</button>
+            <button id="claimBtn">Claim Rewards</button>
         </main>
 
-        <footer>
-            <p>Powered by LiquidityX</p>
-        </footer>
-    </div>
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loadingText">Processing...</p>
+            </div>
+        </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
-    <script src="app.js"></script>
+        <!-- Notification Container -->
+        <div class="notification-container" id="notificationContainer"></div>
+
+        <!-- Scripts -->
+        <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+        <script src="app.js"></script>
+    </div>
 </body>
 </html>
