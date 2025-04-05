@@ -1,106 +1,72 @@
-// Configuration
-const CONFIG = {
-    POLYGON: {
-        network: {
-            chainId: 137,
-            name: 'Polygon',
-            rpcUrls: [
-                'https://polygon-rpc.com',
-                'https://rpc-mainnet.matic.quiknode.pro',
-                'https://polygon-rpc.com'
-            ],
-            explorerUrl: 'https://polygonscan.com',
-            currency: 'MATIC',
-            type: 'EVM'
-        },
-        contracts: {
-            staking: {
-                address: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
-                abi: []
-            },
-            lpToken: {
-                address: '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E',
-                abi: []
-            },
-            lqxToken: {
-                address: '0x9e27f48659b1005b1abc0f58465137e531430d4b',
-                abi: []
-            }
-        }
-    },
-    OSMOSIS: {
-        network: {
-            chainId: 'osmosis-1',
-            name: 'Osmosis',
-            rpcUrls: [
-                'https://rpc-osmosis.keplr.app',
-                'https://osmosis-rpc.polkachu.com',
-                'https://rpc-osmosis.blockapsis.com'
-            ],
-            explorerUrl: 'https://www.mintscan.io/osmosis',
-            currency: 'OSMO',
-            type: 'COSMOS'
-        }
-    }
-};
-
-// Wallet Definitions
-const WALLETS = {
-    METAMASK: 'metamask',
-    TRUSTWALLET: 'trustwallet',
-    KEPLR: 'keplr',
-    LEAP: 'leap'
-};
-
-// Contract ABIs
-const ABIS = {
-    staking: 'abis/LPStaking.json',
-    lpToken: 'abis/LPToken.json',
-    lqxToken: 'abis/LQXToken.json'
-};
-
-// Helper Functions
-async function fetchABI(path) {
-    const response = await fetch(path);
-    return await response.json();
+:root {
+    --primary-color: #6a4cff;
+    --secondary-color: #4a6cf7;
+    --background-color: #1e1e2d;
+    --text-color: white;
+    --border-color: #2a2a3a;
+    --highlight-color: #ff6b4a;
 }
 
-async function loadContracts(provider) {
-    const [stakingABI, lpTokenABI, lqxTokenABI] = await Promise.all([
-        fetchABI(ABIS.staking),
-        fetchABI(ABIS.lpToken),
-        fetchABI(ABIS.lqxToken)
-    ]);
-
-    return {
-        staking: new ethers.Contract(CONFIG.POLYGON.contracts.staking.address, stakingABI, provider),
-        lpToken: new ethers.Contract(CONFIG.POLYGON.contracts.lpToken.address, lpTokenABI, provider),
-        lqxToken: new ethers.Contract(CONFIG.POLYGON.contracts.lqxToken.address, lqxTokenABI, provider)
-    };
+body {
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
-// Initialize Application
-async function init() {
-    if (!window.ethereum) {
-        alert('Please install MetaMask or Trust Wallet!');
-        return;
-    }
-
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const contracts = await loadContracts(signer);
-
-    // Fetch balances
-    const userAddress = await signer.getAddress();
-    const lqxBalance = await contracts.lqxToken.balanceOf(userAddress);
-    const lpBalance = await contracts.lpToken.balanceOf(userAddress);
-    const stakedAmount = await contracts.staking.userStake(userAddress);
-    const pendingReward = await contracts.staking.earned(userAddress);
-
-    console.log(`LQX Balance: ${ethers.utils.formatUnits(lqxBalance, 18)}`);
-    console.log(`LP Balance: ${ethers.utils.formatUnits(lpBalance, 18)}`);
-    console.log(`Staked Amount: ${ethers.utils.formatUnits(stakedAmount, 18)}`);
-    console.log(`Pending Reward: ${ethers.utils.formatUnits(pendingReward, 18)}`);
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
-init();
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: var(--secondary-color);
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#balances {
+    padding: 20px;
+    background-color: var(--border-color);
+    border-radius: 8px;
+}
+
+#actions {
+    padding: 20px;
+    background-color: var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input {
+    padding: 10px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 5px;
+    background-color: #2a2a3a;
+    color: white;
+}
