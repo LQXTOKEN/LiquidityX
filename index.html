@@ -1,51 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX DApp</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LiquidityX | Hybrid Wallet Connection</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>LiquidityX</h1>
-            <div id="walletStatus">Disconnected</div>
-            <button id="connectButton">Connect Wallet</button>
-        </header>
+  <div class="container">
+    <header>
+      <h1>LiquidityX</h1>
+      <div id="walletStatus">Disconnected</div>
+    </header>
 
-        <div class="dashboard">
-            <div class="card">
-                <h2>LQX Token</h2>
-                <div class="balance">Balance: <span id="lqxBalance">0</span> LQX</div>
-            </div>
-
-            <div class="card">
-                <h2>LP Staking</h2>
-                <div class="info-row">
-                    <span>Your Stake:</span>
-                    <span id="userStake">0</span> LP
-                </div>
-                <div class="info-row">
-                    <span>Pending Rewards:</span>
-                    <span id="pendingRewards">0</span> LQX
-                </div>
-                <div class="info-row">
-                    <span>Current APR:</span>
-                    <span id="currentAPR">0</span>%
-                </div>
-
-                <div class="action-section">
-                    <input type="number" id="stakeAmount" placeholder="LP amount">
-                    <button id="stakeButton">Stake</button>
-                    <button id="unstakeButton">Unstake</button>
-                    <button id="claimButton">Claim Rewards</button>
-                </div>
-            </div>
+    <main>
+      <div id="walletSelector" class="card">
+        <h2>Select Wallet</h2>
+        <div class="wallet-buttons">
+          <button id="metamaskBtn" class="wallet-btn">
+            <img src="assets/metamask.png" alt="MetaMask"> MetaMask
+          </button>
+          <button id="trustBtn" class="wallet-btn">
+            <img src="assets/trust.png" alt="Trust Wallet"> Trust Wallet
+          </button>
+          <button id="keplrBtn" class="wallet-btn">
+            <img src="assets/keplr.png" alt="Keplr"> Keplr
+          </button>
+          <button id="leapBtn" class="wallet-btn">
+            <img src="assets/leap.png" alt="Leap"> Leap
+          </button>
         </div>
-    </div>
+      </div>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
-    <script src="app.js"></script>
+      <div id="networkSelector" class="card hidden">
+        <h2>Select Network</h2>
+        <div class="network-buttons">
+          <button id="osmosisBtn" class="network-btn">Osmosis</button>
+          <button id="polygonBtn" class="network-btn">Polygon</button>
+        </div>
+      </div>
+
+      <div id="connectionDetails" class="card hidden">
+        <h2>Connection Info</h2>
+        <p>Wallet: <span id="connectedWallet">-</span></p>
+        <p>Network: <span id="connectedNetwork">-</span></p>
+        <p>Address: <span id="connectedAddress">-</span></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
