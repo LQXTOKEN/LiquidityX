@@ -1,343 +1,139 @@
-:root {
-    --primary-color: #6a4cff;
-    --primary-light: rgba(106, 76, 255, 0.1);
-    --secondary-color: #4a6cf7;
-    --accent-color: #ff6b4a;
-    --success-color: #4CAF50;
-    --error-color: #f44336;
-    --warning-color: #ff9800;
-    --dark-bg: #1e1e2d;
-    --card-bg: #2a2a3a;
-    --text-primary: #ffffff;
-    --text-secondary: #b8b8d2;
-    --border-color: rgba(255, 255, 255, 0.1);
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LiquidityX | Staking Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="https://lqxtoken.github.io/LiquidityX/logo.png" type="image/png">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo-container">
+                <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="LiquidityX Logo" class="logo">
+                <h1>LiquidityX <span class="mobile-hidden">Staking</span></h1>
+            </div>
+            <button id="connectButton" class="connect-btn">
+                <i class="fas fa-wallet"></i>
+                <span class="btn-text">Connect</span>
+            </button>
+        </header>
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
+        <div id="walletModal" class="wallet-modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Connect Wallet</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="wallet-options">
+                    <div class="wallet-option" data-wallet="metamask">
+                        <i class="fab fa-ethereum"></i>
+                        <span>MetaMask</span>
+                    </div>
+                    <div class="wallet-option" data-wallet="trustwallet">
+                        <i class="fas fa-wallet"></i>
+                        <span>Trust Wallet</span>
+                    </div>
+                    <div class="wallet-option" data-wallet="keplr">
+                        <i class="fas fa-atom"></i>
+                        <span>Keplr</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-body {
-    font-family: 'Montserrat', sans-serif;
-    background-color: var(--dark-bg);
-    color: var(--text-primary);
-    line-height: 1.5;
-}
+        <div id="networkIndicator" class="network-indicator hidden">
+            <span id="networkStatusText"></span>
+            <button id="switchNetworkBtn" class="switch-network-btn">Switch Network</button>
+            <button id="disconnectBtn" class="disconnect-btn">Disconnect</button>
+        </div>
 
-.app-container {
-    max-width: 100%;
-    min-height: 100vh;
-    padding: 15px;
-    position: relative;
-}
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <span id="loadingText">Processing...</span>
+        </div>
 
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    margin-bottom: 20px;
-}
+        <main class="app-content">
+            <section class="balance-section">
+                <div class="balance-card">
+                    <div class="balance-row">
+                        <span>LP Balance:</span>
+                        <span id="lpBalance">0.00</span>
+                    </div>
+                    <div class="balance-row">
+                        <span>LQX Balance:</span>
+                        <span id="lqxBalance">0.00</span>
+                    </div>
+                    <div class="balance-row highlight">
+                        <span>Staked:</span>
+                        <span id="stakedBalance">0.00</span>
+                    </div>
+                    <div class="balance-row highlight">
+                        <span>Rewards:</span>
+                        <span id="rewardsBalance">0.00</span>
+                    </div>
+                </div>
 
-.logo-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+                <div class="info-card">
+                    <div class="info-row">
+                        <span>APR:</span>
+                        <span id="aprValue">0.00%</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Total Staked:</span>
+                        <span id="totalStaked">0.00 LP</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Your Share:</span>
+                        <span id="userShare">0.00%</span>
+                    </div>
+                </div>
+            </section>
 
-.logo {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-}
+            <section class="action-section">
+                <div class="action-card">
+                    <h3><i class="fas fa-coins"></i> Stake</h3>
+                    <div class="input-group">
+                        <input type="number" id="stakeAmount" placeholder="0.00" min="0" step="0.01">
+                        <button id="maxStakeBtn" class="max-btn">MAX</button>
+                    </div>
+                    <button id="stakeBtn" class="action-btn primary" disabled>Stake LP</button>
+                </div>
 
-.connect-btn {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-}
+                <div class="action-card">
+                    <h3><i class="fas fa-unlock"></i> Unstake</h3>
+                    <div class="input-group">
+                        <input type="number" id="unstakeAmount" placeholder="0.00" min="0" step="0.01">
+                        <button id="maxUnstakeBtn" class="max-btn">MAX</button>
+                    </div>
+                    <button id="unstakeBtn" class="action-btn secondary" disabled>Unstake LP</button>
+                </div>
 
-.wallet-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
+                <div class="action-card">
+                    <h3><i class="fas fa-gift"></i> Rewards</h3>
+                    <button id="claimBtn" class="action-btn accent" disabled>Claim</button>
+                    <div id="claimableInfo" class="info-text">Next reward in: <span id="nextRewardTime">--</span></div>
+                </div>
+            </section>
 
-.wallet-modal.hidden {
-    display: none;
-}
+            <section class="history-section">
+                <h2>Recent Transactions</h2>
+                <div id="transactionHistory" class="transaction-list">
+                    <div class="empty-state">No transactions yet</div>
+                </div>
+            </section>
 
-.modal-content {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 20px;
-    width: 90%;
-    max-width: 400px;
-}
+            <div id="walletStatus" class="wallet-status"></div>
+        </main>
 
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
+        <div id="transactionToast" class="toast hidden"></div>
+    </div>
 
-.close-modal {
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-
-.wallet-options {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 15px;
-}
-
-.wallet-option {
-    background-color: var(--dark-bg);
-    border-radius: 8px;
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-}
-
-.network-indicator {
-    background-color: var(--warning-color);
-    color: white;
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.network-indicator.hidden {
-    display: none;
-}
-
-.switch-network-btn, .disconnect-btn {
-    background-color: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-left: 10px;
-}
-
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(30, 30, 45, 0.9);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    gap: 20px;
-}
-
-.loading-overlay.hidden {
-    display: none;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    border-top-color: var(--primary-color);
-    animation: spin 1s linear infinite;
-}
-
-.balance-section {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.balance-card, .info-card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 15px;
-}
-
-.balance-row, .info-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-}
-
-.highlight {
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-.action-section {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.action-card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 15px;
-}
-
-.input-group {
-    display: flex;
-    margin-bottom: 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.input-group input {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    background-color: transparent;
-    color: var(--text-primary);
-}
-
-.max-btn {
-    background-color: var(--primary-light);
-    color: var(--primary-color);
-    border: none;
-    padding: 0 15px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.action-btn {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.secondary {
-    background-color: var(--primary-light);
-    color: var(--primary-color);
-}
-
-.accent {
-    background-color: var(--accent-color);
-    color: white;
-}
-
-.action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.history-section {
-    margin-top: 30px;
-}
-
-.transaction-list {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 15px;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.transaction-item {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-}
-
-.empty-state {
-    color: var(--text-secondary);
-    text-align: center;
-    padding: 20px;
-}
-
-.toast {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--card-bg);
-    color: white;
-    padding: 15px 25px;
-    border-radius: 8px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.toast.show {
-    opacity: 1;
-}
-
-.toast.success {
-    border-left: 4px solid var(--success-color);
-}
-
-.toast.error {
-    border-left: 4px solid var(--error-color);
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-@media (min-width: 768px) {
-    .app-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .balance-section {
-        flex-direction: row;
-    }
-
-    .balance-card, .info-card {
-        flex: 1;
-    }
-
-    .action-section {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/@keplr-wallet/provider@0.1.1/dist/provider.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
