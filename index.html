@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+    <!-- Add Keplr and Leap wallet detection scripts -->
+    <script src="https://unpkg.com/@keplr-wallet/provider@0.1.0/build/provider.js"></script>
+    <script src="https://unpkg.com/@leapwallet/provider@0.1.0/build/provider.js"></script>
 </head>
 <body>
     <div class="container">
@@ -18,11 +21,16 @@
                 </div>
                 <div class="wallet-section">
                     <button id="connectButton" class="connect-btn">
-                        <i class="fas fa-wallet"></i> Connect Wallet
+                        <i class="fas fa-wallet"></i> <span id="connectButtonText">Connect Wallet</span>
                     </button>
                     <div id="walletInfo" class="wallet-info hidden">
                         <span id="walletAddress" class="wallet-address"></span>
                         <span id="networkInfo" class="network-info"></span>
+                        <div class="wallet-actions">
+                            <button id="walletDisconnect" class="wallet-action-btn">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -30,7 +38,13 @@
 
         <main class="main-content">
             <section class="dashboard-section">
-                <div id="walletStatus">Not connected</div> <!-- Wallet Status Element -->
+                <div id="walletStatus" class="wallet-status">
+                    <div class="wallet-status-content">
+                        <i class="fas fa-circle-notch status-icon disconnected"></i>
+                        <span class="status-text">Not connected</span>
+                        <span id="walletTypeBadge" class="wallet-type-badge hidden"></span>
+                    </div>
+                </div>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-header">
@@ -38,6 +52,7 @@
                             <h3>LQX Balance</h3>
                         </div>
                         <div id="lqxBalance" class="stat-value">0</div>
+                        <div class="chain-badge evm-badge">EVM</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-header">
@@ -45,6 +60,7 @@
                             <h3>LP Balance</h3>
                         </div>
                         <div id="lpBalance" class="stat-value">0</div>
+                        <div class="chain-badge evm-badge">EVM</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-header">
@@ -52,6 +68,7 @@
                             <h3>Staked Amount</h3>
                         </div>
                         <div id="stakedAmount" class="stat-value">0</div>
+                        <div class="chain-badge evm-badge">EVM</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-header">
@@ -59,6 +76,7 @@
                             <h3>Pending Reward</h3>
                         </div>
                         <div id="pendingReward" class="stat-value">0</div>
+                        <div class="chain-badge evm-badge">EVM</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-header">
@@ -85,6 +103,7 @@
                         <button id="stakeBtn" class="action-btn primary-btn">Stake</button>
                     </div>
                     <div class="balance-info">Available: <span id="availableLpBalance">0</span> LP</div>
+                    <button id="approveLpBtn" class="action-btn tertiary-btn hidden">Approve LP Tokens</button>
                 </div>
 
                 <div class="action-card">
@@ -106,28 +125,108 @@
             </section>
         </main>
 
-        <!-- Wallet Connection Modal -->
+        <!-- Enhanced Wallet Connection Modal -->
         <div id="walletModal" class="modal hidden">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
                 <h2>Connect Wallet</h2>
                 <div class="wallet-options">
-                    <button class="wallet-option" id="metamaskOption"><i class="fab fa-ethereum"></i> MetaMask</button>
-                    <button class="wallet-option" id="trustwalletOption"><i class="fas fa-wallet"></i> Trust Wallet</button>
-                    <button class="wallet-option" id="keplrOption"><i class="fas fa-atom"></i> Keplr</button>
-                    <button class="wallet-option" id="leapOption"><i class="fas fa-rocket"></i> Leap</button>
+                    <div class="wallet-option-group">
+                        <h3 class="wallet-group-title">EVM Wallets</h3>
+                        <div class="wallet-options-row">
+                            <button class="wallet-option" id="metamaskOption">
+                                <div class="wallet-icon"><i class="fab fa-ethereum"></i></div>
+                                <div class="wallet-info">
+                                    <span class="wallet-name">MetaMask</span>
+                                    <span class="wallet-chains">Polygon, Ethereum, BSC</span>
+                                </div>
+                                <div class="wallet-status" id="metamaskStatus"></div>
+                            </button>
+                            <button class="wallet-option" id="trustwalletOption">
+                                <div class="wallet-icon"><i class="fas fa-wallet"></i></div>
+                                <div class="wallet-info">
+                                    <span class="wallet-name">Trust Wallet</span>
+                                    <span class="wallet-chains">Polygon, Ethereum, BSC</span>
+                                </div>
+                                <div class="wallet-status" id="trustwalletStatus"></div>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="wallet-option-group">
+                        <h3 class="wallet-group-title">Cosmos Wallets</h3>
+                        <div class="wallet-options-row">
+                            <button class="wallet-option" id="keplrOption">
+                                <div class="wallet-icon"><i class="fas fa-atom"></i></div>
+                                <div class="wallet-info">
+                                    <span class="wallet-name">Keplr</span>
+                                    <span class="wallet-chains">Osmosis, Cosmos Hub</span>
+                                </div>
+                                <div class="wallet-status" id="keplrStatus"></div>
+                            </button>
+                            <button class="wallet-option" id="leapOption">
+                                <div class="wallet-icon"><i class="fas fa-rocket"></i></div>
+                                <div class="wallet-info">
+                                    <span class="wallet-name">Leap</span>
+                                    <span class="wallet-chains">Osmosis, Cosmos Hub</span>
+                                </div>
+                                <div class="wallet-status" id="leapStatus"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="wallet-help">
+                    <p>Don't have a wallet? <a href="#" id="installWalletHelp">Learn how to install</a></p>
                 </div>
             </div>
         </div>
 
-        <!-- Transaction Status Elements -->
+        <!-- Enhanced Transaction Status Elements -->
         <div id="notificationContainer"></div>
         <div id="loadingOverlay" class="loading-overlay hidden">
             <div class="loading-content">
                 <div class="spinner"></div>
                 <div id="loadingText">Processing Transaction...</div>
-                <div id="txHash" class="tx-hash"></div>
-                <a id="txLink" class="tx-link" target="_blank" rel="noopener noreferrer">View on Explorer</a>
+                <div id="txDetails" class="tx-details">
+                    <div class="tx-info">
+                        <span class="tx-label">Wallet:</span>
+                        <span id="txWallet" class="tx-value"></span>
+                    </div>
+                    <div class="tx-info">
+                        <span class="tx-label">Network:</span>
+                        <span id="txNetwork" class="tx-value"></span>
+                    </div>
+                    <div class="tx-info">
+                        <span class="tx-label">TX Hash:</span>
+                        <span id="txHash" class="tx-hash"></span>
+                    </div>
+                </div>
+                <a id="txLink" class="tx-link" target="_blank" rel="noopener noreferrer">
+                    <i class="fas fa-external-link-alt"></i> View on Explorer
+                </a>
+                <button id="txCloseBtn" class="tx-close-btn">Close</button>
+            </div>
+        </div>
+
+        <!-- Wallet Install Guide Modal -->
+        <div id="installGuideModal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>Install Wallet</h2>
+                <div class="install-options">
+                    <div class="install-option" id="installMetamask">
+                        <img src="https://metamask.io/images/metamask-logo.png" alt="MetaMask" class="install-logo">
+                        <h3>MetaMask</h3>
+                        <p>Browser extension for EVM chains</p>
+                        <a href="https://metamask.io/download.html" target="_blank" class="install-btn">Install MetaMask</a>
+                    </div>
+                    <div class="install-option" id="installKeplr">
+                        <img src="https://keplr.app/images/keplr-logo.png" alt="Keplr" class="install-logo">
+                        <h3>Keplr</h3>
+                        <p>Browser extension for Cosmos chains</p>
+                        <a href="https://www.keplr.app/" target="_blank" class="install-btn">Install Keplr</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
