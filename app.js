@@ -1,154 +1,126 @@
-// Contract Addresses
-const LQX_TOKEN_ADDRESS = "0x9e27f48659b1005b1abc0f58465137e531430d4b";
-const LP_STAKING_ADDRESS = "0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3";
-const LP_TOKEN_ADDRESS = "0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E";
+// Contract Addresses (Προσαρμόστε με τα δικά σας)
+const CONTRACT_ADDRESSES = {
+  osmosis: {
+    lqxToken: "0x...",
+    lpStaking: "0x..."
+  },
+  polygon: {
+    lqxToken: "0x...",
+    lpStaking: "0x..."
+  }
+};
 
-// Contract ABIs (simplified versions)
-const LQX_ABI = [
-    "function balanceOf(address) view returns (uint256)",
-    "function transfer(address, uint256) returns (bool)"
-];
+// Αρχικοποίηση Μεταβλητών
+let currentWallet = null;
+let currentNetwork = null;
+let userAddress = null;
 
-const LP_STAKING_ABI = [
-    "function stake(uint256 amount)",
-    "function unstake(uint256 amount)",
-    "function claimRewards()",
-    "function userStake(address) view returns (uint256)",
-    "function earned(address) view returns (uint256)",
-    "function getAPR() view returns (uint256)"
-];
+// DOM Elements
+const walletStatus = document.getElementById('walletStatus');
+const walletSelector = document.getElementById('walletSelector');
+const networkSelector = document.getElementById('networkSelector');
+const connectionDetails = document.getElementById('connectionDetails');
 
-const LP_TOKEN_ABI = [
-    "function approve(address spender, uint256 amount) returns (bool)",
-    "function balanceOf(address) view returns (uint256)"
-];
+// Wallet Buttons
+document.getElementById('metamaskBtn').addEventListener('click', () => connectWallet('metamask'));
+document.getElementById('trustBtn').addEventListener('click', () => connectWallet('trust'));
+document.getElementById('keplrBtn').addEventListener('click', () => connectWallet('keplr'));
+document.getElementById('leapBtn').addEventListener('click', () => connectWallet('leap'));
 
-let provider, signer, lqxContract, lpStakingContract, lpTokenContract;
-let currentAccount = null;
+// Network Buttons
+document.getElementById('osmosisBtn').addEventListener('click', () => selectNetwork('osmosis'));
+document.getElementById('polygonBtn').addEventListener('click', () => selectNetwork('polygon'));
 
-// Initialize the DApp
-async function init() {
-    // Connect to MetaMask
-    document.getElementById('connectButton').onclick = connectWallet;
-    document.getElementById('stakeButton').onclick = stakeLP;
-    document.getElementById('unstakeButton').onclick = unstakeLP;
-    document.getElementById('claimButton').onclick = claimRewards;
+// Σύνδεση Wallet
+async function connectWallet(walletType) {
+  try {
+    // Reset προηγούμενης σύνδεσης
+    resetConnection();
 
-    // Check if already connected
-    if (window.ethereum && window.ethereum.selectedAddress) {
-        await connectWallet();
+    // EVM Wallets (MetaMask/Trust)
+    if (walletType === 'metamask' || walletType === 'trust') {
+      if (!window.ethereum) throw new Error(`${walletType} not detected!`);
+      
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      userAddress = accounts[0];
+      currentWallet = walletType;
+      
+      // EVM wallets auto-connect to their current network
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      currentNetwork = chainId === '0x89' ? 'polygon' : 'other-evm';
+      
+      updateUI();
+      showConnectionDetails();
     }
+    // Cosmos Wallets (Keplr/Leap)
+    else if (walletType === 'keplr' || walletType === 'leap') {
+      if (!window[walletType]) throw new Error(`${walletType} not detected!`);
+      
+      currentWallet = walletType;
+      showNetworkSelector();
+    }
+    
+    walletStatus.textContent = `Connected: ${walletType}`;
+  } catch (error) {
+    console.error("Connection error:", error);
+    walletStatus.textContent = `Error: ${error.message}`;
+  }
 }
 
-async function connectWallet() {
-    if (!window.ethereum) {
-        alert("Please install MetaMask!");
-        return;
+// Επιλογή Δικτύου
+async function selectNetwork(network) {
+  try {
+    if (currentWallet === 'keplr' || currentWallet === 'leap') {
+      // Cosmos network selection
+      if (network === 'polygon') {
+        throw new Error("Keplr/Leap don't support Polygon directly. Use MetaMask for Polygon.");
+      }
+      
+      await window[currentWallet].enable('osmosis-1');
+      const offlineSigner = window[currentWallet].getOfflineSigner('osmosis-1');
+      const accounts = await offlineSigner.getAccounts();
+      userAddress = accounts[0].address;
+      currentNetwork = 'osmosis';
     }
-
-    try {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        currentAccount = await signer.getAddress();
-
-        // Initialize contracts
-        lqxContract = new ethers.Contract(LQX_TOKEN_ADDRESS, LQX_ABI, signer);
-        lpStakingContract = new ethers.Contract(LP_STAKING_ADDRESS, LP_STAKING_ABI, signer);
-        lpTokenContract = new ethers.Contract(LP_TOKEN_ADDRESS, LP_TOKEN_ABI, signer);
-
-        // Update UI
-        document.getElementById('walletStatus').textContent = `Connected: ${currentAccount.substring(0, 6)}...${currentAccount.substring(38)}`;
-        
-        // Load data
-        await updateBalances();
-        
-        // Set up periodic refresh
-        setInterval(updateBalances, 10000);
-    } catch (error) {
-        console.error("Connection error:", error);
-        alert("Connection failed: " + error.message);
-    }
+    
+    updateUI();
+    showConnectionDetails();
+  } catch (error) {
+    console.error("Network selection error:", error);
+    walletStatus.textContent = `Network Error: ${error.message}`;
+  }
 }
 
-async function updateBalances() {
-    if (!currentAccount) return;
-
-    try {
-        // Get LQX balance
-        const lqxBalance = await lqxContract.balanceOf(currentAccount);
-        document.getElementById('lqxBalance').textContent = ethers.utils.formatUnits(lqxBalance, 18);
-
-        // Get staking info
-        const userStake = await lpStakingContract.userStake(currentAccount);
-        const pendingRewards = await lpStakingContract.earned(currentAccount);
-        const currentAPR = await lpStakingContract.getAPR();
-
-        document.getElementById('userStake').textContent = ethers.utils.formatUnits(userStake, 18);
-        document.getElementById('pendingRewards').textContent = ethers.utils.formatUnits(pendingRewards, 18);
-        document.getElementById('currentAPR').textContent = currentAPR.toString();
-    } catch (error) {
-        console.error("Update error:", error);
-    }
+// UI Updates
+function updateUI() {
+  document.getElementById('connectedWallet').textContent = currentWallet;
+  document.getElementById('connectedNetwork').textContent = currentNetwork;
+  document.getElementById('connectedAddress').textContent = 
+    userAddress ? `${userAddress.substring(0, 6)}...${userAddress.substring(userAddress.length - 4)}` : '-';
 }
 
-async function stakeLP() {
-    const amount = document.getElementById('stakeAmount').value;
-    if (!amount || amount <= 0) {
-        alert("Please enter a valid amount");
-        return;
-    }
-
-    try {
-        // Approve LP tokens first
-        const amountWei = ethers.utils.parseUnits(amount, 18);
-        const approveTx = await lpTokenContract.approve(LP_STAKING_ADDRESS, amountWei);
-        await approveTx.wait();
-
-        // Then stake
-        const stakeTx = await lpStakingContract.stake(amountWei);
-        await stakeTx.wait();
-        
-        alert("Staking successful!");
-        await updateBalances();
-    } catch (error) {
-        console.error("Staking error:", error);
-        alert("Staking failed: " + error.message);
-    }
+function showNetworkSelector() {
+  walletSelector.classList.add('hidden');
+  networkSelector.classList.remove('hidden');
 }
 
-async function unstakeLP() {
-    const amount = document.getElementById('stakeAmount').value;
-    if (!amount || amount <= 0) {
-        alert("Please enter a valid amount");
-        return;
-    }
-
-    try {
-        const amountWei = ethers.utils.parseUnits(amount, 18);
-        const tx = await lpStakingContract.unstake(amountWei);
-        await tx.wait();
-        
-        alert("Unstaking successful!");
-        await updateBalances();
-    } catch (error) {
-        console.error("Unstaking error:", error);
-        alert("Unstaking failed: " + error.message);
-    }
+function showConnectionDetails() {
+  networkSelector.classList.add('hidden');
+  connectionDetails.classList.remove('hidden');
 }
 
-async function claimRewards() {
-    try {
-        const tx = await lpStakingContract.claimRewards();
-        await tx.wait();
-        
-        alert("Rewards claimed successfully!");
-        await updateBalances();
-    } catch (error) {
-        console.error("Claim error:", error);
-        alert("Claim failed: " + error.message);
-    }
+function resetConnection() {
+  currentWallet = null;
+  currentNetwork = null;
+  userAddress = null;
+  walletSelector.classList.remove('hidden');
+  networkSelector.classList.add('hidden');
+  connectionDetails.classList.add('hidden');
 }
 
-// Start the DApp
-window.onload = init;
+// Έλεγχος για αυτόματη επανασύνδεση
+window.addEventListener('load', async () => {
+  if (window.ethereum && window.ethereum.selectedAddress) {
+    await connectWallet(window.ethereum.isMetaMask ? 'metamask' : 'trust');
+  }
+});
