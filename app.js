@@ -1,92 +1,73 @@
-// Configuration (EVM + Cosmos)
+// Configuration
 const CONFIG = {
-  // Polygon Mainnet
-  EVM: {
+  network: {
     chainId: 137,
-    name: "Polygon",
-    rpcUrl: "https://polygon-rpc.com",
-    explorerUrl: "https://polygonscan.com",
-    currency: "MATIC",
-    nativeDecimals: 18
+    name: 'Polygon',
+    rpcUrl: 'https://polygon-rpc.com',
+    explorerUrl: 'https://polygonscan.com',
+    currency: 'MATIC'
   },
-  // Cosmos Chains (Osmosis + Custom wLQX)
-  COSMOS: {
-    'osmosis-1': {
-      chainId: 'osmosis-1',
-      chainName: 'Osmosis',
-      rpcUrl: 'https://rpc.osmosis.zone',
-      restUrl: 'https://lcd.osmosis.zone',
-      currencies: [
-        {
-          coinDenom: 'OSMO',
-          coinMinimalDenom: 'uosmo',
-          coinDecimals: 6
-        },
-        {
-          coinDenom: 'wLQX',
-          coinMinimalDenom: 'ibc/...', // Add actual IBC denom
-          coinDecimals: 18
-        }
+  contracts: {
+    staking: {
+      address: '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3',
+      abi: [
+        "function stake(uint256 amount) external",
+        "function unstake(uint256 amount) external",
+        "function claimRewards() external",
+        "function getAPR() view returns (uint256)",
+        "function totalStaked() view returns (uint256)",
+        "function userStake(address account) view returns (uint256)",
+        "function earned(address account) view returns (uint256)"
       ]
     }
   }
 };
 
-// Wallet Selection Logic
-function openWalletModal() {
-  const modal = document.getElementById('walletModal');
-  modal.style.display = 'block';
-}
+let provider, signer, stakingContract, selectedWallet;
 
-function closeWalletModal() {
-  const modal = document.getElementById('walletModal');
-  modal.style.display = 'none';
+// Initialize Application
+async function init() {
+  if (window.ethereum) {
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    stakingContract = new ethers.Contract(CONFIG.contracts.staking.address, CONFIG.contracts.staking.abi, signer);
+    console.log('Initialization complete');
+  } else {
+    alert('Please install MetaMask or Trust Wallet!');
+  }
 }
 
 async function connectWallet(walletType) {
-  if (walletType === 'metamask') {
-    if (window.ethereum) {
-      try {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        const address = accounts[0];
-        document.getElementById('connectButton').innerText = `Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-      } catch (error) {
-        console.error('Failed to connect MetaMask', error);
-      }
-    } else {
-      alert('MetaMask is not installed');
-    }
-  } else if (walletType === 'keplr') {
-    if (window.keplr) {
-      await window.keplr.enable('osmosis-1');
-      const offlineSigner = window.getOfflineSigner('osmosis-1');
-      const accounts = await offlineSigner.getAccounts();
-      const address = accounts[0].address;
+  try {
+    if (walletType === 'metamask' || walletType === 'trust') {
+      await provider.send("eth_requestAccounts", []);
+      const address = await signer.getAddress();
+      selectedWallet = walletType;
       document.getElementById('connectButton').innerText = `Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-    } else {
-      alert('Keplr is not installed');
+    } else if (walletType === 'keplr' || walletType === 'leap') {
+      alert(`Support for ${walletType} is under development!`);
     }
-  } else if (walletType === 'leap') {
-    if (window.leap) {
-      await window.leap.enable('osmosis-1');
-      const offlineSigner = window.leap.getOfflineSigner('osmosis-1');
-      const accounts = await offlineSigner.getAccounts();
-      const address = accounts[0].address;
-      document.getElementById('connectButton').innerText = `Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-    } else {
-      alert('Leap Wallet is not installed');
-    }
-  } else if (walletType === 'trust') {
-    alert('Trust Wallet support coming soon!');
+    console.log(`Connected with ${walletType}`);
+  } catch (error) {
+    console.error("Error connecting wallet:", error);
   }
-  closeWalletModal();
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('connectButton').addEventListener('click', openWalletModal);
-  document.getElementById('connectMetaMask').addEventListener('click', () => connectWallet('metamask'));
-  document.getElementById('connectKeplr').addEventListener('click', () => connectWallet('keplr'));
-  document.getElementById('connectLeap').addEventListener('click', () => connectWallet('leap'));
-  document.getElementById('connectTrust').addEventListener('click', () => connectWallet('trust'));
+function openWalletModal() {
+  document.getElementById('walletModal').style.display = 'block';
+}
+
+function closeWalletModal() {
+  document.getElementById('walletModal').style.display = 'none';
+}
+
+document.getElementById('connectButton').addEventListener('click', openWalletModal);
+document.querySelectorAll('.wallet-option').forEach(button => {
+  button.addEventListener('click', () => {
+    const walletType = button.getAttribute('data-wallet');
+    connectWallet(walletType);
+    closeWalletModal();
+  });
 });
+
+window.addEventListener('DOMContentLoaded', init);
