@@ -1,25 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="el">
 <head>
-  <title>LiquidityX dApp</title>
-  <script src="libs/ethers-v6.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Πολυπορτοφόλια Σύνδεση</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .wallet-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .wallet-btn:hover {
+            background: #2563eb;
+        }
+        #wallet-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 5px;
+        }
+        #no-wallet-alert {
+            color: red;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
-  <div id="no-wallet" style="display: none;">
-    <p>Please install <a href="https://metamask.io/" target="_blank">MetaMask</a> to use this app</p>
-  </div>
-  <button id="connect-btn">Connect Wallet</button>
-  <button id="disconnect-btn">Disconnect</button>
-  <div id="wallet-address">Not connected</div>
-  <div id="apr">APR: -</div>
-  <button id="refresh-apr-btn">Refresh APR</button>
+    <h1>Σύνδεση Πορτοφολιού</h1>
+    
+    <div id="wallet-buttons">
+        <button class="wallet-btn" data-wallet="metamask">MetaMask</button>
+        <button class="wallet-btn" data-wallet="trust">Trust Wallet</button>
+        <button class="wallet-btn" data-wallet="coinbase">Coinbase Wallet</button>
+        <button class="wallet-btn" data-wallet="phantom">Phantom</button>
+    </div>
+    
+    <div id="no-wallet-alert" style="display: none;">
+        <p>Δεν βρέθηκε πορτοφόλι! Παρακαλώ εγκαταστήστε ένα από τα παρακάτω:</p>
+        <ul>
+            <li><a href="https://metamask.io/download.html" target="_blank">MetaMask</a></li>
+            <li><a href="https://trustwallet.com/" target="_blank">Trust Wallet</a></li>
+            <li><a href="https://www.coinbase.com/wallet" target="_blank">Coinbase Wallet</a></li>
+            <li><a href="https://phantom.app/" target="_blank">Phantom</a></li>
+        </ul>
+    </div>
+    
+    <div id="wallet-info" style="display: none;">
+        <h3>Πληροφορίες Σύνδεσης</h3>
+        <p><strong>Διεύθυνση:</strong> <span id="wallet-address"></span></p>
+        <p><strong>Δίκτυο:</strong> <span id="wallet-chain"></span></p>
+        <button id="disconnect-btn">Αποσύνδεση</button>
+    </div>
 
-  <script src="app.js"></script>
-  <script>
-    if (!window.ethereum) {
-      document.getElementById('no-wallet').style.display = 'block';
-      document.getElementById('connect-btn').style.display = 'none';
-    }
-  </script>
+    <script src="app.js"></script>
 </body>
 </html>
