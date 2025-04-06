@@ -1,33 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LiquidityX dApp</title>
+    <title>LiquidityX LP Staking</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
 </head>
 <body>
     <div id="app">
-        <div class="header">
-            <img src="logo.png" alt="LiquidityX Logo" class="logo">
-            <h1>LiquidityX Staking dApp</h1>
-        </div>
-        <div id="wallet-address">Disconnected</div>
-        <button id="connect-btn">Connect Wallet</button>
-        
-        <div class="card" id="apr">APR: Loading...</div>
-        <div class="card" id="lqx-balance">LQX Balance: -</div>
-        <div class="card" id="lp-balance">LP Token Balance: -</div>
-        <div class="card" id="staked-amount">Staked Amount: -</div>
-        <div class="card" id="earned-rewards">Earned Rewards: -</div>
+        <header>
+            <h1>LiquidityX LP Staking</h1>
+            <div id="wallet-address">Not connected</div>
+            <select id="wallet-select">
+                <option value="">Select Wallet</option>
+            </select>
+            <button id="connect-btn">Connect Wallet</button>
+            <button id="disconnect-btn" style="display:none;">Disconnect</button>
+        </header>
 
-        <input type="number" id="stake-amount" placeholder="Amount to Stake">
-        <button id="stake-btn">Stake</button>
+        <section>
+            <h2>Staking Information</h2>
+            <p id="apr">APR: Loading...</p>
+            <p id="earned">Earned: Loading...</p>
+            <p id="staked">Staked: Loading...</p>
+        </section>
 
-        <input type="number" id="unstake-amount" placeholder="Amount to Unstake">
-        <button id="unstake-btn">Unstake</button>
+        <section>
+            <h2>Actions</h2>
+            <input type="number" id="stake-amount" placeholder="Enter amount to stake">
+            <button id="stake-btn">Stake Tokens</button>
+            <input type="number" id="unstake-amount" placeholder="Enter amount to unstake">
+            <button id="unstake-btn">Unstake Tokens</button>
+            <button id="claim-btn">Claim Rewards</button>
+        </section>
 
-        <button id="claim-rewards-btn">Claim Rewards</button>
+        <footer>
+            <p>LiquidityX - Decentralized LP Staking</p>
+        </footer>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
