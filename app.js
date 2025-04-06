@@ -15,20 +15,17 @@ const providerOptions = {
 const web3Modal = new Web3Modal({
   cacheProvider: true,
   providerOptions,
+  disableInjectedProvider: false,
 });
 
 let provider;
 let signer;
 let connectedAddress = '';
 
-// Load ABI files
-const LQXTokenABI = require('./abis/LQXToken.json');
-const LPTokenABI = require('./abis/LPToken.json');
-const StakingContractABI = require('./abis/StakingContract.json');
-
-const LQX_TOKEN_ADDRESS = '0x9e27f48659b1005b1abc0f58465137e531430d4b';
-const LP_TOKEN_ADDRESS = '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E';
-const STAKING_CONTRACT_ADDRESS = '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9';
+async function loadABI(abiFileName) {
+  const response = await fetch(`abis/${abiFileName}`);
+  return await response.json();
+}
 
 async function connectWallet() {
   provider = await web3Modal.connect();
@@ -47,8 +44,9 @@ async function disconnectWallet() {
 }
 
 async function getAPR() {
-  const web3Provider = new ethers.providers.Web3Provider(provider);
-  const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, StakingContractABI, web3Provider);
+  const web3Provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com');
+  const StakingContractABI = await loadABI('StakingContract.json');
+  const stakingContract = new ethers.Contract('0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9', StakingContractABI, web3Provider);
   const apr = await stakingContract.getAPR();
   document.getElementById('apr').innerText = `APR: ${ethers.utils.formatUnits(apr, 2)}%`;
 }
