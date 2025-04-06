@@ -1,9 +1,11 @@
-import { ethers } from 'ethers';
-import Web3Modal from 'web3modal';
+// app.js
+
+const { ethers } = window;
+const Web3Modal = window.Web3Modal.default;
 
 const providerOptions = {
   walletconnect: {
-    package: () => import('@walletconnect/web3-provider'),
+    package: window.WalletConnectProvider.default,
     options: {
       rpc: {
         137: 'https://polygon-rpc.com',
