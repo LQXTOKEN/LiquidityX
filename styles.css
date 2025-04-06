@@ -1,14 +1,16 @@
-/* Root CSS for LiquidityX dApp */
+/* Full Styling for LiquidityX dApp */
 
 :root {
     --primary-color: #4CAF50;
     --secondary-color: #333;
-    --background-color: #F0F0F0;
-    --text-color: #000;
+    --background-color: #121212;
+    --card-background-color: #1E1E1E;
+    --text-color: #F0F0F0;
     --button-color: #4CAF50;
     --button-text-color: white;
     --font-family: 'Arial', sans-serif;
-    --border-radius: 5px;
+    --border-radius: 10px;
+    --transition-speed: 0.3s;
 }
 
 body {
@@ -21,24 +23,24 @@ body {
 }
 
 #app {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 40px;
     text-align: center;
-    background: white;
+    background: var(--card-background-color);
     border-radius: var(--border-radius);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 button {
     background-color: var(--button-color);
     color: var(--button-text-color);
     border: none;
-    padding: 10px 20px;
-    margin: 10px;
+    padding: 15px 30px;
+    margin: 20px;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color var(--transition-speed);
 }
 
 button:hover {
@@ -46,21 +48,41 @@ button:hover {
 }
 
 input {
-    padding: 10px;
-    margin: 10px;
+    padding: 15px;
+    margin: 20px;
     border-radius: var(--border-radius);
-    border: 1px solid #ccc;
-    width: 60%;
+    border: 1px solid #444;
+    background-color: #1E1E1E;
+    color: var(--text-color);
+    width: 80%;
 }
 
 h1 {
     color: var(--primary-color);
+    margin-bottom: 40px;
+}
+
+.card {
+    background-color: var(--card-background-color);
+    padding: 20px;
+    margin: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
 #apr, #lqx-balance, #lp-balance, #staked-amount, #earned-rewards {
-    margin-top: 15px;
-    padding: 10px;
-    background-color: #fff;
-    border: 1px solid #ddd;
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--card-background-color);
+    border: 1px solid #444;
     border-radius: var(--border-radius);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #app {
+        padding: 20px;
+    }
+
+    button {
