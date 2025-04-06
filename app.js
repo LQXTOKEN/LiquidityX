@@ -1,19 +1,36 @@
+async function connectWallet() {
+    if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask or another Web3 wallet!');
+        return;
+    }
+
+    try {
+        console.log("🔌 Attempting to connect wallet...");
+
+        provider = new ethers.providers.Web3Provider(window.ethereum, "any"); // Δεχόμαστε οποιοδήποτε δίκτυο
+        await provider.send("eth_requestAccounts", []); // Ζητάμε από το MetaMask να συνδεθεί
+        signer = provider.getSigner();
+        connectedAddress = await signer.getAddress();
+
+        console.log("✅ Wallet Connected Successfully:", connectedAddress);
+        document.getElementById('wallet-address').textContent = `Connected: ${connectedAddress}`;
+
+        stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, signer);
+
+        // Φόρτωσε τα δεδομένα με την πρώτη σύνδεση
+        await fetchAllData();
+
+    } catch (error) {
+        console.error("❌ Connection error:", error);
+    }
+}
+
 async function fetchAllData() {
     try {
         console.log("📊 Fetching all data...");
 
         // Εμφανίζουμε πάντα το Loading αρχικά
         document.getElementById('apr').innerText = `APR: Loading...`;
-
-        // **Βεβαιωνόμαστε ότι ο signer είναι ενεργός και συνδεδεμένος**
-        if (!signer || !provider) {
-            console.log("🔄 Reinitializing provider and signer...");
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            signer = provider.getSigner();
-        }
-
-        // Ανανεώνουμε τον stakingContract για να μην χάσει σύνδεση
-        stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, signer);
 
         console.log("📈 Fetching APR from contract...");
         const apr = await stakingContract.getAPR();
@@ -33,3 +50,5 @@ async function fetchAllData() {
         document.getElementById('apr').innerText = `APR: Error fetching`;
     }
 }
+
+document.getElementById('connect-btn').addEventListener('click', connectWallet);
