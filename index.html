@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="styles.css">
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval';
         style-src 'self' 'unsafe-inline';
         connect-src 'self' https://polygon-rpc.com https://rpc-mumbai.maticvigil.com https://rpc-mainnet.matic.network https://mainnet.infura.io https://bsc-dataseed.binance.org https://osmosis-rpc.polkachu.com;
         img-src 'self' data:;
@@ -22,8 +22,8 @@
         <div id="apr">APR: Loading...</div>
         <button id="refresh-apr-btn">Refresh APR</button>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.6.9/dist/ethers.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web3modal@1.9.7/dist/index.min.js"></script>
+    <script src="libs/ethers.min.js"></script>
+    <script src="libs/web3modal.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
