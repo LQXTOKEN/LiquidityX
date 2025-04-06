@@ -1,3 +1,21 @@
+const { ethers } = window;
+
+let provider;
+let signer;
+let connectedAddress = '';
+
+const STAKING_CONTRACT_ADDRESS = '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3'; // Διεύθυνση Staking Contract
+const STAKING_CONTRACT_ABI = [
+    'function claimRewards() public',
+    'function getAPR() public view returns (uint256)',
+    'function earned(address account) public view returns (uint256)',
+    'function userStake(address account) public view returns (uint256)',
+    'function stake(uint256 amount) public',
+    'function unstake(uint256 amount) public'
+];
+
+let stakingContract;
+
 async function connectWallet() {
     if (typeof window.ethereum === 'undefined') {
         alert('Please install MetaMask or another Web3 wallet!');
@@ -15,6 +33,7 @@ async function connectWallet() {
         console.log("✅ Wallet Connected Successfully:", connectedAddress);
         document.getElementById('wallet-address').textContent = `Connected: ${connectedAddress}`;
 
+        // Δημιουργούμε το staking contract
         stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, signer);
 
         // Φόρτωσε τα δεδομένα με την πρώτη σύνδεση
