@@ -1,67 +1,101 @@
-// app.js
-
 const { ethers } = window;
-const Web3Modal = window.Web3Modal.default || window.Web3Modal;
 
-console.log("🚀 App.js Loaded");
-
-// Έλεγχος αν η βιβλιοθήκη φορτώθηκε σωστά
-console.log("📦 Ethers.js Version:", ethers.version);
-
+// State management
 let provider;
 let signer;
 let connectedAddress = '';
 
-const providerOptions = {
-  injected: {
-    package: null,
-  }
-};
-
-const web3Modal = new Web3Modal({
-  cacheProvider: true,
-  providerOptions,
-});
+// Check if MetaMask is installed
+function hasInjectedProvider() {
+  return typeof window.ethereum !== 'undefined';
+}
 
 async function connectWallet() {
+  if (!hasInjectedProvider()) {
+    alert('Please install MetaMask or another Web3 wallet!');
+    return;
+  }
+
   try {
-    console.log("🔌 Attempting to connect wallet...");
+    // Request account access
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    connectedAddress = accounts[0];
     
-    const instance = await web3Modal.connect();
+    // Initialize ethers provider
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    
+    // Update UI
+    document.getElementById('wallet-address').textContent = 
+      `Connected: ${connectedAddress.substring(0, 6)}...${connectedAddress.slice(-4)}`;
+    
+    // Save connection state
+    localStorage.setItem('walletConnected', 'true');
+    
+    // Set up event listeners
+    window.ethereum.on('accountsChanged', (newAccounts) => {
+      connectedAddress = newAccounts[0] || '';
+      updateConnectionStatus();
+    });
+    
+    window.ethereum.on('chainChanged', () => {
+      window.location.reload();
+    });
 
-    // Έλεγχος αν η κλάση BrowserProvider υπάρχει
-    if (!ethers.BrowserProvider) {
-      console.error("❌ BrowserProvider is not available in ethers.js. Check your ethers.js version.");
-      return;
-    }
-
-    provider = new ethers.BrowserProvider(instance);
-    signer = await provider.getSigner();
-    connectedAddress = await signer.getAddress();
-    
-    console.log("✅ Wallet Connected Successfully:", connectedAddress);
-    document.getElementById('wallet-address').innerText = `Connected: ${connectedAddress}`;
-    
-    localStorage.setItem('connectedAddress', connectedAddress);
   } catch (error) {
-    console.error("❌ Error Connecting Wallet:", error);
+    console.error("Connection error:", error);
+    alert(`Connection failed: ${error.message}`);
   }
 }
 
-async function disconnectWallet() {
-  console.log("🔌 Disconnecting Wallet...");
-  web3Modal.clearCachedProvider();
+function disconnectWallet() {
+  if (window.ethereum && window.ethereum.removeListener) {
+    window.ethereum.removeListener('accountsChanged');
+    window.ethereum.removeListener('chainChanged');
+  }
+  
   provider = null;
   signer = null;
   connectedAddress = '';
-  document.getElementById('wallet-address').innerText = 'Disconnected';
-  localStorage.removeItem('connectedAddress');
-  console.log("✅ Wallet Disconnected Successfully");
+  updateConnectionStatus();
+  
+  localStorage.removeItem('walletConnected');
 }
 
+function updateConnectionStatus() {
+  const el = document.getElementById('wallet-address');
+  el.textContent = connectedAddress 
+    ? `Connected: ${connectedAddress.substring(0, 6)}...${connectedAddress.slice(-4)}`
+    : 'Not connected';
+}
+
+// APR Function (unchanged from your original)
+async function getAPR() {
+  try {
+    const rpcProvider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com');
+    const response = await fetch('abis/StakingContract.json');
+    const StakingContractABI = await response.json();
+    
+    const stakingContract = new ethers.Contract(
+      '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9',
+      StakingContractABI,
+      rpcProvider
+    );
+
+    const apr = await stakingContract.getAPR();
+    document.getElementById('apr').innerText = `APR: ${ethers.utils.formatUnits(apr, 2)}%`;
+    console.log("✅ APR Fetched Successfully:", apr.toString());
+  } catch (error) {
+    console.error("APR error:", error);
+  }
+}
+
+// Event Listeners
 document.getElementById('connect-btn').addEventListener('click', connectWallet);
 document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
+document.getElementById('refresh-apr-btn').addEventListener('click', getAPR);
 
-if (localStorage.getItem('connectedAddress')) {
-  document.getElementById('wallet-address').innerText = `Connected: ${localStorage.getItem('connectedAddress')}`;
+// Auto-connect if previously connected
+if (localStorage.getItem('walletConnected') === 'true' && hasInjectedProvider()) {
+  connectWallet();
 }
