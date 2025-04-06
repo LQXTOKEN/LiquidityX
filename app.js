@@ -6,14 +6,21 @@ let connectedAddress = '';
 
 // Νέο συμβόλαιο LPStakingContractHybrid
 const STAKING_CONTRACT_ADDRESS = '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3';
-const STAKING_CONTRACT_ABI = [
-    'function claimRewards() public',
-    'function getAPR() public view returns (uint256)'
-];
+let stakingContract;
 
 // Check if MetaMask is installed
 function hasInjectedProvider() {
   return typeof window.ethereum !== 'undefined';
+}
+
+async function loadABI() {
+  console.log("📂 Loading ABI from abis folder...");
+  const response = await fetch('abis/StakingContract.json');
+  if (!response.ok) {
+    console.error("❌ Failed to load ABI file.");
+    throw new Error("Failed to load ABI file.");
+  }
+  return await response.json();
 }
 
 async function connectWallet() {
@@ -34,9 +41,12 @@ async function connectWallet() {
     document.getElementById('wallet-address').textContent = `Connected: ${connectedAddress}`;
 
     localStorage.setItem('walletConnected', 'true');
+
+    const StakingContractABI = await loadABI();
+    stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, StakingContractABI, signer);
+
   } catch (error) {
     console.error("❌ Connection error:", error);
-    alert(`Connection failed: ${error.message}`);
   }
 }
 
@@ -53,46 +63,25 @@ async function getAPR() {
   try {
     console.log("📊 Fetching APR...");
     const rpcProvider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com');
-    
-    const stakingContract = new ethers.Contract(
-      STAKING_CONTRACT_ADDRESS,
-      STAKING_CONTRACT_ABI,
-      rpcProvider
-    );
-
+    const StakingContractABI = await loadABI();
+    const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, StakingContractABI, rpcProvider);
     const apr = await stakingContract.getAPR();
-    const formattedAPR = ethers.utils.formatUnits(apr, 2);
-    document.getElementById('apr').innerText = `APR: ${formattedAPR}%`;
-    console.log("✅ APR Fetched Successfully:", formattedAPR);
+    document.getElementById('apr').innerText = `APR: ${ethers.utils.formatUnits(apr, 2)}%`;
+    console.log("✅ APR Fetched Successfully:", apr.toString());
   } catch (error) {
     console.error("❌ APR error:", error);
   }
 }
 
 async function claimRewards() {
-  if (!signer) {
-    alert('Please connect your wallet first.');
-    return;
-  }
-
   try {
-    console.log("📥 Attempting to claim rewards...");
-
-    const stakingContract = new ethers.Contract(
-      STAKING_CONTRACT_ADDRESS,
-      STAKING_CONTRACT_ABI,
-      signer
-    );
-
+    console.log("💰 Claiming Rewards...");
     const tx = await stakingContract.claimRewards();
-    console.log("⏳ Transaction sent:", tx.hash);
-
-    const receipt = await tx.wait();
-    console.log("✅ Transaction confirmed:", receipt);
+    await tx.wait();
+    console.log("✅ Rewards Claimed Successfully.");
     alert("Rewards Claimed Successfully.");
   } catch (error) {
     console.error("❌ Error Claiming Rewards:", error);
-    alert(`Error Claiming Rewards: ${error.message}`);
   }
 }
 
@@ -100,8 +89,3 @@ document.getElementById('connect-btn').addEventListener('click', connectWallet);
 document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
 document.getElementById('refresh-apr-btn').addEventListener('click', getAPR);
 document.getElementById('claim-rewards-btn').addEventListener('click', claimRewards);
-
-// Auto-connect if previously connected
-if (localStorage.getItem('walletConnected') === 'true' && hasInjectedProvider()) {
-  connectWallet();
-}
