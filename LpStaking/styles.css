@@ -1,1 +1,113 @@
+/* Full Styling for LiquidityX dApp with Logo Support */
 
+:root {
+    --background-color: #121212;
+    --card-background-color: #1E1E1E;
+    --text-color: #F0F0F0;
+    --button-color: #333;
+    --button-text-color: #F0F0F0;
+    --font-family: 'Arial', sans-serif;
+    --border-radius: 10px;
+    --transition-speed: 0.3s;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+#app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px;
+    text-align: center;
+    background: var(--card-background-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.logo {
+    height: 60px;
+    margin-right: 20px;
+}
+
+button {
+    background-color: var(--button-color);
+    color: var(--button-text-color);
+    border: none;
+    padding: 15px 30px;
+    margin: 20px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+}
+
+button:hover {
+    background-color: #444;
+}
+
+input {
+    padding: 15px;
+    margin: 20px;
+    border-radius: var(--border-radius);
+    border: 1px solid #444;
+    background-color: #1E1E1E;
+    color: var(--text-color);
+    width: 80%;
+}
+
+h1 {
+    color: var(--text-color);
+}
+
+.card {
+    background-color: var(--card-background-color);
+    padding: 20px;
+    margin: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+#apr, #lqx-balance, #lp-balance, #staked-amount, #earned-rewards {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--card-background-color);
+    border: 1px solid #444;
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #app {
+        padding: 20px;
+    }
+
+    .header {
+        flex-direction: column;
+    }
+
+    .logo {
+        margin-bottom: 10px;
+    }
+
+    button {
+        padding: 10px 20px;
+        margin: 10px;
+    }
+
+    input {
+        width: 100%;
+    }
+}
