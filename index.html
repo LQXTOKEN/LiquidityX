@@ -1,29 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LiquidityX dApp</title>
-    <link rel="stylesheet" href="styles.css">
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval';
-        style-src 'self' 'unsafe-inline';
-        connect-src 'self' https://polygon-rpc.com https://rpc-mumbai.maticvigil.com https://rpc-mainnet.matic.network https://mainnet.infura.io https://bsc-dataseed.binance.org https://osmosis-rpc.polkachu.com;
-        img-src 'self' data:;
-        font-src 'self' https://fonts.gstatic.com;
-        frame-src 'self';
-    ">
+  <title>LiquidityX dApp</title>
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <h1>LiquidityX Staking dApp</h1>
-        <div id="wallet-address">Disconnected</div>
-        <button id="connect-btn">Connect Wallet</button>
-        <button id="disconnect-btn">Disconnect Wallet</button>
-        <div id="apr">APR: Loading...</div>
-        <button id="refresh-apr-btn">Refresh APR</button>
-    </div>
-    <script src="libs/ethers-v6.min.js"></script>
-    <script src="libs/web3modal.min.js"></script>
-    <script src="app.js"></script>
+  <div id="no-wallet" style="display: none;">
+    <p>Please install <a href="https://metamask.io/" target="_blank">MetaMask</a> to use this app</p>
+  </div>
+  <button id="connect-btn">Connect Wallet</button>
+  <button id="disconnect-btn">Disconnect</button>
+  <div id="wallet-address">Not connected</div>
+  <div id="apr">APR: -</div>
+  <button id="refresh-apr-btn">Refresh APR</button>
+
+  <script src="app.js"></script>
+  <script>
+    if (!window.ethereum) {
+      document.getElementById('no-wallet').style.display = 'block';
+      document.getElementById('connect-btn').style.display = 'none';
+    }
+  </script>
 </body>
 </html>
