@@ -1,3 +1,5 @@
+// app.js
+
 import { ethers } from 'ethers';
 import Web3Modal from 'web3modal';
 
@@ -24,6 +26,9 @@ let connectedAddress = '';
 
 async function loadABI(abiFileName) {
   const response = await fetch(`abis/${abiFileName}`);
+  if (!response.ok) {
+    throw new Error(`Failed to load ABI: ${abiFileName}`);
+  }
   return await response.json();
 }
 
