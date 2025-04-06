@@ -1,15 +1,15 @@
 // app.js
 
 const { ethers } = window;
-const Web3Modal = window.Web3Modal;
-const WalletConnectProvider = window.WalletConnectProvider.default; // ✅ Χρήση του .default για σωστή φόρτωση
+const Web3Modal = window.Web3Modal.default || window.Web3Modal;  // ✅ Έλεγχος και για .default
+const WalletConnectProvider = window.WalletConnectProvider.default || window.WalletConnectProvider;  // ✅ Έλεγχος και για .default
 
 console.log("🚀 App.js Loaded - Web3Modal:", Web3Modal);
-console.log("🟢 WalletConnectProvider:", WalletConnectProvider); // Έλεγχος αν φορτώνεται σωστά
+console.log("🟢 WalletConnectProvider:", WalletConnectProvider);
 
 const providerOptions = {
   walletconnect: {
-    package: WalletConnectProvider, // ✅ Τώρα διαβάζει σωστά τον provider
+    package: WalletConnectProvider,
     options: {
       rpc: {
         137: 'https://polygon-rpc.com',
@@ -20,13 +20,16 @@ const providerOptions = {
 
 console.log("📦 Provider Options Set:", providerOptions);
 
-const web3Modal = new Web3Modal({
-  cacheProvider: true,
-  providerOptions,
-  disableInjectedProvider: false,
-});
-
-console.log("🌟 Web3Modal Instance Created:", web3Modal);
+try {
+    const web3Modal = new Web3Modal({  // ✅ Σιγουρευόμαστε ότι καλείται σωστά
+      cacheProvider: true,
+      providerOptions,
+      disableInjectedProvider: false,
+    });
+    console.log("🌟 Web3Modal Instance Created:", web3Modal);
+} catch (error) {
+    console.error("❌ Error Creating Web3Modal Instance:", error);
+}
 
 let provider;
 let signer;
