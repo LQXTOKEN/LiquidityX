@@ -4,7 +4,15 @@
     <title>LiquidityX LP Staking</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.0/ethers.umd.min.js"></script>
+    <script src="libs/ethers-5.7.umd.min.js"></script>
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data:;
+        connect-src 'self' https://polygon-rpc.com;
+        frame-ancestors 'self';
+    ">
 </head>
 <body>
     <div id="app">
@@ -29,8 +37,10 @@
             <h2>Actions</h2>
             <input type="number" id="stake-amount" placeholder="Enter amount to stake">
             <button id="stake-btn">Stake Tokens</button>
+            
             <input type="number" id="unstake-amount" placeholder="Enter amount to unstake">
             <button id="unstake-btn">Unstake Tokens</button>
+            
             <button id="claim-btn">Claim Rewards</button>
         </section>
 
