@@ -2,12 +2,14 @@
 
 const { ethers } = window;
 const Web3Modal = window.Web3Modal;
+const WalletConnectProvider = window.WalletConnectProvider; // ✅ Πρέπει να φορτώνεται από το walletconnect.min.js
 
-console.log("🚀 App.js Loaded - Web3Modal:", Web3Modal); // Log για να δούμε αν φορτώνεται σωστά το Web3Modal
+console.log("🚀 App.js Loaded - Web3Modal:", Web3Modal);
+console.log("🟢 WalletConnectProvider:", WalletConnectProvider); // Για να δούμε αν φορτώνεται σωστά
 
 const providerOptions = {
   walletconnect: {
-    package: window.WalletConnectProvider,
+    package: WalletConnectProvider, // ✅ Πρέπει να είναι σωστό τώρα
     options: {
       rpc: {
         137: 'https://polygon-rpc.com',
@@ -16,7 +18,7 @@ const providerOptions = {
   },
 };
 
-console.log("📦 Provider Options Set:", providerOptions); // Log για να δούμε αν το providerOptions έχει φορτωθεί σωστά
+console.log("📦 Provider Options Set:", providerOptions);
 
 const web3Modal = new Web3Modal({
   cacheProvider: true,
@@ -24,14 +26,14 @@ const web3Modal = new Web3Modal({
   disableInjectedProvider: false,
 });
 
-console.log("🌟 Web3Modal Instance Created:", web3Modal); // Log για να δούμε αν δημιουργήθηκε σωστά το Web3Modal instance
+console.log("🌟 Web3Modal Instance Created:", web3Modal);
 
 let provider;
 let signer;
 let connectedAddress = '';
 
 async function loadABI(abiFileName) {
-  console.log(`📂 Loading ABI File: ${abiFileName}`); // Log για να δούμε ποιο ABI αρχείο φορτώνεται
+  console.log(`📂 Loading ABI File: ${abiFileName}`);
   const response = await fetch(`abis/${abiFileName}`);
   if (!response.ok) {
     console.error(`❌ Failed to load ABI: ${abiFileName}`);
@@ -43,20 +45,20 @@ async function loadABI(abiFileName) {
 
 async function connectWallet() {
   try {
-    console.log("🔌 Attempting to connect wallet..."); // Log για να δούμε πότε ξεκινά η σύνδεση
+    console.log("🔌 Attempting to connect wallet...");
     
     provider = await web3Modal.connect();
-    console.log("✅ Wallet Connected Successfully - Provider:", provider); // Log όταν γίνει επιτυχής σύνδεση
+    console.log("✅ Wallet Connected Successfully - Provider:", provider);
     
     const web3Provider = new ethers.providers.Web3Provider(provider);
     signer = web3Provider.getSigner();
     connectedAddress = await signer.getAddress();
     
-    console.log("🎉 Connected Address:", connectedAddress); // Log της συνδεδεμένης διεύθυνσης
+    console.log("🎉 Connected Address:", connectedAddress);
     
     document.getElementById('wallet-address').innerText = `Connected: ${connectedAddress}`;
   } catch (error) {
-    console.error("❌ Error Connecting Wallet:", error); // Log για να δούμε αν υπάρχει κάποιο σφάλμα
+    console.error("❌ Error Connecting Wallet:", error);
   }
 }
 
