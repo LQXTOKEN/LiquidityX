@@ -9,12 +9,13 @@ let stakingContract;
 let lqxContract;
 let lpContract;
 
-// Τα ABI των συμβολαίων
 const STAKING_CONTRACT_ABI = [
     'function claimRewards() public',
     'function getAPR() public view returns (uint256)',
     'function earned(address account) public view returns (uint256)',
-    'function userStake(address account) public view returns (uint256)'
+    'function userStake(address account) public view returns (uint256)',
+    'function stake(uint256 amount) public',
+    'function unstake(uint256 amount) public'
 ];
 
 const LQX_ABI = [
@@ -59,24 +60,25 @@ async function fetchAllData() {
     try {
         console.log("📊 Fetching all data...");
 
+        // Fetch APR
+        const apr = await stakingContract.getAPR();
+        console.log("📈 APR:", ethers.utils.formatUnits(apr, 2));
+        document.getElementById('apr').innerText = `APR: ${ethers.utils.formatUnits(apr, 2)}%`;
+
         // Fetch LQX Balance
         const lqxBalance = await lqxContract.balanceOf(connectedAddress);
-        console.log("💰 LQX Balance:", ethers.utils.formatUnits(lqxBalance, 18));
         document.getElementById('lqx-balance').innerText = `LQX Balance: ${ethers.utils.formatUnits(lqxBalance, 18)}`;
 
         // Fetch LP Token Balance
         const lpBalance = await lpContract.balanceOf(connectedAddress);
-        console.log("💰 LP Balance:", ethers.utils.formatUnits(lpBalance, 18));
         document.getElementById('lp-balance').innerText = `LP Token Balance: ${ethers.utils.formatUnits(lpBalance, 18)}`;
 
         // Fetch Staked Amount
         const stakedAmount = await stakingContract.userStake(connectedAddress);
-        console.log("📈 Staked Amount:", ethers.utils.formatUnits(stakedAmount, 18));
         document.getElementById('staked-amount').innerText = `Staked Amount: ${ethers.utils.formatUnits(stakedAmount, 18)}`;
 
         // Fetch Earned Rewards
         const earned = await stakingContract.earned(connectedAddress);
-        console.log("💎 Earned Rewards:", ethers.utils.formatUnits(earned, 18));
         document.getElementById('earned-rewards').innerText = `Earned Rewards: ${ethers.utils.formatUnits(earned, 18)}`;
 
     } catch (error) {
