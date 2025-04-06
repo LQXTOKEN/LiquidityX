@@ -21,9 +21,9 @@ async function connectWallet() {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     connectedAddress = accounts[0];
     
-    // Initialize ethers provider
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
+    // Initialize ethers provider (Correct way for ethers.js v6)
+    provider = new ethers.BrowserProvider(window.ethereum); 
+    signer = await provider.getSigner();
     
     // Update UI
     document.getElementById('wallet-address').textContent = 
@@ -72,7 +72,7 @@ function updateConnectionStatus() {
 // APR Function (unchanged from your original)
 async function getAPR() {
   try {
-    const rpcProvider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com');
+    const rpcProvider = new ethers.JsonRpcProvider('https://polygon-rpc.com');
     const response = await fetch('abis/StakingContract.json');
     const StakingContractABI = await response.json();
     
@@ -83,7 +83,7 @@ async function getAPR() {
     );
 
     const apr = await stakingContract.getAPR();
-    document.getElementById('apr').innerText = `APR: ${ethers.utils.formatUnits(apr, 2)}%`;
+    document.getElementById('apr').innerText = `APR: ${ethers.formatUnits(apr, 2)}%`;
     console.log("✅ APR Fetched Successfully:", apr.toString());
   } catch (error) {
     console.error("APR error:", error);
