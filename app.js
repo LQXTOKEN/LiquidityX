@@ -2,14 +2,14 @@
 
 const { ethers } = window;
 const Web3Modal = window.Web3Modal;
-const WalletConnectProvider = window.WalletConnectProvider; // ✅ Πρέπει να φορτώνεται από το walletconnect.min.js
+const WalletConnectProvider = window.WalletConnectProvider.default; // ✅ Χρήση του .default για σωστή φόρτωση
 
 console.log("🚀 App.js Loaded - Web3Modal:", Web3Modal);
-console.log("🟢 WalletConnectProvider:", WalletConnectProvider); // Για να δούμε αν φορτώνεται σωστά
+console.log("🟢 WalletConnectProvider:", WalletConnectProvider); // Έλεγχος αν φορτώνεται σωστά
 
 const providerOptions = {
   walletconnect: {
-    package: WalletConnectProvider, // ✅ Πρέπει να είναι σωστό τώρα
+    package: WalletConnectProvider, // ✅ Τώρα διαβάζει σωστά τον provider
     options: {
       rpc: {
         137: 'https://polygon-rpc.com',
