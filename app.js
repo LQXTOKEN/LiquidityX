@@ -4,88 +4,84 @@ let provider;
 let signer;
 let connectedAddress = '';
 
-// Νέο συμβόλαιο LPStakingContractHybrid
 const STAKING_CONTRACT_ADDRESS = '0x8e47D0a54Cb3E4eAf3011928FcF5Fab5Cf0A07c3';
 let stakingContract;
+let lqxContract;
+let lpContract;
 
-// Check if MetaMask is installed
-function hasInjectedProvider() {
-  return typeof window.ethereum !== 'undefined';
-}
+// Τα ABI των συμβολαίων
+const STAKING_CONTRACT_ABI = [
+    'function claimRewards() public',
+    'function getAPR() public view returns (uint256)',
+    'function earned(address account) public view returns (uint256)',
+    'function userStake(address account) public view returns (uint256)'
+];
 
-async function loadABI() {
-  console.log("📂 Loading ABI from abis folder...");
-  const response = await fetch('abis/StakingContract.json');
-  if (!response.ok) {
-    console.error("❌ Failed to load ABI file.");
-    throw new Error("Failed to load ABI file.");
-  }
-  return await response.json();
-}
+const LQX_ABI = [
+    'function balanceOf(address account) public view returns (uint256)'
+];
+
+const LP_ABI = [
+    'function balanceOf(address account) public view returns (uint256)',
+    'function approve(address spender, uint256 amount) public returns (bool)',
+    'function allowance(address owner, address spender) public view returns (uint256)'
+];
 
 async function connectWallet() {
-  if (!hasInjectedProvider()) {
-    alert('Please install MetaMask or another Web3 wallet!');
-    return;
-  }
+    if (typeof window.ethereum === 'undefined') {
+        alert('Please install MetaMask or another Web3 wallet!');
+        return;
+    }
 
-  try {
-    console.log("🔌 Attempting to connect wallet...");
+    try {
+        console.log("🔌 Attempting to connect wallet...");
 
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    signer = provider.getSigner();
-    connectedAddress = await signer.getAddress();
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        connectedAddress = await signer.getAddress();
 
-    console.log("✅ Wallet Connected Successfully:", connectedAddress);
-    document.getElementById('wallet-address').textContent = `Connected: ${connectedAddress}`;
+        console.log("✅ Wallet Connected Successfully:", connectedAddress);
+        document.getElementById('wallet-address').textContent = `Connected: ${connectedAddress}`;
 
-    localStorage.setItem('walletConnected', 'true');
+        stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, signer);
+        lqxContract = new ethers.Contract('0x9e27f48659b1005b1abc0f58465137e531430d4b', LQX_ABI, provider);
+        lpContract = new ethers.Contract('0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E', LP_ABI, provider);
 
-    const StakingContractABI = await loadABI();
-    stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, StakingContractABI, signer);
+        await fetchAllData();
 
-  } catch (error) {
-    console.error("❌ Connection error:", error);
-  }
+    } catch (error) {
+        console.error("❌ Connection error:", error);
+    }
 }
 
-function disconnectWallet() {
-  provider = null;
-  signer = null;
-  connectedAddress = '';
-  document.getElementById('wallet-address').textContent = 'Disconnected';
-  localStorage.removeItem('walletConnected');
-  console.log("✅ Disconnected successfully.");
-}
+async function fetchAllData() {
+    try {
+        console.log("📊 Fetching all data...");
 
-async function getAPR() {
-  try {
-    console.log("📊 Fetching APR...");
-    const rpcProvider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com');
-    const StakingContractABI = await loadABI();
-    const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, StakingContractABI, rpcProvider);
-    const apr = await stakingContract.getAPR();
-    document.getElementById('apr').innerText = `APR: ${ethers.utils.formatUnits(apr, 2)}%`;
-    console.log("✅ APR Fetched Successfully:", apr.toString());
-  } catch (error) {
-    console.error("❌ APR error:", error);
-  }
-}
+        // Fetch LQX Balance
+        const lqxBalance = await lqxContract.balanceOf(connectedAddress);
+        console.log("💰 LQX Balance:", ethers.utils.formatUnits(lqxBalance, 18));
+        document.getElementById('lqx-balance').innerText = `LQX Balance: ${ethers.utils.formatUnits(lqxBalance, 18)}`;
 
-async function claimRewards() {
-  try {
-    console.log("💰 Claiming Rewards...");
-    const tx = await stakingContract.claimRewards();
-    await tx.wait();
-    console.log("✅ Rewards Claimed Successfully.");
-    alert("Rewards Claimed Successfully.");
-  } catch (error) {
-    console.error("❌ Error Claiming Rewards:", error);
-  }
+        // Fetch LP Token Balance
+        const lpBalance = await lpContract.balanceOf(connectedAddress);
+        console.log("💰 LP Balance:", ethers.utils.formatUnits(lpBalance, 18));
+        document.getElementById('lp-balance').innerText = `LP Token Balance: ${ethers.utils.formatUnits(lpBalance, 18)}`;
+
+        // Fetch Staked Amount
+        const stakedAmount = await stakingContract.userStake(connectedAddress);
+        console.log("📈 Staked Amount:", ethers.utils.formatUnits(stakedAmount, 18));
+        document.getElementById('staked-amount').innerText = `Staked Amount: ${ethers.utils.formatUnits(stakedAmount, 18)}`;
+
+        // Fetch Earned Rewards
+        const earned = await stakingContract.earned(connectedAddress);
+        console.log("💎 Earned Rewards:", ethers.utils.formatUnits(earned, 18));
+        document.getElementById('earned-rewards').innerText = `Earned Rewards: ${ethers.utils.formatUnits(earned, 18)}`;
+
+    } catch (error) {
+        console.error("❌ Error Fetching Data:", error);
+    }
 }
 
 document.getElementById('connect-btn').addEventListener('click', connectWallet);
-document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
-document.getElementById('refresh-apr-btn').addEventListener('click', getAPR);
-document.getElementById('claim-rewards-btn').addEventListener('click', claimRewards);
