@@ -60,10 +60,14 @@ async function fetchAllData() {
     try {
         console.log("📊 Fetching all data...");
 
+        // Εμφανίζουμε πάντα το Loading αρχικά
+        document.getElementById('apr').innerText = `APR: Loading...`;
+
         // Fetch APR
         const apr = await stakingContract.getAPR();
-        console.log("📈 APR:", ethers.utils.formatUnits(apr, 2));
-        document.getElementById('apr').innerText = `APR: ${ethers.utils.formatUnits(apr, 2)}%`;
+        const aprFormatted = ethers.utils.formatUnits(apr, 2);
+        console.log("📈 APR:", aprFormatted);
+        document.getElementById('apr').innerText = `APR: ${aprFormatted}%`;
 
         // Fetch LQX Balance
         const lqxBalance = await lqxContract.balanceOf(connectedAddress);
@@ -83,6 +87,7 @@ async function fetchAllData() {
 
     } catch (error) {
         console.error("❌ Error Fetching Data:", error);
+        document.getElementById('apr').innerText = `APR: Error fetching`;
     }
 }
 
