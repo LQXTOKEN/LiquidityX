@@ -1,139 +1,62 @@
-<!-- LiquidityX Full Code with All Features Integrated -->
-<!-- index.html -->
+import { ethers } from 'ethers';
+import Web3Modal from 'web3modal';
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX Staking DApp</title>
-    <link rel="stylesheet" href="styles.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
-    <script defer src="app.js"></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <div class="logo-title">
-                <h1>LiquidityX Staking</h1>
-                <button id="connectButton" class="connect-btn">Connect Wallet</button>
-            </div>
-            <div id="walletInfo" class="wallet-info hidden">
-                <span id="walletAddress" class="wallet-address"></span>
-                <span id="networkInfo" class="network-info"></span>
-            </div>
-        </header>
+const providerOptions = {
+  walletconnect: {
+    package: () => import('@walletconnect/web3-provider'),
+    options: {
+      rpc: {
+        137: 'https://polygon-rpc.com',
+      },
+    },
+  },
+};
 
-        <main>
-            <div class="stats-grid">
-                <div id="lqxBalance" class="stat-card">LQX Balance: 0</div>
-                <div id="lpBalance" class="stat-card">LP Balance: 0</div>
-                <div id="stakedAmount" class="stat-card">Staked Amount: 0</div>
-                <div id="pendingReward" class="stat-card">Pending Reward: 0</div>
-                <div id="aprValue" class="stat-card">APR: 0%</div>
-                <div id="totalStaked" class="stat-card">Total Staked: 0</div>
-            </div>
+const web3Modal = new Web3Modal({
+  cacheProvider: true,
+  providerOptions,
+});
 
-            <div class="action-section">
-                <div>
-                    <input type="number" id="stakeAmount" placeholder="Enter amount to Stake">
-                    <button id="stakeBtn" class="primary-btn">Stake</button>
-                </div>
-                <div>
-                    <input type="number" id="unstakeAmount" placeholder="Enter amount to Unstake">
-                    <button id="unstakeBtn" class="secondary-btn">Unstake</button>
-                </div>
-                <div>
-                    <button id="claimBtn" class="accent-btn">Claim Rewards</button>
-                </div>
-            </div>
-        </main>
+let provider;
+let signer;
+let connectedAddress = '';
 
-        <div id="notificationContainer"></div>
-        <div id="loadingOverlay" class="loading-overlay hidden">Processing...</div>
-    </div>
+// Load ABI files
+const LQXTokenABI = require('./abis/LQXToken.json');
+const LPTokenABI = require('./abis/LPToken.json');
+const StakingContractABI = require('./abis/StakingContract.json');
 
-<!-- styles.css -->
-<style>
-    :root {
-        --primary-color: #6a4cff;
-        --secondary-color: #4a6cf7;
-        --accent-color: #ff6b4a;
-        --success-color: #4CAF50;
-        --error-color: #f44336;
-        --warning-color: #FF9800;
-        --info-color: #2196F3;
-    }
+const LQX_TOKEN_ADDRESS = '0x9e27f48659b1005b1abc0f58465137e531430d4b';
+const LP_TOKEN_ADDRESS = '0xB2a9D1e702550BF3Ac1Db105eABc888dB64Be24E';
+const STAKING_CONTRACT_ADDRESS = '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9';
 
-    body {
-        background-color: #1e1e2d;
-        color: white;
-        font-family: 'Montserrat', sans-serif;
-    }
+async function connectWallet() {
+  provider = await web3Modal.connect();
+  const web3Provider = new ethers.providers.Web3Provider(provider);
+  signer = web3Provider.getSigner();
+  connectedAddress = await signer.getAddress();
+  document.getElementById('wallet-address').innerText = `Connected: ${connectedAddress}`;
+}
 
-    .container {
-        max-width: 1200px;
-        margin: auto;
-        padding: 20px;
-    }
+async function disconnectWallet() {
+  web3Modal.clearCachedProvider();
+  provider = null;
+  signer = null;
+  connectedAddress = '';
+  document.getElementById('wallet-address').innerText = 'Disconnected';
+}
 
-    .connect-btn {
-        background-color: var(--primary-color);
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        cursor: pointer;
-        transition: 0.3s;
-    }
+async function getAPR() {
+  const web3Provider = new ethers.providers.Web3Provider(provider);
+  const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, StakingContractABI, web3Provider);
+  const apr = await stakingContract.getAPR();
+  document.getElementById('apr').innerText = `APR: ${ethers.utils.formatUnits(apr, 2)}%`;
+}
 
-    .connect-btn:hover {
-        background-color: var(--secondary-color);
-    }
+document.getElementById('connect-btn').addEventListener('click', connectWallet);
+document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
+document.getElementById('refresh-apr-btn').addEventListener('click', getAPR);
 
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-top: 20px;
-    }
-
-    .stat-card {
-        background: #2a2a3a;
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-    }
-
-    .action-section {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 20px;
-    }
-
-    .primary-btn, .secondary-btn, .accent-btn {
-        padding: 10px 20px;
-        border: none;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-    .primary-btn { background-color: var(--primary-color); color: white; }
-    .secondary-btn { background-color: var(--secondary-color); color: white; }
-    .accent-btn { background-color: var(--accent-color); color: white; }
-
-    .primary-btn:hover { background-color: #4a6cf7; }
-    .secondary-btn:hover { background-color: #374cc1; }
-    .accent-btn:hover { background-color: #e65a3c; }
-</style>
-
-<!-- app.js -->
-<script>
-    'use strict';
-
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('connectButton').addEventListener('click', () => alert('Connecting wallet...'));
-        document.getElementById('stakeBtn').addEventListener('click', () => alert('Staking LP Tokens...'));
-        document.getElementById('unstakeBtn').addEventListener('click', () => alert('Unstaking LP Tokens...'));
-        document.getElementById('claimBtn').addEventListener('click', () => alert('Claiming Rewards...'));
-    });
-</script>
+if (provider) {
+  getAPR();
+}
