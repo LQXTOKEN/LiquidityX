@@ -1,11 +1,11 @@
 // app.js
 
 const { ethers } = window;
-const Web3Modal = window.Web3Modal.default;
+const Web3Modal = window.Web3Modal; // Αλλάξαμε τη χρήση του Web3Modal
 
 const providerOptions = {
   walletconnect: {
-    package: window.WalletConnectProvider.default,
+    package: window.WalletConnectProvider, // Αφαίρεσα το '.default'
     options: {
       rpc: {
         137: 'https://polygon-rpc.com',
