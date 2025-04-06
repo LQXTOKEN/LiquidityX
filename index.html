@@ -3,15 +3,6 @@
 <head>
     <title>LiquidityX dApp</title>
     <link rel="stylesheet" href="styles.css">
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval';
-        style-src 'self' 'unsafe-inline';
-        connect-src 'self' https://polygon-rpc.com https://rpc-mumbai.maticvigil.com https://rpc-mainnet.matic.network https://mainnet.infura.io https://bsc-dataseed.binance.org https://osmosis-rpc.polkachu.com;
-        img-src 'self' data:;
-        font-src 'self' https://fonts.gstatic.com;
-        frame-src 'self';
-    ">
 </head>
 <body>
     <div id="app">
@@ -19,12 +10,9 @@
         <div id="wallet-address">Disconnected</div>
         <button id="connect-btn">Connect Wallet</button>
         <button id="disconnect-btn">Disconnect Wallet</button>
-        <div id="apr">APR: Loading...</div>
-        <button id="refresh-apr-btn">Refresh APR</button>
     </div>
-    <script src="libs/ethers.min.js"></script>
+    <script src="libs/ethers-v6.min.js"></script>
     <script src="libs/web3modal.min.js"></script>
-    <script src="libs/walletconnect.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
