@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LiquidityX LP Staking</title>
+    <title>LiquidityX LP Staking dApp</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <script src="libs/ethers-5.7.umd.min.js"></script>
@@ -19,9 +19,6 @@
         <header>
             <h1>LiquidityX LP Staking</h1>
             <div id="wallet-address">Not connected</div>
-            <select id="wallet-select">
-                <option value="">Select Wallet</option>
-            </select>
             <button id="connect-btn">Connect Wallet</button>
             <button id="disconnect-btn" style="display:none;">Disconnect</button>
         </header>
@@ -29,8 +26,10 @@
         <section>
             <h2>Staking Information</h2>
             <p id="apr">APR: Loading...</p>
-            <p id="earned">Earned: Loading...</p>
-            <p id="staked">Staked: Loading...</p>
+            <p id="lqx-balance">LQX Balance: Loading...</p>
+            <p id="lp-balance">LP Token Balance: Loading...</p>
+            <p id="staked-amount">Staked Amount: Loading...</p>
+            <p id="earned-rewards">Earned Rewards: Loading...</p>
         </section>
 
         <section>
@@ -41,11 +40,11 @@
             <input type="number" id="unstake-amount" placeholder="Enter amount to unstake">
             <button id="unstake-btn">Unstake Tokens</button>
             
-            <button id="claim-btn">Claim Rewards</button>
+            <button id="claim-rewards-btn">Claim Rewards</button>
         </section>
 
         <footer>
-            <p>LiquidityX - Decentralized LP Staking</p>
+            <p>LiquidityX - Decentralized LP Staking dApp</p>
         </footer>
     </div>
 
