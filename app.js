@@ -1,101 +1,106 @@
-const { ethers } = window;
-
-// State management
-let provider;
-let signer;
-let connectedAddress = '';
-
-// Check if MetaMask is installed
-function hasInjectedProvider() {
-  return typeof window.ethereum !== 'undefined';
-}
-
-async function connectWallet() {
-  if (!hasInjectedProvider()) {
-    alert('Please install MetaMask or another Web3 wallet!');
-    return;
-  }
-
-  try {
-    // Request account access
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    connectedAddress = accounts[0];
+document.addEventListener('DOMContentLoaded', function() {
+    // Έλεγχος για πορτοφόλια
+    checkWallets();
     
-    // Initialize ethers provider (Correct way for ethers.js v6)
-    provider = new ethers.BrowserProvider(window.ethereum); 
-    signer = await provider.getSigner();
-    
-    // Update UI
-    document.getElementById('wallet-address').textContent = 
-      `Connected: ${connectedAddress.substring(0, 6)}...${connectedAddress.slice(-4)}`;
-    
-    // Save connection state
-    localStorage.setItem('walletConnected', 'true');
-    
-    // Set up event listeners
-    window.ethereum.on('accountsChanged', (newAccounts) => {
-      connectedAddress = newAccounts[0] || '';
-      updateConnectionStatus();
+    // Προσθήκη event listeners στα κουμπιά
+    document.querySelectorAll('.wallet-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const walletType = this.getAttribute('data-wallet');
+            connectWallet(walletType);
+        });
     });
     
-    window.ethereum.on('chainChanged', () => {
-      window.location.reload();
-    });
+    // Κουμπί αποσύνδεσης
+    document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
+});
 
-  } catch (error) {
-    console.error("Connection error:", error);
-    alert(`Connection failed: ${error.message}`);
-  }
+// Έλεγχος αν υπάρχει κάποιο πορτοφόλι
+function checkWallets() {
+    const hasAnyWallet = 
+        typeof window.ethereum !== 'undefined' || 
+        typeof window.phantom !== 'undefined' ||
+        typeof window.coinbaseWalletExtension !== 'undefined';
+    
+    if (!hasAnyWallet) {
+        document.getElementById('no-wallet-alert').style.display = 'block';
+    }
 }
 
+// Συνάρτηση σύνδεσης
+async function connectWallet(walletType) {
+    try {
+        let provider;
+        
+        // Ανίχνευση πορτοφολιού
+        switch(walletType) {
+            case 'metamask':
+            case 'trust':
+            case 'coinbase':
+                if (!window.ethereum) {
+                    throw new Error('Το πορτοφόλι δεν βρέθηκε!');
+                }
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                break;
+                
+            case 'phantom':
+                if (!window.phantom?.solana) {
+                    throw new Error('Το Phantom δεν βρέθηκε!');
+                }
+                // Phantom χρησιμοποιεί Solana, οπότε χρειαζόμαστε διαφορετικό provider
+                // (Εδώ θα μπορούσαμε να χρησιμοποιήσουμε την Solana Web3.js βιβλιοθήκη)
+                throw new Error('Το Phantom απαιτεί Solana integration');
+                
+            default:
+                throw new Error('Μη υποστηριζόμενο πορτοφόλι');
+        }
+        
+        // Αίτημα πρόσβασης
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const signer = provider.getSigner();
+        const address = await signer.getAddress();
+        const network = await provider.getNetwork();
+        
+        // Ενημέρωση UI
+        document.getElementById('wallet-address').textContent = address;
+        document.getElementById('wallet-chain').textContent = `${network.name} (ID: ${network.chainId})`;
+        document.getElementById('wallet-info').style.display = 'block';
+        document.getElementById('no-wallet-alert').style.display = 'none';
+        
+        // Event listeners για αλλαγές
+        window.ethereum?.on('accountsChanged', handleAccountsChanged);
+        window.ethereum?.on('chainChanged', handleChainChanged);
+        
+    } catch (error) {
+        console.error('Σφάλμα σύνδεσης:', error);
+        alert(`Σφάλμα σύνδεσης: ${error.message}`);
+    }
+}
+
+// Χειρισμός αλλαγών λογαριασμού
+function handleAccountsChanged(accounts) {
+    if (accounts.length === 0) {
+        alert('Αποσυνδεθήκατε από το πορτοφόλι');
+        disconnectWallet();
+    } else {
+        document.getElementById('wallet-address').textContent = accounts[0];
+    }
+}
+
+// Χειρισμός αλλαγών δικτύου
+function handleChainChanged(chainId) {
+    window.location.reload();
+}
+
+// Συνάρτηση αποσύνδεσης
 function disconnectWallet() {
-  if (window.ethereum && window.ethereum.removeListener) {
-    window.ethereum.removeListener('accountsChanged');
-    window.ethereum.removeListener('chainChanged');
-  }
-  
-  provider = null;
-  signer = null;
-  connectedAddress = '';
-  updateConnectionStatus();
-  
-  localStorage.removeItem('walletConnected');
-}
-
-function updateConnectionStatus() {
-  const el = document.getElementById('wallet-address');
-  el.textContent = connectedAddress 
-    ? `Connected: ${connectedAddress.substring(0, 6)}...${connectedAddress.slice(-4)}`
-    : 'Not connected';
-}
-
-// APR Function (unchanged from your original)
-async function getAPR() {
-  try {
-    const rpcProvider = new ethers.JsonRpcProvider('https://polygon-rpc.com');
-    const response = await fetch('abis/StakingContract.json');
-    const StakingContractABI = await response.json();
+    // Καθαρισμός event listeners
+    window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
+    window.ethereum?.removeListener('chainChanged', handleChainChanged);
     
-    const stakingContract = new ethers.Contract(
-      '0xCD95Ccc0bE64f84E0A12BFe3CC50DBc0f0748ad9',
-      StakingContractABI,
-      rpcProvider
-    );
-
-    const apr = await stakingContract.getAPR();
-    document.getElementById('apr').innerText = `APR: ${ethers.formatUnits(apr, 2)}%`;
-    console.log("✅ APR Fetched Successfully:", apr.toString());
-  } catch (error) {
-    console.error("APR error:", error);
-  }
-}
-
-// Event Listeners
-document.getElementById('connect-btn').addEventListener('click', connectWallet);
-document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
-document.getElementById('refresh-apr-btn').addEventListener('click', getAPR);
-
-// Auto-connect if previously connected
-if (localStorage.getItem('walletConnected') === 'true' && hasInjectedProvider()) {
-  connectWallet();
+    // Επαναφορά UI
+    document.getElementById('wallet-info').style.display = 'none';
+    document.getElementById('wallet-address').textContent = '';
+    document.getElementById('wallet-chain').textContent = '';
+    
+    alert('Αποσυνδεθήκατε επιτυχώς');
 }
