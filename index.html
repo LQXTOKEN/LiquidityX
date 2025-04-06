@@ -3,7 +3,15 @@
 <head>
     <title>LiquidityX dApp</title>
     <link rel="stylesheet" href="styles.css">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://polygon-rpc.com;">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+        style-src 'self' 'unsafe-inline';
+        connect-src 'self' https://polygon-rpc.com https://rpc-mumbai.maticvigil.com https://rpc-mainnet.matic.network https://mainnet.infura.io https://bsc-dataseed.binance.org https://osmosis-rpc.polkachu.com;
+        img-src 'self' data:;
+        font-src 'self' https://fonts.gstatic.com;
+        frame-src 'self';
+    ">
 </head>
 <body>
     <div id="app">
