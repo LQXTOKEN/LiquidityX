@@ -1,33 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LiquidityX dApp</title>
+    <title>LiquidityX</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <div class="header">
-            <img src="logo.png" alt="LiquidityX Logo" class="logo">
-            <h1>LiquidityX LP Staking </h1>
-        </div>
-        <div id="wallet-address">Disconnected</div>
-        <button id="connect-btn">Connect Wallet</button>
-        
-        <div class="card" id="apr">APR: Loading...</div>
-        <div class="card" id="lqx-balance">LQX Balance: -</div>
-        <div class="card" id="lp-balance">LP Token Balance: -</div>
-        <div class="card" id="staked-amount">Staked Amount: -</div>
-        <div class="card" id="earned-rewards">Earned Rewards: -</div>
-
-        <input type="number" id="stake-amount" placeholder="Amount to Stake">
-        <button id="stake-btn">Stake</button>
-
-        <input type="number" id="unstake-amount" placeholder="Amount to Unstake">
-        <button id="unstake-btn">Unstake</button>
-
-        <button id="claim-rewards-btn">Claim Rewards</button>
+    <div id="main">
+        <header>
+            <h1>LiquidityX</h1>
+            <nav>
+                <ul>
+                    <li><a href="LpStaking/index.html">LP Staking</a></li>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+        </header>
+        <section>
+            <h2>Welcome to LiquidityX</h2>
+            <p>The best DeFi platform for staking and earning rewards with your LP Tokens.</p>
+            <p>Explore our platform and earn rewards through staking!</p>
+        </section>
     </div>
-    <script src="app.js"></script>
 </body>
 </html>
