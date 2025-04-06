@@ -1,70 +1,20 @@
 <!DOCTYPE html>
-<html lang="el">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Πολυπορτοφόλια Σύνδεση</title>
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .wallet-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .wallet-btn:hover {
-            background: #2563eb;
-        }
-        #wallet-info {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f3f4f6;
-            border-radius: 5px;
-        }
-        #no-wallet-alert {
-            color: red;
-            margin: 20px 0;
-        }
-    </style>
+    <title>LiquidityX dApp</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Σύνδεση Πορτοφολιού</h1>
-    
-    <div id="wallet-buttons">
-        <button class="wallet-btn" data-wallet="metamask">MetaMask</button>
-        <button class="wallet-btn" data-wallet="trust">Trust Wallet</button>
-        <button class="wallet-btn" data-wallet="coinbase">Coinbase Wallet</button>
-        <button class="wallet-btn" data-wallet="phantom">Phantom</button>
+    <div id="app">
+        <h1>LiquidityX Staking dApp</h1>
+        <div id="wallet-address">Disconnected</div>
+        <button id="connect-btn">Connect Wallet</button>
+        <button id="disconnect-btn">Disconnect Wallet</button>
+        <div id="apr">APR: Loading...</div>
+        <button id="refresh-apr-btn">Refresh APR</button>
+        <button id="claim-rewards-btn">Claim Rewards</button>
     </div>
-    
-    <div id="no-wallet-alert" style="display: none;">
-        <p>Δεν βρέθηκε πορτοφόλι! Παρακαλώ εγκαταστήστε ένα από τα παρακάτω:</p>
-        <ul>
-            <li><a href="https://metamask.io/download.html" target="_blank">MetaMask</a></li>
-            <li><a href="https://trustwallet.com/" target="_blank">Trust Wallet</a></li>
-            <li><a href="https://www.coinbase.com/wallet" target="_blank">Coinbase Wallet</a></li>
-            <li><a href="https://phantom.app/" target="_blank">Phantom</a></li>
-        </ul>
-    </div>
-    
-    <div id="wallet-info" style="display: none;">
-        <h3>Πληροφορίες Σύνδεσης</h3>
-        <p><strong>Διεύθυνση:</strong> <span id="wallet-address"></span></p>
-        <p><strong>Δίκτυο:</strong> <span id="wallet-chain"></span></p>
-        <button id="disconnect-btn">Αποσύνδεση</button>
-    </div>
-
+    <script src="libs/ethers-v5.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
