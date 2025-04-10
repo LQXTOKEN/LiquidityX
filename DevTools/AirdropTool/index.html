@@ -1,1 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LiquidityX Airdrop Tool</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>LiquidityX Community Airdrop Tool</h1>
+      <p>Create your Airdrop list using any of the methods below.</p>
+    </header>
 
+    <section id="wallet-section">
+      <button id="connect-btn">🔗 Connect Wallet</button>
+      <div id="wallet-info"></div>
+      <div id="lqx-info"></div>
+      <div id="requirement-warning"></div>
+    </section>
+
+    <section id="token-section">
+      <label for="token-address">Choose ERC-20 token to airdrop:</label>
+      <input type="text" id="token-address" placeholder="Polygon Token Contract Address" />
+      <button id="check-token-btn">Check Token</button>
+      <div id="token-info"></div>
+    </section>
+
+    <section id="method-selection">
+      <label for="method-select">Select address input method:</label>
+      <select id="method-select">
+        <option value="">-- Select --</option>
+        <option value="paste">Paste</option>
+        <option value="create">Create from PolygonScan</option>
+        <option value="random">Generate Random</option>
+      </select>
+    </section>
+
+    <section id="paste-inputs" style="display: none;">
+      <label for="manual-addresses">Paste wallet addresses (one per line):</label>
+      <textarea id="manual-addresses" rows="6" placeholder="0x123...\n0xabc..."></textarea>
+    </section>
+
+    <section id="create-inputs" style="display: none;">
+      <label for="scan-link">Paste PolygonScan Token Link:</label>
+      <input type="text" id="scan-link" placeholder="https://polygonscan.com/token/0x..." />
+      <label for="max-addresses">Enter max number of addresses to use:</label>
+      <input type="number" id="max-addresses" placeholder="e.g. 10" min="1" />
+    </section>
+
+    <section id="random-inputs" style="display: none;">
+      <label for="random-count">Generate how many random addresses?</label>
+      <input type="number" id="random-count" placeholder="e.g. 5" min="1" max="500" />
+    </section>
+
+    <button id="extract-btn" disabled>Choose Addresses</button>
+
+    <div id="address-count" style="margin-top: 1rem;"></div>
+    <ul id="address-list"></ul>
+
+    <footer>
+      <p>Powered by LiquidityX | Community Tools</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
