@@ -1,58 +1,77 @@
-import { connectWallet, disconnectWallet, isConnected, getUserAddress, checkLQXBalance } from './js/modules/wallet_module.js';
-import { handleAddressModeChange, handleProceed, downloadAddresses } from './js/modules/address_module.js';
-import { checkTokenInfo } from './js/modules/token_module.js';
-import { setupUI, disableUI, enableUI } from './js/modules/ui_module.js';
+// js/main.js
 
-// Global state
-let walletConnected = false;
+import { connectWallet, disconnectWallet, checkLQXBalance, getUserAddress } from './modules/wallet_module.js';
+import { handleModeChange, handleProceed, downloadAddresses, toggleInputFields, clearUI } from './modules/address_module.js';
+import { displayWalletInfo, displayLQXBalance, showWarning, resetUI } from './modules/ui_module.js';
 
-// Run on DOM load
+let selectedMode = "";
+let addressList = [];
+
 document.addEventListener("DOMContentLoaded", async () => {
-  setupUI();
+  const connectBtn = document.getElementById("connect-btn");
+  const disconnectBtn = document.getElementById("disconnect-btn");
+  const backBtn = document.getElementById("back-btn");
+  const modeSelect = document.getElementById("mode");
+  const proceedBtn = document.getElementById("proceed-btn");
+  const downloadBtn = document.getElementById("download-btn");
 
-  // Connect Wallet
-  document.getElementById("connect-btn").addEventListener("click", async () => {
-    const connected = await connectWallet();
-    if (connected) {
-      walletConnected = true;
-
-      const isHolder = await checkLQXBalance();
-      if (!isHolder) {
-        disableUI("⚠️ You must hold at least 1000 LQX tokens to use this tool.");
-        return;
+  connectBtn.addEventListener("click", async () => {
+    const wallet = await connectWallet();
+    if (wallet) {
+      displayWalletInfo(wallet.address);
+      const lqxBalance = await checkLQXBalance(wallet.provider, wallet.address);
+      displayLQXBalance(lqxBalance.formatted);
+      if (lqxBalance.ok) {
+        enableUI();
+      } else {
+        showWarning("⚠️ You must hold at least 1000 LQX tokens to use this tool.");
+        disableUI();
       }
-
-      enableUI();
     }
   });
 
-  // Disconnect Wallet
-  document.getElementById("disconnect-btn").addEventListener("click", () => {
+  disconnectBtn.addEventListener("click", () => {
     disconnectWallet();
-    walletConnected = false;
-    disableUI("🔌 Wallet disconnected.");
+    resetUI();
+    disableUI();
   });
 
-  // ERC20 Check Button
-  document.getElementById("check-token-btn").addEventListener("click", async () => {
-    if (!walletConnected) {
-      alert("Please connect wallet first.");
-      return;
-    }
-    await checkTokenInfo();
-  });
-
-  // Address Mode Change
-  document.getElementById("mode").addEventListener("change", handleAddressModeChange);
-
-  // Proceed button
-  document.getElementById("proceed-btn").addEventListener("click", handleProceed);
-
-  // Download addresses
-  document.getElementById("download-btn").addEventListener("click", downloadAddresses);
-
-  // Back button
-  document.getElementById("back-btn").addEventListener("click", () => {
+  backBtn.addEventListener("click", () => {
     window.location.href = "https://liquidityx.io";
   });
+
+  modeSelect.addEventListener("change", (e) => {
+    const newMode = e.target.value;
+    if (addressList.length > 0) {
+      const confirmClear = confirm("Switching modes will clear your current address list. Proceed?");
+      if (!confirmClear) {
+        modeSelect.value = selectedMode;
+        return;
+      }
+      addressList = [];
+      clearUI();
+    }
+    selectedMode = newMode;
+    toggleInputFields(newMode);
+  });
+
+  proceedBtn.addEventListener("click", async () => {
+    addressList = await handleProceed(selectedMode);
+  });
+
+  downloadBtn.addEventListener("click", () => {
+    downloadAddresses(addressList);
+  });
+
+  function disableUI() {
+    modeSelect.disabled = true;
+    proceedBtn.disabled = true;
+    downloadBtn.disabled = true;
+  }
+
+  function enableUI() {
+    modeSelect.disabled = false;
+    proceedBtn.disabled = false;
+    downloadBtn.disabled = false;
+  }
 });
