@@ -1,50 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-    <title>LiquidityX LP Staking dApp</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LiquidityX Airdrop Tool</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.2.umd.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>LiquidityX LP Staking dApp</h1>
-            <div id="wallet-address">Not connected</div>
-            <button id="connect-btn">Connect Wallet</button>
-            <button id="disconnect-btn" style="display:none;">Disconnect</button>
-            <!-- Navigation Button: Back to Main Website -->
-            <button id="back-to-main-btn" onclick="window.location.href='https://liquidityx.io/'">Back to Main Website</button>
-        </header>
-
-        <section>
-            <h2>Staking Information</h2>
-            <p id="apr">APR: Loading...</p>
-            <p id="lqx-balance">LQX Balance: Loading...</p>
-            <p id="lp-balance">LP Token Balance: Loading...</p>
-            <p id="staked-amount">Staked Amount: Loading...</p>
-            <p id="earned-rewards">Earned Rewards: Loading...</p>
-        </section>
-
-        <section>
-            <h2>Actions</h2>
-            <input type="number" id="stake-amount" placeholder="Enter amount to stake">
-            <button id="stake-btn">Stake Tokens</button>
-            
-            <input type="number" id="unstake-amount" placeholder="Enter amount to unstake">
-            <button id="unstake-btn">Unstake Tokens</button>
-            
-            <button id="claim-rewards-btn">Claim Rewards</button>
-        </section>
-
-        <footer>
-            <p>LiquidityX - LP Staking dApp Version 1.0</p>
-        </footer>        
+  <div class="container">
+    <h1>LiquidityX Airdrop Tool</h1>
+    <button id="backToMain">Back to Main Website</button>
+    <div id="walletSection">
+      <button id="connectWallet">Connect Wallet</button>
+      <button id="disconnectWallet" style="display: none;">Disconnect Wallet</button>
+      <p id="walletAddress"></p>
+      <p id="lqxBalance"></p>
     </div>
+    <div id="accessDenied" style="display:none;">
+      <p>You need at least 1000 LQX to use this tool.</p>
+    </div>
+    <div id="airdropTool" style="display: none;">
+      <label for="modeSelect">Choose input method:</label>
+      <select id="modeSelect">
+        <option value="paste">Paste</option>
+        <option value="create">Create</option>
+        <option value="random">Random</option>
+      </select>
 
-    <script src="app.js"></script>
+      <div id="pasteSection" class="modeSection">
+        <label for="polygonScanInput">Paste PolygonScan URL:</label>
+        <div class="custom-textarea">
+          <textarea id="polygonScanInput" placeholder="Enter PolygonScan token or transaction URL..."></textarea>
+        </div>
+      </div>
+
+      <div id="createSection" class="modeSection" style="display:none;">
+        <label for="contractInput">Enter Token Contract Address:</label>
+        <input type="text" id="contractInput" placeholder="0x...">
+      </div>
+
+      <div id="randomSection" class="modeSection" style="display:none;">
+        <label for="maxAddresses">Enter max number of addresses to use (max 1000):</label>
+        <input type="number" id="maxAddresses" max="1000" min="1" value="100">
+      </div>
+
+      <button id="proceedButton">Proceed</button>
+      <button id="downloadButton" style="display:none;">Download Addresses (.txt)</button>
+
+      <pre id="results"></pre>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
