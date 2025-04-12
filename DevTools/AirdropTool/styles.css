@@ -7,7 +7,7 @@ body {
 }
 
 #app {
-  max-width: 950px;
+  max-width: 900px;
   margin: auto;
   padding: 20px;
   border: 1px solid #333;
@@ -20,26 +20,15 @@ header, footer {
   margin-bottom: 20px;
 }
 
-.top-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
-}
-
 input, select, textarea {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
+  margin-bottom: 10px;
   border-radius: 5px;
   border: 1px solid #444;
   background-color: #0d1117;
   color: white;
-  font-size: 14px;
-}
-
-textarea {
-  min-height: 120px;
-  resize: vertical;
 }
 
 button {
@@ -48,14 +37,19 @@ button {
   border: none;
   padding: 10px 20px;
   margin-top: 15px;
+  margin-right: 10px;
   border-radius: 5px;
   cursor: pointer;
   transition: 0.3s;
-  font-size: 14px;
 }
 
 button:hover {
   background-color: #3d38a3;
+}
+
+textarea {
+  height: 120px;
+  resize: vertical;
 }
 
 ul {
@@ -69,7 +63,7 @@ li {
   font-size: 14px;
   border-bottom: 1px solid #333;
   padding-bottom: 5px;
-  word-break: break-all;
+  word-break: break-word;
 }
 
 #wallet-info, #lqx-info {
@@ -85,6 +79,11 @@ li {
   margin-top: 10px;
 }
 
+#address-count {
+  font-size: 14px;
+  margin-top: 15px;
+}
+
 #token-info {
   font-size: 14px;
   color: #00ffae;
@@ -93,5 +92,4 @@ li {
 
 .mode-box {
   display: none;
-  margin-top: 15px;
 }
