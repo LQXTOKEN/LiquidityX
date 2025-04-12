@@ -1,13 +1,63 @@
 // js/main.js
 
-import { CONFIG } from './config.js';
-import { getERC20Balance } from './erc20_module.js';
-import { getProvider, getUserAddress } from './wallet_module.js';
-import { showSectionByMode, displayResults, downloadAddressesAsTxt } from './ui_module.js';
+document.addEventListener("DOMContentLoaded", () => {
+  // Mode switch
+  const modeSelect = document.getElementById("modeSelect");
+  modeSelect.addEventListener("change", function () {
+    uiModule.showSectionByMode(this.value);
+  });
 
-export async function fetchAddresses(mode) {
-  const provider = getProvider();
-  const userAddress = getUserAddress();
+  // Connect wallet
+  document.getElementById("connectWallet").addEventListener("click", async () => {
+    const result = await walletModule.connectWallet();
+    if (!result) return;
+
+    const { provider, userAddress } = result;
+    const balanceInfo = await erc20Module.getERC20Balance(CONFIG.LQX_TOKEN_ADDRESS, userAddress, provider);
+    if (!balanceInfo) return;
+
+    const meetsRequirement = parseFloat(balanceInfo.formatted) >= CONFIG.MIN_LQX_REQUIRED;
+    uiModule.setWalletInfo(userAddress, balanceInfo.formatted, balanceInfo.symbol);
+    uiModule.setAccessDenied(!meetsRequirement);
+
+    document.getElementById("connectWallet").style.display = "none";
+    document.getElementById("disconnectWallet").style.display = "inline-block";
+  });
+
+  // Disconnect wallet
+  document.getElementById("disconnectWallet").addEventListener("click", () => {
+    walletModule.disconnectWallet();
+    window.location.reload();
+  });
+
+  // Back to main site
+  document.getElementById("backToMain").addEventListener("click", () => {
+    window.location.href = "https://liquidityx.io";
+  });
+
+  // Proceed button
+  document.getElementById("proceedButton").addEventListener("click", async () => {
+    const mode = document.getElementById("modeSelect").value;
+    const addresses = await fetchAddresses(mode);
+    if (addresses && addresses.length > 0) {
+      uiModule.displayResults(addresses);
+    } else {
+      alert("No addresses found.");
+    }
+  });
+
+  // Download .txt button
+  document.getElementById("downloadButton").addEventListener("click", () => {
+    const results = document.getElementById("results").textContent.trim().split("\n");
+    if (results.length > 0) {
+      uiModule.downloadAddressesAsTxt(results);
+    }
+  });
+});
+
+async function fetchAddresses(mode) {
+  const provider = walletModule.getProvider();
+  const userAddress = walletModule.getUserAddress();
   if (!provider || !userAddress) return [];
 
   if (mode === "paste") {
@@ -29,7 +79,7 @@ export async function fetchAddresses(mode) {
 
   } else if (mode === "create") {
     const contractInput = document.getElementById("contractInput").value.trim();
-    if (!ethers.utils.isAddress(contractInput)) {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(contractInput)) {
       alert("Invalid contract address.");
       return [];
     }
@@ -62,11 +112,4 @@ function extractTokenAddress(url) {
   const regex = /address\\/(0x[a-fA-F0-9]{40})/;
   const match = url.match(regex);
   return match ? match[1] : null;
-}
-
-export function initModeSelector() {
-  const modeSelect = document.getElementById("modeSelect");
-  modeSelect.addEventListener("change", (e) => {
-    showSectionByMode(e.target.value);
-  });
 }
