@@ -1,129 +1,73 @@
-import { 
-  LQX_ADDRESS, 
-  LQX_ABI, 
-  LQX_REQUIRED, 
-  POLYGON_MAINNET_CHAIN_ID,
-  POLYGON_TESTNET_CHAIN_ID,
-  POLYGON_RPC_URL
-} from './config.js';
+import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/+esm";
+import { LQX_ADDRESS, LQX_ABI } from './config.js';
 
-export let provider, signer, userAddress, lqxContract;
+let provider, signer, userAddress;
 
 export async function connectWallet() {
   try {
-    // 1. Check for MetaMask installation
+    // 1. Έλεγχος αν το MetaMask είναι εγκατεστημένο
     if (!window.ethereum) {
       throw new Error("MetaMask not installed");
     }
 
-    // 2. Initialize provider
-    provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-
-    // 3. Handle network switching
-    try {
-      await checkAndSwitchToPolygon();
-    } catch (networkError) {
-      console.warn("Network switch failed:", networkError);
-      throw new Error("Please switch to Polygon manually in MetaMask");
-    }
-
-    // 4. Request account access
-    const accounts = await provider.send("eth_requestAccounts", []);
+    // 2. Ζητάμε πρόσβαση στον λογαριασμό
+    const accounts = await window.ethereum.request({ 
+      method: "eth_requestAccounts" 
+    });
+    
     if (!accounts || accounts.length === 0) {
       throw new Error("User denied account access");
     }
 
-    // 5. Initialize wallet components
+    // 3. Αρχικοποίηση Provider & Signer
+    provider = new ethers.providers.Web3Provider(window.ethereum);
     signer = provider.getSigner();
-    userAddress = await signer.getAddress();
+    userAddress = accounts[0];
 
-    // 6. Verify correct network
+    // 4. Έλεγχος δικτύου (Polygon Mainnet)
     const network = await provider.getNetwork();
-    if (![POLYGON_MAINNET_CHAIN_ID, POLYGON_TESTNET_CHAIN_ID].includes(network.chainId)) {
-      throw new Error("Unsupported network - Please use Polygon");
+    if (network.chainId !== 137) { // 137 = Polygon Mainnet
+      await switchToPolygon();
     }
 
-    // 7. Initialize LQX contract and check balance
-    lqxContract = new ethers.Contract(LQX_ADDRESS, LQX_ABI, provider);
+    // 5. Έλεγχος υπολοίπου LQX
+    const lqxContract = new ethers.Contract(LQX_ADDRESS, LQX_ABI, provider);
     const balance = await lqxContract.balanceOf(userAddress);
-    const formattedBalance = ethers.utils.formatUnits(balance, 18);
-
-    // 8. Update UI
-    updateWalletUI(userAddress, formattedBalance, balance);
+    const hasEnoughLQX = balance.gte(ethers.utils.parseUnits("1000", 18));
 
     return {
       success: true,
       address: userAddress,
-      balance: formattedBalance,
-      hasEnoughLQX: balance.gte(LQX_REQUIRED)
+      hasEnoughLQX,
+      balance: ethers.utils.formatUnits(balance, 18)
     };
 
-  } catch (err) {
-    console.error("Wallet connection error:", err);
-    updateWalletUI(null, "0", ethers.BigNumber.from(0));
-    throw err; // Re-throw for calling code to handle
+  } catch (error) {
+    console.error("Connection error:", error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
 
-export function disconnectWallet() {
-  provider = null;
-  signer = null;
-  userAddress = null;
-  lqxContract = null;
-  updateWalletUI(null, "0", ethers.BigNumber.from(0));
-}
-
-function updateWalletUI(address, balance, balanceBN) {
-  const walletInfo = document.getElementById("wallet-info");
-  const lqxInfo = document.getElementById("lqx-info");
-  const warning = document.getElementById("requirement-warning");
-
-  if (address) {
-    walletInfo.innerText = `🧾 Connected: ${address}`;
-    lqxInfo.innerText = `💰 LQX Balance: ${balance}`;
-    
-    if (balanceBN.lt(LQX_REQUIRED)) {
-      warning.innerText = "⚠️ You must hold at least 1000 LQX tokens to use this tool.";
-      disableToolUI();
-    } else {
-      warning.innerText = "";
-      enableToolUI();
-    }
-  } else {
-    walletInfo.innerText = "";
-    lqxInfo.innerText = "";
-    warning.innerText = "🔌 Wallet disconnected.";
-    disableToolUI();
-  }
-}
-
-function disableToolUI() {
-  document.getElementById("mode").disabled = true;
-  document.getElementById("proceed-btn").disabled = true;
-}
-
-function enableToolUI() {
-  document.getElementById("mode").disabled = false;
-  document.getElementById("proceed-btn").disabled = false;
-}
-
-async function checkAndSwitchToPolygon() {
-  const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-
-  if (![POLYGON_MAINNET_CHAIN_ID, POLYGON_TESTNET_CHAIN_ID].includes(currentChainId)) {
+async function switchToPolygon() {
+  try {
     await window.ethereum.request({
-      method: 'wallet_addEthereumChain',
+      method: "wallet_addEthereumChain",
       params: [{
-        chainId: POLYGON_MAINNET_CHAIN_ID,
-        chainName: 'Polygon Mainnet',
+        chainId: "0x89", // 137 in hex (Polygon)
+        chainName: "Polygon Mainnet",
         nativeCurrency: {
-          name: 'MATIC',
-          symbol: 'MATIC',
+          name: "MATIC",
+          symbol: "MATIC",
           decimals: 18
         },
-        rpcUrls: [POLYGON_RPC_URL],
-        blockExplorerUrls: ['https://polygonscan.com/']
+        rpcUrls: ["https://polygon-rpc.com/"],
+        blockExplorerUrls: ["https://polygonscan.com/"]
       }]
     });
+  } catch (switchError) {
+    throw new Error("Please switch to Polygon manually in MetaMask");
   }
 }
