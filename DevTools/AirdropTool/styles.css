@@ -1,221 +1,97 @@
-/* ===== LIQUIDITYX DARK THEME ===== */
-:root {
-  /* Color Palette */
-  --primary: #0062ff;
-  --primary-hover: #0048d9;
-  --gradient-purple: #6e00ff;
-  --gradient-pink: #ff00a8;
-  --dark-bg: #0f172a;
-  --card-bg: #1e293b;
-  --text-light: #ffffff;
-  --text-gray: #94a3b8;
-  --border-dark: #334155;
-  --positive: #00c853;
-  --negative: #ff3d00;
-
-  /* Spacing */
-  --radius: 8px;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  --section-padding: 1.5rem;
-}
-
-/* ===== BASE STYLES ===== */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* styles.css */
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--dark-bg);
-  color: var(--text-light);
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f7f9fc;
+  margin: 0;
+  padding: 0;
+  color: #333;
 }
 
-#app {
-  flex: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 1.5rem;
-}
-
-/* ===== HEADER ===== */
-header {
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(8px);
-  padding: 1.2rem 2rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  border-radius: var(--radius);
-  margin-bottom: 2rem;
-  border: 1px solid var(--border-dark);
+.container {
+  max-width: 900px;
+  margin: 50px auto;
+  background: #fff;
+  padding: 30px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
 }
 
 h1 {
-  background: linear-gradient(90deg, 
-    var(--primary), 
-    var(--gradient-purple), 
-    var(--gradient-pink));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  font-weight: 800;
-  font-size: 2rem;
-  margin: 0;
-  animation: gradientShift 8s ease infinite;
-  background-size: 200% auto;
-  flex-grow: 1;
+  text-align: center;
+  color: #20232a;
 }
 
-@keyframes gradientShift {
-  0% { background-position: 0% center; }
-  50% { background-position: 100% center; }
-  100% { background-position: 0% center; }
-}
-
-/* ===== WALLET ADDRESS ===== */
-#wallet-address {
-  font-family: monospace;
-  background: rgba(0, 98, 255, 0.1);
-  color: var(--primary);
-  padding: 0.6rem 1rem;
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-  border: 1px solid rgba(0, 98, 255, 0.3);
-}
-
-/* ===== BUTTONS ===== */
 button {
-  background: var(--primary);
-  color: var(--text-light);
+  padding: 10px 20px;
+  background-color: #2d6cdf;
+  color: white;
   border: none;
-  border-radius: var(--radius);
-  padding: 0.75rem 1.5rem;
-  font-weight: 600;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Inter', sans-serif;
+  margin-top: 10px;
+  margin-right: 10px;
+  transition: background 0.3s ease;
 }
 
 button:hover {
-  background: var(--primary-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  background-color: #1a4fbf;
 }
 
-#back-to-main-btn {
-  background: transparent;
-  border: 1px solid var(--text-gray);
-  color: var(--text-light);
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 
-#back-to-main-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-#connect-btn, #disconnect-btn {
-  order: 2;
-}
-
-/* ===== SECTIONS ===== */
-section {
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: var(--section-padding);
-  margin-bottom: 1.5rem;
-  border: 1px solid var(--border-dark);
-}
-
-h2 {
-  color: var(--primary);
-  margin-top: 0;
-  font-size: 1.4rem;
-  margin-bottom: 1rem;
-}
-
-/* ===== FORM ELEMENTS ===== */
-input[type="number"] {
+input[type="text"], input[type="number"], textarea, select {
   width: 100%;
-  padding: 0.75rem;
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid var(--border-dark);
-  border-radius: var(--radius);
-  margin-bottom: 1rem;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  color: var(--text-light);
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
 }
 
-input[type="number"]:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(0, 98, 255, 0.2);
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 15px;
 }
 
-/* ===== INFO TEXT ===== */
-p {
-  color: var(--text-gray);
-  margin: 0.8rem 0;
+#walletAddress, #lqxBalance {
+  margin-top: 10px;
+  font-size: 0.95rem;
 }
 
-#apr {
-  color: var(--positive);
-  font-weight: 600;
+.modeSection {
+  margin-top: 20px;
+  display: none;
 }
 
-/* ===== FOOTER ===== */
-footer {
-  background: var(--dark-bg);
+#results {
+  background-color: #f1f1f1;
+  padding: 15px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.custom-textarea textarea {
+  height: 120px;
+  font-family: monospace;
+  background-color: #fcfcfc;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  resize: vertical;
+  padding: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+#accessDenied p {
+  color: red;
+  font-weight: bold;
   text-align: center;
-  padding: 1.5rem;
-  margin-top: 2rem;
-  border-top: 1px solid var(--border-dark);
-  color: var(--text-gray);
-  font-size: 0.9rem;
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.8rem;
-    padding: 1rem;
-  }
-
-  h1 {
-    font-size: 1.8rem;
-    text-align: center;
-  }
-
-  #wallet-address {
-    text-align: center;
-    order: 3;
-  }
-
-  #back-to-main-btn,
-  #connect-btn,
-  #disconnect-btn {
-    width: 100%;
-    order: initial !important;
-  }
-}
-
-@media (max-width: 480px) {
-  :root {
-    --section-padding: 1rem;
-  }
-  
-  button {
-    padding: 0.65rem 1rem;
-    font-size: 0.9rem;
-  }
 }
