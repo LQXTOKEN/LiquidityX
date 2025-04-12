@@ -1,41 +1,45 @@
 /* styles.css */
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f7f9fc;
   margin: 0;
   padding: 0;
-  color: #333;
+  font-family: 'Inter', sans-serif;
+  background-color: #f5f6fa;
+  color: #222;
 }
 
 .container {
-  max-width: 900px;
-  margin: 50px auto;
-  background: #fff;
+  max-width: 880px;
+  margin: 60px auto;
   padding: 30px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 h1 {
+  font-size: 28px;
   text-align: center;
-  color: #20232a;
+  margin-bottom: 20px;
+  color: #1a1a1a;
 }
 
 button {
+  font-weight: 600;
+  font-family: inherit;
   padding: 10px 20px;
-  background-color: #2d6cdf;
+  font-size: 16px;
+  background-color: #2563eb;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  margin-top: 10px;
-  margin-right: 10px;
-  transition: background 0.3s ease;
+  margin: 10px 8px 10px 0;
+  transition: background-color 0.25s ease-in-out;
 }
 
 button:hover {
-  background-color: #1a4fbf;
+  background-color: #1e4ecf;
 }
 
 button:disabled {
@@ -43,55 +47,62 @@ button:disabled {
   cursor: not-allowed;
 }
 
-input[type="text"], input[type="number"], textarea, select {
+input, select, textarea {
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  font-size: 15px;
   box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  background-color: #fff;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 label {
-  font-weight: bold;
+  font-weight: 600;
   display: block;
-  margin-top: 15px;
-}
-
-#walletAddress, #lqxBalance {
-  margin-top: 10px;
-  font-size: 0.95rem;
-}
-
-.modeSection {
   margin-top: 20px;
-  display: none;
 }
 
 #results {
-  background-color: #f1f1f1;
-  padding: 15px;
+  background-color: #f1f3f5;
   border-radius: 8px;
+  padding: 16px;
   white-space: pre-wrap;
-  margin-top: 20px;
-  max-height: 300px;
   overflow-y: auto;
-}
-
-.custom-textarea textarea {
-  height: 120px;
-  font-family: monospace;
-  background-color: #fcfcfc;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  resize: vertical;
-  padding: 10px;
-  font-size: 14px;
-  line-height: 1.4;
+  max-height: 280px;
+  border: 1px solid #dcdfe6;
 }
 
 #accessDenied p {
-  color: red;
+  color: #d7263d;
   font-weight: bold;
   text-align: center;
+  font-size: 16px;
+}
+
+#walletAddress, #lqxBalance {
+  font-size: 14px;
+  margin: 5px 0 0 0;
+  color: #555;
+}
+
+.modeSection {
+  display: none;
+}
+
+.custom-textarea textarea {
+  background-color: #fcfcfc;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 14px;
 }
