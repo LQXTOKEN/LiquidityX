@@ -1,109 +1,175 @@
 import { connectWallet, disconnectWallet } from './modules/wallet_module.js';
 import { fetchData } from './modules/fetch_module.js';
-import { populateAddressList, clearUI, toggleInputFields, enableInputs, disableInputs } from './modules/ui_module.js';
+import { 
+  populateAddressList, 
+  clearUI, 
+  toggleInputFields, 
+  enableInputs, 
+  disableInputs 
+} from './modules/ui_module.js';
 import { LQX_REQUIRED } from './modules/config.js';
 
-let selectedMode = "";
-let addressList = [];
+// Application state
+const appState = {
+  selectedMode: "",
+  addressList: [],
+  isConnected: false
+};
 
-document.getElementById("connect-btn").addEventListener("click", async () => {
-  const result = await connectWallet();
-  if (result && result.hasEnoughLQX) {
-    enableInputs();
-  } else {
-    disableInputs();
+// DOM Elements cache
+const domElements = {
+  connectBtn: document.getElementById("connect-btn"),
+  disconnectBtn: document.getElementById("disconnect-btn"),
+  modeSelect: document.getElementById("mode"),
+  proceedBtn: document.getElementById("proceed-btn"),
+  downloadBtn: document.getElementById("download-btn"),
+  backBtn: document.getElementById("back-btn"),
+  pasteInput: document.getElementById("paste-input"),
+  scanLink: document.getElementById("scan-link"),
+  maxAddresses: document.getElementById("max-addresses"),
+  randomCount: document.getElementById("random-count")
+};
+
+// Initialize event listeners
+function initEventListeners() {
+  domElements.connectBtn.addEventListener("click", handleConnect);
+  domElements.disconnectBtn.addEventListener("click", handleDisconnect);
+  domElements.modeSelect.addEventListener("change", handleModeChange);
+  domElements.proceedBtn.addEventListener("click", handleProceed);
+  domElements.downloadBtn.addEventListener("click", downloadAddresses);
+  domElements.backBtn.addEventListener("click", () => {
+    window.location.href = "https://liquidityx.io";
+  });
+}
+
+// Connection handlers
+async function handleConnect() {
+  try {
+    const result = await connectWallet();
+    if (result?.hasEnoughLQX) {
+      appState.isConnected = true;
+      enableInputs();
+    } else {
+      disableInputs();
+    }
+  } catch (error) {
+    console.error("Connection error:", error);
+    alert("Failed to connect wallet");
   }
-});
+}
 
-document.getElementById("disconnect-btn").addEventListener("click", () => {
+function handleDisconnect() {
   disconnectWallet();
+  appState.isConnected = false;
   disableInputs();
   clearUI();
-});
+}
 
-document.getElementById("mode").addEventListener("change", handleModeChange);
-document.getElementById("proceed-btn").addEventListener("click", handleProceed);
-document.getElementById("download-btn").addEventListener("click", downloadAddresses);
-document.getElementById("back-btn").addEventListener("click", () => {
-  window.location.href = "https://liquidityx.io";
-});
-
+// Mode handling
 function handleModeChange() {
-  const mode = document.getElementById("mode").value;
-  if (addressList.length > 0) {
-    const confirmClear = confirm("Switching modes will clear your current address list. Proceed?");
-    if (!confirmClear) {
-      document.getElementById("mode").value = selectedMode;
+  const newMode = domElements.modeSelect.value;
+  
+  if (appState.addressList.length > 0) {
+    if (!confirm("Switching modes will clear your current address list. Proceed?")) {
+      domElements.modeSelect.value = appState.selectedMode;
       return;
     }
-    addressList = [];
+    appState.addressList = [];
     clearUI();
   }
 
-  selectedMode = mode;
-  toggleInputFields(mode);
+  appState.selectedMode = newMode;
+  toggleInputFields(newMode);
 }
 
+// Address processing
 async function handleProceed() {
-  clearUI();
-
-  if (selectedMode === "paste") {
-    const raw = document.getElementById("paste-input").value.trim();
-    const lines = raw.split(/\s+/).filter(line => ethers.utils.isAddress(line));
-    addressList = lines;
-    populateAddressList(addressList);
-  }
-
-  if (selectedMode === "create") {
-    const scanLink = document.getElementById("scan-link").value.trim();
-    const max = parseInt(document.getElementById("max-addresses").value) || 100;
-
-    const regex = /token\/(0x[a-fA-F0-9]{40})/;
-    const match = scanLink.match(regex);
-    if (!match) {
-      alert("❌ Invalid PolygonScan token link.");
-      return;
+  try {
+    clearUI();
+    
+    switch (appState.selectedMode) {
+      case "paste":
+        await handlePasteMode();
+        break;
+      case "create":
+        await handleCreateMode();
+        break;
+      case "random":
+        await handleRandomMode();
+        break;
+      default:
+        throw new Error("Invalid mode selected");
     }
-
-    const tokenAddress = match[1];
-
-    try {
-      const data = await fetchData(tokenAddress);
-      addressList = data.slice(0, max);
-      populateAddressList(addressList);
-    } catch (err) {
-      console.error("❌ PolygonScan fetch failed:", err);
-      alert("⚠️ Failed to fetch PolygonScan data. Please try another mode.");
+    
+    if (appState.addressList.length > 0) {
+      populateAddressList(appState.addressList);
     }
+  } catch (error) {
+    console.error("Proceed error:", error);
+    alert(error.message);
   }
+}
 
-  if (selectedMode === "random") {
-    const count = parseInt(document.getElementById("random-count").value) || 100;
-    try {
-      const res = await fetch('https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json');
-      const all = await res.json();
-      const shuffled = all.sort(() => 0.5 - Math.random());
-      addressList = shuffled.slice(0, count);
-      populateAddressList(addressList);
-    } catch (err) {
-      console.error("❌ Failed to load random wallets:", err);
-      alert("⚠️ Failed to load random wallets. Try another mode.");
-    }
-  }
+async function handlePasteMode() {
+  const raw = domElements.pasteInput.value.trim();
+  if (!raw) throw new Error("No addresses pasted");
+  
+  appState.addressList = raw.split(/\s+/)
+    .filter(line => ethers.utils.isAddress(line));
+}
+
+async function handleCreateMode() {
+  const scanLink = domElements.scanLink.value.trim();
+  const max = parseInt(domElements.maxAddresses.value) || 100;
+
+  const tokenAddress = extractTokenAddress(scanLink);
+  const data = await fetchData(tokenAddress);
+  appState.addressList = data.slice(0, max);
+}
+
+async function handleRandomMode() {
+  const count = parseInt(domElements.randomCount.value) || 100;
+  const response = await fetch('https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json');
+  const all = await response.json();
+  appState.addressList = shuffleArray(all).slice(0, count);
+}
+
+// Helper functions
+function extractTokenAddress(scanLink) {
+  const regex = /token\/(0x[a-fA-F0-9]{40})/;
+  const match = scanLink.match(regex);
+  if (!match) throw new Error("Invalid PolygonScan token link");
+  return match[1];
+}
+
+function shuffleArray(array) {
+  return array
+    .map(value => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
 }
 
 function downloadAddresses() {
-  if (addressList.length === 0) {
+  if (appState.addressList.length === 0) {
     alert("No addresses to download.");
     return;
   }
 
-  const blob = new Blob([addressList.join("\n")], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "airdrop_addresses.txt";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  try {
+    const blob = new Blob([appState.addressList.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `airdrop_addresses_${new Date().toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download failed:", error);
+    alert("Failed to download addresses");
+  }
 }
+
+// Initialize the application
+initEventListeners();
