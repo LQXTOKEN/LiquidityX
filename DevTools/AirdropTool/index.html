@@ -11,54 +11,55 @@
   <div id="app">
     <header>
       <h1>LiquidityX Community Airdrop Tool</h1>
-      <p>Create your Airdrop list using real Polygon addresses.</p>
+      <p>Create your Airdrop list using one of the available options below.</p>
     </header>
 
     <section id="wallet-section">
-      <button id="back-btn">⬅️ Back to Main Website</button>
+      <button id="back-btn">← Back to Main Website</button>
       <button id="connect-btn">🔗 Connect Wallet</button>
-      <button id="disconnect-btn" style="display: none;">❌ Disconnect Wallet</button>
+      <button id="disconnect-btn" style="display:none;">❌ Disconnect</button>
       <div id="wallet-info"></div>
       <div id="lqx-info"></div>
       <div id="requirement-warning"></div>
     </section>
 
     <section id="mode-section">
-      <label for="mode">How do you want to create your airdrop list?</label>
+      <label for="mode">Select address mode:</label>
       <select id="mode" disabled>
-        <option value="">-- Select Mode --</option>
-        <option value="paste">Paste addresses manually</option>
-        <option value="create">Fetch from PolygonScan</option>
-        <option value="random">Use active wallets</option>
+        <option value="">-- Choose --</option>
+        <option value="paste">Paste</option>
+        <option value="create">Create</option>
+        <option value="random">Random</option>
       </select>
     </section>
 
-    <!-- Paste Mode -->
-    <section id="paste-box" class="mode-box" style="display: none;">
-      <label for="paste-input">Paste one address per line or separated by space:</label>
-      <textarea id="paste-input" placeholder="0x1234...&#10;0x5678..."></textarea>
+    <!-- Paste Mode Box -->
+    <section id="paste-box" class="mode-box">
+      <label for="paste-input">Paste your addresses (one per line):</label>
+      <textarea id="paste-input" rows="8" placeholder="0x123...&#10;0x456..."></textarea>
     </section>
 
-    <!-- Create Mode -->
-    <section id="scan-box" class="mode-box" style="display: none;">
-      <label for="scan-link">Paste a PolygonScan Token URL:</label>
+    <!-- Create Mode Box -->
+    <section id="scan-box" class="mode-box">
+      <label for="scan-link">Paste PolygonScan Token Link:</label>
       <input type="text" id="scan-link" placeholder="https://polygonscan.com/token/0x..." />
-
       <label for="max-addresses">Enter max number of addresses to use (max 1000):</label>
-      <input type="number" id="max-addresses" placeholder="e.g. 100" min="1" max="1000" />
+      <input type="number" id="max-addresses" placeholder="e.g. 500" min="1" max="1000" />
     </section>
 
-    <!-- Random Mode -->
-    <section id="random-box" class="mode-box" style="display: none;">
-      <label for="random-count">How many random addresses do you want to use? (max 1000)</label>
-      <input type="number" id="random-count" placeholder="e.g. 100" min="1" max="1000" />
+    <!-- Random Mode Box -->
+    <section id="random-box" class="mode-box">
+      <label for="random-count">Generate random addresses (max 1000):</label>
+      <input type="number" id="random-count" placeholder="e.g. 250" min="1" max="1000" />
     </section>
 
     <section>
-      <button id="proceed-btn" disabled>🎯 Proceed</button>
-      <button id="download-btn" style="display: none;">⬇️ Download addresses (.txt)</button>
+      <button id="proceed-btn" disabled>🚀 Proceed</button>
+      <button id="download-btn" style="display:none;">📥 Download Addresses</button>
+    </section>
 
-      <div id="address-count" style="margin-top: 1rem;"></div>
+    <section>
+      <div id="address-count"></div>
       <ul id="address-list"></ul>
     </section>
 
