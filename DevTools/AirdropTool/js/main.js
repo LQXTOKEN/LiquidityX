@@ -1,5 +1,3 @@
-// js/main.js
-
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[main.js] DOM loaded");
 
@@ -50,10 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = "https://liquidityx.io";
   });
 
-  // Token Selection
   document.getElementById("checkToken").addEventListener("click", async () => {
     const tokenInput = document.getElementById("tokenAddressInput").value.trim();
-
     console.log("[main.js] Token check initiated for:", tokenInput);
 
     if (!addressModule.isValidAddress(tokenInput)) {
@@ -91,7 +87,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Proceed
   document.getElementById("proceedButton").addEventListener("click", async () => {
     console.log("[main.js] Proceed button clicked");
 
@@ -114,7 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Fetch Logic
   async function fetchAddresses(mode) {
     console.log("[main.js] Fetching addresses for mode:", mode);
 
@@ -146,6 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } else if (mode === "create") {
       const contractInput = document.getElementById("contractInput").value.trim();
+      const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
 
       if (!addressModule.isValidAddress(contractInput)) {
         alert("Please enter a valid contract address to create your list from.");
@@ -156,7 +151,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${contractInput}`);
         const data = await response.json();
         console.log("[main.js] Proxy API response (create):", data);
-        return data.addresses || [];
+
+        const finalList = data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
+        return finalList;
+
       } catch (err) {
         console.error("[main.js] Proxy fetch failed (create mode):", err);
         return [];
