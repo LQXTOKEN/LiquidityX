@@ -1,4 +1,4 @@
-import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.2.umd.min.js';
+import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js';
 
 // ======================
 // Token Configuration
