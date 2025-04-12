@@ -1,39 +1,41 @@
-// js/modules/token_module.js
+import { ethers } from "../libs/ethers.min.js";
 
-export let selectedToken = null;
-export let selectedTokenSymbol = "";
-export let selectedTokenDecimals = 18;
+let selectedToken = {
+  address: null,
+  contract: null,
+  symbol: "",
+  decimals: 18,
+  balance: "0"
+};
 
-export async function checkSelectedToken(tokenAddress, userAddress, provider) {
-  const infoEl = document.getElementById("token-info");
-
-  if (!tokenAddress || !ethers.utils.isAddress(tokenAddress)) {
-    infoEl.innerText = "❌ Please enter a valid ERC-20 contract address.";
-    return false;
+export async function checkERC20Token(provider, userAddress, tokenAddress) {
+  if (!ethers.utils.isAddress(tokenAddress)) {
+    throw new Error("Invalid ERC-20 address.");
   }
 
-  try {
-    const abi = [
-      "function symbol() view returns (string)",
-      "function decimals() view returns (uint8)",
-      "function balanceOf(address account) view returns (uint256)"
-    ];
+  const abi = [
+    "function symbol() view returns (string)",
+    "function decimals() view returns (uint8)",
+    "function balanceOf(address account) view returns (uint256)"
+  ];
 
-    const contract = new ethers.Contract(tokenAddress, abi, provider);
-    const symbol = await contract.symbol();
-    const decimals = await contract.decimals();
-    const balance = await contract.balanceOf(userAddress);
-    const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+  const contract = new ethers.Contract(tokenAddress, abi, provider);
+  const symbol = await contract.symbol();
+  const decimals = await contract.decimals();
+  const rawBalance = await contract.balanceOf(userAddress);
+  const formatted = ethers.utils.formatUnits(rawBalance, decimals);
 
-    selectedToken = contract;
-    selectedTokenSymbol = symbol;
-    selectedTokenDecimals = decimals;
+  selectedToken = {
+    address: tokenAddress,
+    contract,
+    symbol,
+    decimals,
+    balance: formatted
+  };
 
-    infoEl.innerText = `✅ Token: ${symbol} | Decimals: ${decimals} | 💰 Balance: ${formattedBalance} ${symbol}`;
-    return true;
-  } catch (err) {
-    console.error("Token check failed:", err);
-    infoEl.innerText = "❌ Failed to fetch token info.";
-    return false;
-  }
+  return selectedToken;
+}
+
+export function getSelectedToken() {
+  return selectedToken;
 }
