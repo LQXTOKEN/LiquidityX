@@ -10,58 +10,63 @@
 <body>
   <div id="app">
     <header>
+      <div class="top-buttons">
+        <button id="back-btn">← Back to Main Website</button>
+        <button id="disconnect-btn">Disconnect Wallet</button>
+      </div>
       <h1>LiquidityX Community Airdrop Tool</h1>
-      <p>Create your Airdrop list using one of the available methods below.</p>
+      <p>Create your airdrop list in 3 different ways: Paste, Create from PolygonScan, or Random</p>
     </header>
 
     <section id="wallet-section">
-      <button id="back-btn">🔙 Back to Main Website</button>
       <button id="connect-btn">🔗 Connect Wallet</button>
-      <button id="disconnect-btn" style="display: none;">❌ Disconnect</button>
       <div id="wallet-info"></div>
       <div id="lqx-info"></div>
       <div id="requirement-warning"></div>
     </section>
 
+    <section id="token-section">
+      <label for="token-address">Choose ERC-20 token to airdrop:</label>
+      <input type="text" id="token-address" placeholder="Polygon Token Contract Address" />
+      <button id="check-token-btn">Check Token</button>
+      <div id="token-info"></div>
+    </section>
+
     <section id="mode-section">
-      <label for="mode">Select address input method:</label>
-      <select id="mode" disabled>
-        <option value="" selected disabled>-- Choose --</option>
-        <option value="paste">Paste your addresses</option>
-        <option value="create">Import from PolygonScan</option>
-        <option value="random">Use random addresses</option>
+      <label for="mode">Select how to create the address list:</label>
+      <select id="mode">
+        <option value="" disabled selected>-- Choose Mode --</option>
+        <option value="paste">Paste</option>
+        <option value="create">Create</option>
+        <option value="random">Random</option>
       </select>
+      <button id="proceed-btn" disabled>Proceed</button>
     </section>
 
-    <!-- Paste Box -->
-    <section id="paste-box" class="input-box" style="display: none;">
-      <label for="paste-input">Paste your wallet addresses (one per line or space-separated):</label>
-      <textarea id="paste-input" placeholder="0x1234..."></textarea>
+    <section id="input-boxes">
+      <div id="paste-box" class="mode-box">
+        <label for="paste-input">Paste addresses below (one per line or space-separated):</label>
+        <textarea id="paste-input" placeholder="0x1234..."></textarea>
+      </div>
+
+      <div id="scan-box" class="mode-box">
+        <label for="scan-link">Paste PolygonScan Token Link:</label>
+        <input type="text" id="scan-link" placeholder="https://polygonscan.com/token/0x..." />
+
+        <label for="max-addresses">Enter max number of addresses to use (max 1000):</label>
+        <input type="number" id="max-addresses" placeholder="e.g. 100" min="1" max="1000" />
+      </div>
+
+      <div id="random-box" class="mode-box">
+        <label for="random-count">How many random addresses do you want to use?</label>
+        <input type="number" id="random-count" placeholder="e.g. 100" min="1" max="1000" />
+      </div>
     </section>
 
-    <!-- Create Box -->
-    <section id="scan-box" class="input-box" style="display: none;">
-      <label for="scan-link">Enter PolygonScan Token Link:</label>
-      <input type="text" id="scan-link" placeholder="https://polygonscan.com/token/0x..." />
-
-      <label for="max-addresses">Enter max number of addresses to use (max 1000):</label>
-      <input type="number" id="max-addresses" placeholder="e.g. 100" min="1" max="1000" />
-    </section>
-
-    <!-- Random Box -->
-    <section id="random-box" class="input-box" style="display: none;">
-      <label for="random-count">How many random addresses? (max 1000)</label>
-      <input type="number" id="random-count" placeholder="e.g. 100" min="1" max="1000" />
-    </section>
-
-    <section id="action-section">
-      <button id="proceed-btn" disabled>🚀 Proceed</button>
-      <button id="download-btn" style="display: none;">⬇️ Download .txt</button>
-    </section>
-
-    <section>
+    <section id="results-section">
       <div id="address-count"></div>
       <ul id="address-list"></ul>
+      <button id="download-btn" style="display:none;">📄 Download Addresses</button>
     </section>
 
     <footer>
@@ -69,6 +74,6 @@
     </footer>
   </div>
 
-  <script type="module" src="./js/main.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
