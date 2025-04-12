@@ -28,10 +28,6 @@ input, select, textarea {
   border: 1px solid #444;
   background-color: #0d1117;
   color: white;
-}
-
-textarea {
-  height: 120px;
   resize: vertical;
 }
 
@@ -48,6 +44,11 @@ button {
 
 button:hover {
   background-color: #3d38a3;
+}
+
+button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
 }
 
 ul {
@@ -79,10 +80,23 @@ li {
 
 #address-count {
   font-size: 14px;
+  color: #80ffb4;
+  margin-top: 15px;
+}
+
+#token-info {
+  font-size: 14px;
   color: #00ffae;
   margin-top: 10px;
 }
 
-.input-box {
+.mode-box {
   margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+label {
+  font-weight: bold;
+  margin-top: 15px;
+  display: block;
 }
