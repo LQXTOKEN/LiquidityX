@@ -1,88 +1,39 @@
-import { clearAddressList } from './address_module.js';
-import { disconnectWallet } from './wallet_module.js';
+// js/ui_module.js
 
-let selectedMode = "";
+export function setWalletInfo(address, balanceFormatted, symbol) {
+  document.getElementById("walletAddress").textContent = `Wallet: ${address}`;
+  document.getElementById("lqxBalance").textContent = `LQX Balance: ${balanceFormatted} ${symbol}`;
+}
 
-// UI Elements cache
-const uiElements = {
-  backBtn: document.getElementById("back-btn"),
-  disconnectBtn: document.getElementById("disconnect-btn"),
-  modeSelect: document.getElementById("mode"),
-  pasteBox: document.getElementById("paste-box"),
-  scanBox: document.getElementById("scan-box"),
-  randomBox: document.getElementById("random-box"),
-  downloadBtn: document.getElementById("download-btn"),
-  lqxInfo: document.getElementById("lqx-info"),
-  walletInfo: document.getElementById("wallet-info"),
-  warning: document.getElementById("requirement-warning"),
-  proceedBtn: document.getElementById("proceed-btn")
-};
+export function setAccessDenied(denied) {
+  document.getElementById("accessDenied").style.display = denied ? "block" : "none";
+  document.getElementById("airdropTool").style.display = denied ? "none" : "block";
+}
 
-export function initUI() {
-  // Event listeners
-  uiElements.backBtn.addEventListener("click", () => {
-    window.location.href = "https://liquidityx.io";
+export function showSectionByMode(mode) {
+  const sections = ["pasteSection", "createSection", "randomSection"];
+  sections.forEach(id => {
+    document.getElementById(id).style.display = (id.startsWith(mode)) ? "block" : "none";
   });
-
-  uiElements.disconnectBtn.addEventListener("click", disconnectWallet);
-  uiElements.modeSelect.addEventListener("change", handleModeChange);
-
-  // Initialize UI state
-  toggleInputFields("");
 }
 
-function handleModeChange() {
-  const newMode = uiElements.modeSelect.value;
-
-  if (selectedMode && selectedMode !== newMode) {
-    if (!confirm("Switching modes will clear your current address list. Proceed?")) {
-      uiElements.modeSelect.value = selectedMode;
-      return;
-    }
-    clearAddressList();
-  }
-
-  selectedMode = newMode;
-  toggleInputFields(newMode);
+export function setProceedButtonEnabled(enabled) {
+  const btn = document.getElementById("proceedButton");
+  btn.disabled = !enabled;
 }
 
-function toggleInputFields(mode) {
-  // Show/hide input sections based on selected mode
-  uiElements.pasteBox.style.display = mode === "paste" ? "block" : "none";
-  uiElements.scanBox.style.display = mode === "create" ? "block" : "none";
-  uiElements.randomBox.style.display = mode === "random" ? "block" : "none";
-  
-  // Download button visibility logic
-  uiElements.downloadBtn.style.display = ["create", "random"].includes(mode) 
-    ? "inline-block" 
-    : "none";
+export function displayResults(addresses) {
+  const resultsEl = document.getElementById("results");
+  resultsEl.textContent = addresses.join(\"\\n\");
+  document.getElementById(\"downloadButton\").style.display = \"block\";
 }
 
-// Wallet information display functions
-export function updateLQXInfo(balance) {
-  uiElements.lqxInfo.innerText = `💰 LQX Balance: ${balance}`;
-}
-
-export function updateWalletInfo(address) {
-  uiElements.walletInfo.innerText = `🧾 Connected: ${address}`;
-}
-
-// Warning message functions
-export function showWarning(message) {
-  uiElements.warning.innerText = message;
-}
-
-export function clearWarning() {
-  uiElements.warning.innerText = "";
-}
-
-// UI state functions
-export function disableUI() {
-  uiElements.modeSelect.disabled = true;
-  uiElements.proceedBtn.disabled = true;
-}
-
-export function enableUI() {
-  uiElements.modeSelect.disabled = false;
-  uiElements.proceedBtn.disabled = false;
+export function downloadAddressesAsTxt(addresses) {
+  const blob = new Blob([addresses.join(\"\\n\")], { type: \"text/plain\" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement(\"a\");
+  link.href = url;
+  link.download = \"airdrop_addresses.txt\";
+  link.click();
+  URL.revokeObjectURL(url);
 }
