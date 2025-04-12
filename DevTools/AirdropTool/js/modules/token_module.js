@@ -1,41 +1,45 @@
-import { ethers } from "../libs/ethers.min.js";
+import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/+esm";
 
-let selectedToken = {
-  address: null,
-  contract: null,
-  symbol: "",
-  decimals: 18,
-  balance: "0"
-};
+let selectedTokenContract;
+let selectedTokenSymbol = "";
+let selectedTokenDecimals = 18;
 
-export async function checkERC20Token(provider, userAddress, tokenAddress) {
+export async function checkERC20Token(tokenAddress, provider, userAddress) {
+  const infoEl = document.getElementById("token-info");
+
   if (!ethers.utils.isAddress(tokenAddress)) {
-    throw new Error("Invalid ERC-20 address.");
+    alert("❌ Please enter a valid ERC-20 token address.");
+    return;
   }
 
-  const abi = [
-    "function symbol() view returns (string)",
-    "function decimals() view returns (uint8)",
-    "function balanceOf(address account) view returns (uint256)"
-  ];
+  try {
+    const abi = [
+      "function symbol() view returns (string)",
+      "function decimals() view returns (uint8)",
+      "function balanceOf(address account) view returns (uint256)"
+    ];
 
-  const contract = new ethers.Contract(tokenAddress, abi, provider);
-  const symbol = await contract.symbol();
-  const decimals = await contract.decimals();
-  const rawBalance = await contract.balanceOf(userAddress);
-  const formatted = ethers.utils.formatUnits(rawBalance, decimals);
+    selectedTokenContract = new ethers.Contract(tokenAddress, abi, provider);
 
-  selectedToken = {
-    address: tokenAddress,
-    contract,
-    symbol,
-    decimals,
-    balance: formatted
-  };
+    const symbol = await selectedTokenContract.symbol();
+    const decimals = await selectedTokenContract.decimals();
+    const balanceRaw = await selectedTokenContract.balanceOf(userAddress);
+    const balanceFormatted = ethers.utils.formatUnits(balanceRaw, decimals);
 
-  return selectedToken;
+    selectedTokenSymbol = symbol;
+    selectedTokenDecimals = decimals;
+
+    infoEl.innerText = `✅ Token: ${symbol} | Decimals: ${decimals} | 💰 Balance: ${balanceFormatted} ${symbol}`;
+  } catch (err) {
+    console.error("Token check error:", err);
+    infoEl.innerText = "❌ Failed to fetch token info.";
+  }
 }
 
-export function getSelectedToken() {
-  return selectedToken;
+export function getSelectedTokenDetails() {
+  return {
+    contract: selectedTokenContract,
+    symbol: selectedTokenSymbol,
+    decimals: selectedTokenDecimals
+  };
 }
