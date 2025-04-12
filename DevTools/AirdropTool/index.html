@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LiquidityX Airdrop Tool</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
 
-  <!-- UMD version of ethers (no eval, compatible with CSP) -->
+  <!-- CSP-safe ethers.js UMD build -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
@@ -60,11 +60,13 @@
     </div>
   </div>
 
-  <!-- Scripts in correct order -->
-<script src="js/modules/config.js"></script>
-<script src="js/modules/wallet_module.js"></script>
-<script src="js/modules/erc20_module.js"></script>
-<script src="js/modules/ui_module.js"></script>
-<script src="js/main.js"></script>
+  <!-- JS modules (correct paths) -->
+  <script src="js/modules/config.js"></script>
+  <script src="js/modules/wallet_module.js"></script>
+  <script src="js/modules/erc20_module.js"></script>
+  <script src="js/modules/ui_module.js"></script>
+  <script src="js/modules/address_module.js"></script>
+  <script src="js/modules/token_module.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
