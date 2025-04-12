@@ -42,6 +42,7 @@
         <option value="random">Random</option>
       </select>
 
+      <!-- Paste -->
       <div id="pasteSection" class="modeSection">
         <label for="polygonScanInput">Paste PolygonScan URL:</label>
         <div class="custom-textarea">
@@ -49,11 +50,15 @@
         </div>
       </div>
 
+      <!-- Create -->
       <div id="createSection" class="modeSection" style="display:none;">
         <label for="contractInput">Enter token address you want to build your list from (e.g. MATIC):</label>
         <input type="text" id="contractInput" placeholder="Enter token contract address..." />
+        <label for="maxCreateAddresses">Enter max number of addresses to use (max 1000):</label>
+        <input type="number" id="maxCreateAddresses" max="1000" min="1" value="100" />
       </div>
 
+      <!-- Random -->
       <div id="randomSection" class="modeSection" style="display:none;">
         <label for="maxAddresses">Enter max number of addresses to use (max 1000):</label>
         <input type="number" id="maxAddresses" max="1000" min="1" value="100" />
