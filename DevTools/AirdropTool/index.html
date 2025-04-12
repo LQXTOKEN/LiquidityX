@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LiquidityX Airdrop Tool</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.2.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -57,6 +56,13 @@
     </div>
   </div>
 
+  <!-- Load ethers as ESM module and assign to window -->
+  <script type="module">
+    import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js";
+    window.ethers = ethers;
+  </script>
+
+  <!-- Main logic -->
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
