@@ -1,34 +1,48 @@
-import { connectWallet, disconnectWallet, isConnected, getUserAddress, checkLQXBalance } from './modules/wallet_module.js';
-import { handleTokenCheck, getSelectedToken } from './modules/token_module.js';
-import { handleModeChange, handleProceed, getAddressList, downloadAddresses } from './modules/address_module.js';
-import { initUI, disableUI, enableUI } from './modules/ui_module.js';
+import { connectWallet, disconnectWallet, getUserAddress, checkLQXBalance } from './modules/wallet_module.js';
+import { handleProceed, downloadAddresses, clearAddressList } from './modules/address_module.js';
+import { initUI, disableUI, enableUI, updateWalletInfo, updateLQXInfo, showWarning, clearWarning } from './modules/ui_module.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // Αρχικοποίηση UI
   initUI();
 
+  // Σύνδεση wallet
   document.getElementById("connect-btn").addEventListener("click", async () => {
-    const connected = await connectWallet();
-    if (connected) {
-      const hasRequired = await checkLQXBalance();
-      if (hasRequired) {
+    const address = await connectWallet();
+    if (address) {
+      updateWalletInfo(address);
+      const balance = await checkLQXBalance(address);
+      updateLQXInfo(balance);
+
+      if (balance >= 1000) {
         enableUI();
+        clearWarning();
       } else {
-        disableUI("⚠️ You must hold at least 1000 LQX tokens to use this tool.");
+        disableUI();
+        showWarning("⚠️ You must hold at least 1000 LQX tokens to use this tool.");
       }
     }
   });
 
+  // Αποσύνδεση wallet
   document.getElementById("disconnect-btn").addEventListener("click", () => {
     disconnectWallet();
-    disableUI("🔌 Wallet disconnected.");
+    clearAddressList();
+    disableUI();
+    showWarning("🔌 Wallet disconnected.");
   });
 
+  // Επιβεβαίωση και εξαγωγή διευθύνσεων
+  document.getElementById("proceed-btn").addEventListener("click", handleProceed);
+
+  // Download as .txt
+  document.getElementById("download-btn").addEventListener("click", downloadAddresses);
+
+  // Back to main site
   document.getElementById("back-btn").addEventListener("click", () => {
     window.location.href = "https://liquidityx.io";
   });
 
-  document.getElementById("mode").addEventListener("change", handleModeChange);
-  document.getElementById("proceed-btn").addEventListener("click", handleProceed);
-  document.getElementById("download-btn").addEventListener("click", downloadAddresses);
-  document.getElementById("check-token-btn").addEventListener("click", handleTokenCheck);
+  // Αρχικά απενεργοποιημένα τα inputs
+  disableUI();
 });
