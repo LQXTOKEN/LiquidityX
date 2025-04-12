@@ -1,23 +1,22 @@
-import { ethers } from "ethers";
+// js/modules/config.js
 
-// 🎯 Βασικά Στοιχεία LQX Token
+// ✅ LQX token settings
 export const LQX_ADDRESS = "0x9e27f48659b1005b1abc0f58465137e531430d4b";
 export const LQX_ABI = [
   "function balanceOf(address account) external view returns (uint256)"
 ];
-export const LQX_REQUIRED = ethers.utils.parseUnits("1000", 18); // 1000 LQX
+export const LQX_REQUIRED = ethers.utils.parseUnits("1000", 18);
 
-// 🌐 Polygon RPC & Chain Info
-export const POLYGON_MAINNET_CHAIN_ID = "0x89"; // Decimal: 137
-export const POLYGON_RPC_URL = "https://polygon-rpc.com/";
-export const POLYGON_BLOCK_EXPLORER = "https://polygonscan.com";
-
-// 🧩 Proxy Server (secured via Vercel)
+// ✅ Proxy API & Random JSON wallet source
 export const PROXY_URL = "https://proxy-git-main-lqxtokens-projects.vercel.app";
+export const RANDOM_WALLETS_JSON = `${PROXY_URL}/abis/active_polygon_wallets.json`;
 
-// 📦 Διαδρομές API και JSON
-export const RANDOM_WALLETS_JSON_URL = `${PROXY_URL}/abis/active_polygon_wallets.json`;
-export const POLYGONSCAN_PROXY_ENDPOINT = `${PROXY_URL}/api/polygon`;
+// ✅ Polygon RPC fallback (σε περίπτωση που χρειαστεί custom provider)
+export const POLYGON_RPC_URL = "https://polygon-rpc.com";
 
-// 🧾 UI Labels / Tokens
-export const MAX_ADDRESS_LIMIT = 1000;
+// ✅ Polygon chain IDs
+export const POLYGON_MAINNET_CHAIN_ID = "0x89";      // Decimal 137
+export const POLYGON_TESTNET_CHAIN_ID = "0x13881";   // Decimal 80001
+
+// ✅ Regex για εξαγωγή token address από PolygonScan links
+export const POLYGONSCAN_TOKEN_REGEX = /token\/(0x[a-fA-F0-9]{40})/;
