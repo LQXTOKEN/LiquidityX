@@ -1,25 +1,138 @@
-document.getElementById("connectWallet").addEventListener("click", async () => {
-  console.log("[main.js] Connect button clicked");
+// js/main.js
 
-  const result = await walletModule.connectWallet();
-  if (!result) {
-    console.warn("[main.js] Wallet connection failed or cancelled");
-    return;
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("[main.js] DOM loaded");
 
-  const { provider, userAddress } = result;
-  console.log("[main.js] Wallet connected:", userAddress);
+  const modeSelect = document.getElementById("modeSelect");
+  modeSelect.addEventListener("change", function () {
+    console.log("[main.js] Mode changed:", this.value);
+    uiModule.showSectionByMode(this.value);
+  });
 
-  const balanceInfo = await erc20Module.getERC20Balance(CONFIG.LQX_TOKEN_ADDRESS, userAddress, provider);
-  if (!balanceInfo) {
-    console.error("[main.js] Could not fetch LQX balance");
-    return;
-  }
+  document.getElementById("connectWallet").addEventListener("click", async () => {
+    console.log("[main.js] Connect button clicked");
 
-  const meetsRequirement = parseFloat(balanceInfo.formatted) >= CONFIG.MIN_LQX_REQUIRED;
-  uiModule.setWalletInfo(userAddress, balanceInfo.formatted, balanceInfo.symbol);
-  uiModule.setAccessDenied(!meetsRequirement);
+    const result = await walletModule.connectWallet();
+    if (!result) {
+      console.warn("[main.js] Wallet connection failed or cancelled");
+      return;
+    }
 
-  document.getElementById("connectWallet").style.display = "none";
-  document.getElementById("disconnectWallet").style.display = "inline-block";
+    const { provider, userAddress } = result;
+    console.log("[main.js] Wallet connected:", userAddress);
+
+    const balanceInfo = await erc20Module.getERC20Balance(CONFIG.LQX_TOKEN_ADDRESS, userAddress, provider);
+    if (!balanceInfo) {
+      console.error("[main.js] Could not fetch LQX balance");
+      return;
+    }
+
+    console.log("[main.js] LQX balance info:", balanceInfo);
+
+    const meetsRequirement = parseFloat(balanceInfo.formatted) >= CONFIG.MIN_LQX_REQUIRED;
+    uiModule.setWalletInfo(userAddress, balanceInfo.formatted, balanceInfo.symbol);
+    uiModule.setAccessDenied(!meetsRequirement);
+
+    document.getElementById("connectWallet").style.display = "none";
+    document.getElementById("disconnectWallet").style.display = "inline-block";
+  });
+
+  document.getElementById("disconnectWallet").addEventListener("click", () => {
+    console.log("[main.js] Disconnect clicked");
+    walletModule.disconnectWallet();
+    window.location.reload();
+  });
+
+  document.getElementById("backToMain").addEventListener("click", () => {
+    console.log("[main.js] Back to Main Website");
+    window.location.href = "https://liquidityx.io";
+  });
+
+  document.getElementById("proceedButton").addEventListener("click", async () => {
+    console.log("[main.js] Proceed button clicked");
+    const mode = document.getElementById("modeSelect").value;
+    const addresses = await fetchAddresses(mode);
+    console.log("[main.js] Fetched addresses:", addresses);
+    if (addresses && addresses.length > 0) {
+      uiModule.displayResults(addresses);
+    } else {
+      alert("No addresses found.");
+    }
+  });
+
+  document.getElementById("downloadButton").addEventListener("click", () => {
+    console.log("[main.js] Download button clicked");
+    const results = document.getElementById("results").textContent.trim().split("\n");
+    if (results.length > 0) {
+      uiModule.downloadAddressesAsTxt(results);
+    }
+  });
 });
+
+async function fetchAddresses(mode) {
+  console.log("[main.js] Fetching addresses for mode:", mode);
+
+  const provider = walletModule.getProvider();
+  const userAddress = walletModule.getUserAddress();
+  if (!provider || !userAddress) {
+    console.warn("[main.js] Provider or user address not available");
+    return [];
+  }
+
+  if (mode === "paste") {
+    const url = document.getElementById("polygonScanInput").value.trim();
+    const tokenAddress = extractTokenAddress(url);
+    console.log("[main.js] Extracted token address from URL:", tokenAddress);
+    if (!tokenAddress) {
+      alert("Invalid URL format.");
+      return [];
+    }
+
+    try {
+      const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${tokenAddress}`);
+      const data = await response.json();
+      console.log("[main.js] Proxy API response:", data);
+      return data.addresses || [];
+    } catch (err) {
+      console.error("[main.js] Proxy fetch failed:", err);
+      return [];
+    }
+
+  } else if (mode === "create") {
+    const contractInput = document.getElementById("contractInput").value.trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(contractInput)) {
+      alert("Invalid contract address.");
+      return [];
+    }
+
+    try {
+      const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${contractInput}`);
+      const data = await response.json();
+      console.log("[main.js] Proxy API response:", data);
+      return data.addresses || [];
+    } catch (err) {
+      console.error("[main.js] Proxy fetch failed:", err);
+      return [];
+    }
+
+  } else if (mode === "random") {
+    const max = parseInt(document.getElementById("maxAddresses").value || "100");
+    try {
+      const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
+      const data = await response.json();
+      console.log("[main.js] Loaded random wallets:", data.length);
+      return data.slice(0, Math.min(max, 1000));
+    } catch (err) {
+      console.error("[main.js] Failed to load random wallets JSON:", err);
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function extractTokenAddress(url) {
+  const regex = /address\/(0x[a-fA-F0-9]{40})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
