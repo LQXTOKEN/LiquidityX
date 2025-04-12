@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = "https://liquidityx.io";
   });
 
-  // ✅ Token Selection Logic
+  // Token Selection
   document.getElementById("checkToken").addEventListener("click", async () => {
     const tokenInput = document.getElementById("tokenAddressInput").value.trim();
 
@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ✅ Proceed Button
+  // Proceed
   document.getElementById("proceedButton").addEventListener("click", async () => {
     console.log("[main.js] Proceed button clicked");
 
@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ✅ Fetch logic
+  // Fetch Logic
   async function fetchAddresses(mode) {
     console.log("[main.js] Fetching addresses for mode:", mode);
 
@@ -137,27 +137,28 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${tokenAddress}`);
         const data = await response.json();
-        console.log("[main.js] Proxy API response:", data);
+        console.log("[main.js] Proxy API response (paste):", data);
         return data.addresses || [];
       } catch (err) {
-        console.error("[main.js] Proxy fetch failed:", err);
+        console.error("[main.js] Proxy fetch failed (paste mode):", err);
         return [];
       }
 
     } else if (mode === "create") {
       const contractInput = document.getElementById("contractInput").value.trim();
-      if (!/^0x[a-fA-F0-9]{40}$/.test(contractInput)) {
-        alert("Invalid contract address.");
+
+      if (!addressModule.isValidAddress(contractInput)) {
+        alert("Please enter a valid contract address to create your list from.");
         return [];
       }
 
       try {
         const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${contractInput}`);
         const data = await response.json();
-        console.log("[main.js] Proxy API response:", data);
+        console.log("[main.js] Proxy API response (create):", data);
         return data.addresses || [];
       } catch (err) {
-        console.error("[main.js] Proxy fetch failed:", err);
+        console.error("[main.js] Proxy fetch failed (create mode):", err);
         return [];
       }
 
