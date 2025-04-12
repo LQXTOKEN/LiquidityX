@@ -1,20 +1,21 @@
-// 📦 address_module.js
-import { fetchData } from "./proxy_helper.js";
-import { populateAddressList, clearAddressListUI } from "./ui_module.js";
+// js/modules/address_module.js
 
-let addressList = [];
+import { fetchDataFromPolygonScan, fetchRandomAddresses } from './utils_module.js';
+
+export let addressList = [];
 let selectedMode = "";
-const PROXY_URL = "https://proxy-git-main-lqxtokens-projects.vercel.app";
-
-export function getAddressList() {
-  return addressList;
-}
 
 export function getSelectedMode() {
   return selectedMode;
 }
 
-export function handleModeChange() {
+export function setupAddressModuleEvents() {
+  document.getElementById("mode").addEventListener("change", handleModeChange);
+  document.getElementById("proceed-btn").addEventListener("click", handleProceed);
+  document.getElementById("download-btn").addEventListener("click", downloadAddresses);
+}
+
+function handleModeChange() {
   const mode = document.getElementById("mode").value;
   if (addressList.length > 0) {
     const confirmClear = confirm("Switching modes will clear your current address list. Proceed?");
@@ -23,7 +24,7 @@ export function handleModeChange() {
       return;
     }
     addressList = [];
-    clearAddressListUI();
+    clearUI();
   }
 
   selectedMode = mode;
@@ -37,56 +38,76 @@ function toggleInputFields(mode) {
   document.getElementById("download-btn").style.display = (mode === "random" || mode === "create") ? "inline-block" : "none";
 }
 
-export async function handleProceed() {
-  clearAddressListUI();
+function clearUI() {
+  document.getElementById("address-list").innerHTML = "";
+  document.getElementById("address-count").innerText = "";
+}
+
+async function handleProceed() {
+  clearUI();
 
   if (selectedMode === "paste") {
     const raw = document.getElementById("paste-input").value.trim();
     const lines = raw.split(/\s+/).filter(line => ethers.utils.isAddress(line));
     addressList = lines;
-    populateAddressList(addressList);
+    populateAddressList();
   }
 
   if (selectedMode === "create") {
     const scanLink = document.getElementById("scan-link").value.trim();
     const max = parseInt(document.getElementById("max-addresses").value) || 100;
+
     const regex = /token\/(0x[a-fA-F0-9]{40})/;
     const match = scanLink.match(regex);
     if (!match) {
       alert("❌ Invalid PolygonScan token link.");
       return;
     }
+
     const tokenAddress = match[1];
     try {
-      const data = await fetchData(tokenAddress);
+      const data = await fetchDataFromPolygonScan(tokenAddress);
       addressList = data.slice(0, max);
-      populateAddressList(addressList);
+      populateAddressList();
     } catch (err) {
-      console.error("❌ PolygonScan fetch failed:", err);
-      alert("⚠️ Failed to fetch PolygonScan data. Try another mode.");
+      console.error("❌ Fetch failed:", err);
+      alert("⚠️ Failed to fetch data. Try 'Paste' or 'Random' mode.");
     }
   }
 
   if (selectedMode === "random") {
     const count = parseInt(document.getElementById("random-count").value) || 100;
     try {
-      const res = await fetch(`${PROXY_URL}/abis/active_polygon_wallets.json`);
-      const all = await res.json();
-      const shuffled = all.sort(() => 0.5 - Math.random());
-      addressList = shuffled.slice(0, count);
-      populateAddressList(addressList);
+      const data = await fetchRandomAddresses(count);
+      addressList = data;
+      populateAddressList();
     } catch (err) {
       console.error("❌ Failed to load random wallets:", err);
-      alert("⚠️ Failed to load random wallets. Try another mode.");
+      alert("⚠️ Failed to load random wallets.");
     }
   }
 }
 
-export function downloadAddresses() {
+function populateAddressList() {
+  const ul = document.getElementById("address-list");
+  const countEl = document.getElementById("address-count");
+
+  ul.innerHTML = "";
+  addressList.forEach(addr => {
+    const li = document.createElement("li");
+    li.textContent = addr;
+    ul.appendChild(li);
+  });
+
+  countEl.innerText = `✅ ${addressList.length} addresses loaded.`;
+}
+
+function downloadAddresses() {
   if (addressList.length === 0) {
     alert("No addresses to download.");
     return;
   }
+
   const blob = new Blob([addressList.join("\n")], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
