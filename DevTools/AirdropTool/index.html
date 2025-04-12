@@ -1,116 +1,62 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-    <title>LiquidityX Community Airdrop Tool for Polygon network</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LiquidityX Airdrop Tool</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.2.umd.min.js"></script>
 </head>
 <body>
-  <div id="app">
-    <header class="app-header">
-      <div class="header-actions">
-        <button id="back-btn" class="btn btn-secondary" aria-label="Return to main website">
-          <span class="icon">←</span> Back to LiquidityX
-        </button>
-        <div class="wallet-actions">
-          <button id="connect-btn" class="btn btn-primary" aria-label="Connect your wallet">
-            <span class="icon">🔗</span> Connect Wallet
-          </button>
-          <button id="disconnect-btn" class="btn btn-secondary" style="display:none;" aria-label="Disconnect wallet">
-            <span class="icon">🔌</span> Disconnect
-          </button>
+  <div class="container">
+    <h1>LiquidityX Airdrop Tool</h1>
+
+    <button id="backToMain">Back to Main Website</button>
+
+    <div id="walletSection">
+      <button id="connectWallet">Connect Wallet</button>
+      <button id="disconnectWallet" style="display: none;">Disconnect Wallet</button>
+      <p id="walletAddress"></p>
+      <p id="lqxBalance"></p>
+    </div>
+
+    <div id="accessDenied" style="display:none;">
+      <p>You need at least 1000 LQX to use this tool.</p>
+    </div>
+
+    <div id="airdropTool" style="display: none;">
+      <label for="modeSelect">Choose input method:</label>
+      <select id="modeSelect">
+        <option value="paste">Paste</option>
+        <option value="create">Create</option>
+        <option value="random">Random</option>
+      </select>
+
+      <div id="pasteSection" class="modeSection">
+        <label for="polygonScanInput">Paste PolygonScan URL:</label>
+        <div class="custom-textarea">
+          <textarea id="polygonScanInput" placeholder="Enter PolygonScan token or transaction URL..."></textarea>
         </div>
       </div>
-      
-      <div class="header-content">
-        <h1>LiquidityX Community Airdrop Tool</h1>
-        <p class="subtitle">Distribute tokens efficiently on the Polygon network</p>
+
+      <div id="createSection" class="modeSection" style="display:none;">
+        <label for="contractInput">Enter Token Contract Address:</label>
+        <input type="text" id="contractInput" placeholder="0x..." />
       </div>
-    </header>
 
-    <main class="app-content">
-      <section id="wallet-section" class="card wallet-status" aria-live="polite">
-        <div id="wallet-info" class="wallet-info"></div>
-        <div id="lqx-info" class="token-info"></div>
-        <div id="requirement-warning" class="warning-message"></div>
-      </section>
+      <div id="randomSection" class="modeSection" style="display:none;">
+        <label for="maxAddresses">Enter max number of addresses to use (max 1000):</label>
+        <input type="number" id="maxAddresses" max="1000" min="1" value="100" />
+      </div>
 
-      <section id="mode-section" class="card">
-        <h2>Step 1: Select Distribution Method</h2>
-        <div class="form-group">
-          <label for="mode">Choose a method:</label>
-          <select id="mode" class="form-control" disabled aria-disabled="true">
-            <option value="">-- Select Mode --</option>
-            <option value="paste">Paste Addresses</option>
-            <option value="create">From Token Holders</option>
-            <option value="random">Random Active Wallets</option>
-          </select>
-        </div>
-      </section>
+      <button id="proceedButton">Proceed</button>
+      <button id="downloadButton" style="display:none;">Download Addresses (.txt)</button>
 
-      <section id="input-sections" class="card">
-        <div id="paste-box" class="mode-box" style="display:none;">
-          <h3>Paste Addresses</h3>
-          <div class="form-group">
-            <label for="paste-input">Wallet addresses (space or newline separated):</label>
-            <textarea id="paste-input" class="form-control" rows="6" 
-                     placeholder="0x1234...&#10;0x5678...&#10;0x9abc..."></textarea>
-          </div>
-        </div>
-
-        <div id="scan-box" class="mode-box" style="display:none;">
-          <h3>From Token Holders</h3>
-          <div class="form-group">
-            <label for="scan-link">PolygonScan Token Holder Page URL:</label>
-            <input type="url" id="scan-link" class="form-control" 
-                   placeholder="https://polygonscan.com/token/0x..." 
-                   pattern="https://polygonscan.com/token/0x[a-fA-F0-9]{40}">
-          </div>
-          <div class="form-group">
-            <label for="max-addresses">Maximum addresses to include (1-1000):</label>
-            <input type="number" id="max-addresses" class="form-control" 
-                   min="1" max="1000" value="100">
-          </div>
-        </div>
-
-        <div id="random-box" class="mode-box" style="display:none;">
-          <h3>Random Active Wallets</h3>
-          <div class="form-group">
-            <label for="random-count">Number of addresses to generate (1-1000):</label>
-            <input type="number" id="random-count" class="form-control" 
-                   min="1" max="1000" value="100">
-          </div>
-        </div>
-      </section>
-
-      <section class="card actions-section">
-        <div class="action-buttons">
-          <button id="proceed-btn" class="btn btn-primary" disabled aria-disabled="true">
-            <span class="icon">✅</span> Generate Address List
-          </button>
-          <button id="download-btn" class="btn btn-secondary" style="display:none;">
-            <span class="icon">📥</span> Download Addresses (.txt)
-          </button>
-        </div>
-        
-        <div id="address-count" class="result-count" aria-live="polite"></div>
-        <div class="address-list-container">
-          <ul id="address-list" class="address-list"></ul>
-        </div>
-      </section>
-    </main>
-
-    <footer class="app-footer">
-      <p>© 2023 LiquidityX | Community Tools</p>
-      <p class="small">Works with Polygon Mainnet. Requires MetaMask or compatible wallet.</p>
-    </footer>
+      <pre id="results"></pre>
+    </div>
   </div>
-      
-  <!-- Modern module-based script loading -->
-  <script type="module" src="js/main.js" defer></script>
+
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
