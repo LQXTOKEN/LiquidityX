@@ -3,74 +3,86 @@ import { disconnectWallet } from './wallet_module.js';
 
 let selectedMode = "";
 
+// UI Elements cache
+const uiElements = {
+  backBtn: document.getElementById("back-btn"),
+  disconnectBtn: document.getElementById("disconnect-btn"),
+  modeSelect: document.getElementById("mode"),
+  pasteBox: document.getElementById("paste-box"),
+  scanBox: document.getElementById("scan-box"),
+  randomBox: document.getElementById("random-box"),
+  downloadBtn: document.getElementById("download-btn"),
+  lqxInfo: document.getElementById("lqx-info"),
+  walletInfo: document.getElementById("wallet-info"),
+  warning: document.getElementById("requirement-warning"),
+  proceedBtn: document.getElementById("proceed-btn")
+};
+
 export function initUI() {
-  // Back to main website
-  document.getElementById("back-btn").addEventListener("click", () => {
+  // Event listeners
+  uiElements.backBtn.addEventListener("click", () => {
     window.location.href = "https://liquidityx.io";
   });
 
-  // Disconnect wallet
-  document.getElementById("disconnect-btn").addEventListener("click", () => {
-    disconnectWallet();
-  });
+  uiElements.disconnectBtn.addEventListener("click", disconnectWallet);
+  uiElements.modeSelect.addEventListener("change", handleModeChange);
 
-  // Handle dropdown change
-  document.getElementById("mode").addEventListener("change", handleModeChange);
-
-  // Hide all input sections initially
+  // Initialize UI state
   toggleInputFields("");
 }
 
 function handleModeChange() {
-  const mode = document.getElementById("mode").value;
+  const newMode = uiElements.modeSelect.value;
 
-  if (selectedMode && selectedMode !== mode) {
-    const confirmClear = confirm("Switching modes will clear your current address list. Proceed?");
-    if (!confirmClear) {
-      document.getElementById("mode").value = selectedMode;
+  if (selectedMode && selectedMode !== newMode) {
+    if (!confirm("Switching modes will clear your current address list. Proceed?")) {
+      uiElements.modeSelect.value = selectedMode;
       return;
     }
     clearAddressList();
   }
 
-  selectedMode = mode;
-  toggleInputFields(mode);
+  selectedMode = newMode;
+  toggleInputFields(newMode);
 }
 
 function toggleInputFields(mode) {
-  const pasteBox = document.getElementById("paste-box");
-  const scanBox = document.getElementById("scan-box");
-  const randomBox = document.getElementById("random-box");
-  const downloadBtn = document.getElementById("download-btn");
-
-  pasteBox.style.display = mode === "paste" ? "block" : "none";
-  scanBox.style.display = mode === "create" ? "block" : "none";
-  randomBox.style.display = mode === "random" ? "block" : "none";
-  downloadBtn.style.display = (mode === "create" || mode === "random") ? "inline-block" : "none";
+  // Show/hide input sections based on selected mode
+  uiElements.pasteBox.style.display = mode === "paste" ? "block" : "none";
+  uiElements.scanBox.style.display = mode === "create" ? "block" : "none";
+  uiElements.randomBox.style.display = mode === "random" ? "block" : "none";
+  
+  // Download button visibility logic
+  uiElements.downloadBtn.style.display = ["create", "random"].includes(mode) 
+    ? "inline-block" 
+    : "none";
 }
 
+// Wallet information display functions
 export function updateLQXInfo(balance) {
-  document.getElementById("lqx-info").innerText = `💰 LQX Balance: ${balance}`;
+  uiElements.lqxInfo.innerText = `💰 LQX Balance: ${balance}`;
 }
 
 export function updateWalletInfo(address) {
-  document.getElementById("wallet-info").innerText = `🧾 Connected: ${address}`;
+  uiElements.walletInfo.innerText = `🧾 Connected: ${address}`;
 }
 
-export function showWarning(msg) {
-  document.getElementById("requirement-warning").innerText = msg;
+// Warning message functions
+export function showWarning(message) {
+  uiElements.warning.innerText = message;
 }
 
 export function clearWarning() {
-  document.getElementById("requirement-warning").innerText = "";
+  uiElements.warning.innerText = "";
 }
 
+// UI state functions
 export function disableUI() {
-  document.getElementById("mode").disabled = true;
-  document.getElementById("proceed-btn").disabled = true;
+  uiElements.modeSelect.disabled = true;
+  uiElements.proceedBtn.disabled = true;
 }
 
 export function enableUI() {
-  document.getElementById("mode").disabled = false;
-  document.getElementById("proceed-btn").disabled = false;
+  uiElements.modeSelect.disabled = false;
+  uiElements.proceedBtn.disabled = false;
 }
