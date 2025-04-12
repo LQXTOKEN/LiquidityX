@@ -3,6 +3,8 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[main.js] DOM loaded");
 
+  let selectedToken = null;
+
   const modeSelect = document.getElementById("modeSelect");
   modeSelect.addEventListener("change", function () {
     console.log("[main.js] Mode changed:", this.value);
@@ -48,11 +50,55 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = "https://liquidityx.io";
   });
 
+  // ✅ Token Selection Logic
+  document.getElementById("checkToken").addEventListener("click", async () => {
+    const tokenInput = document.getElementById("tokenAddressInput").value.trim();
+
+    console.log("[main.js] Token check initiated for:", tokenInput);
+
+    if (!addressModule.isValidAddress(tokenInput)) {
+      document.getElementById("tokenStatus").textContent = "❌ Invalid token address.";
+      selectedToken = null;
+      return;
+    }
+
+    const provider = walletModule.getProvider();
+    const userAddress = walletModule.getUserAddress();
+    if (!provider || !userAddress) {
+      document.getElementById("tokenStatus").textContent = "Please connect wallet first.";
+      return;
+    }
+
+    const tokenDetails = await tokenModule.getTokenDetails(tokenInput, provider);
+    if (!tokenDetails) {
+      document.getElementById("tokenStatus").textContent = "❌ Could not read token metadata.";
+      return;
+    }
+
+    const balance = await tokenModule.getFormattedBalance(tokenDetails.contract, userAddress, tokenDetails.decimals);
+
+    if (parseFloat(balance) <= 0) {
+      document.getElementById("tokenStatus").textContent = `⚠️ You have 0 ${tokenDetails.symbol} tokens.`;
+    } else {
+      document.getElementById("tokenStatus").textContent = `✅ Token: ${tokenDetails.symbol}, Balance: ${balance}`;
+      selectedToken = {
+        address: tokenInput,
+        symbol: tokenDetails.symbol,
+        decimals: tokenDetails.decimals,
+        contract: tokenDetails.contract
+      };
+      console.log("[main.js] Token selected:", selectedToken);
+    }
+  });
+
+  // ✅ Proceed Button
   document.getElementById("proceedButton").addEventListener("click", async () => {
     console.log("[main.js] Proceed button clicked");
+
     const mode = document.getElementById("modeSelect").value;
     const addresses = await fetchAddresses(mode);
     console.log("[main.js] Fetched addresses:", addresses);
+
     if (addresses && addresses.length > 0) {
       uiModule.displayResults(addresses);
     } else {
@@ -67,72 +113,67 @@ document.addEventListener("DOMContentLoaded", () => {
       uiModule.downloadAddressesAsTxt(results);
     }
   });
-});
 
-async function fetchAddresses(mode) {
-  console.log("[main.js] Fetching addresses for mode:", mode);
+  // ✅ Fetch logic
+  async function fetchAddresses(mode) {
+    console.log("[main.js] Fetching addresses for mode:", mode);
 
-  const provider = walletModule.getProvider();
-  const userAddress = walletModule.getUserAddress();
-  if (!provider || !userAddress) {
-    console.warn("[main.js] Provider or user address not available");
+    const provider = walletModule.getProvider();
+    const userAddress = walletModule.getUserAddress();
+    if (!provider || !userAddress) {
+      console.warn("[main.js] Provider or user address not available");
+      return [];
+    }
+
+    if (mode === "paste") {
+      const url = document.getElementById("polygonScanInput").value.trim();
+      const tokenAddress = addressModule.extractTokenAddress(url);
+      console.log("[main.js] Extracted token address from URL:", tokenAddress);
+      if (!tokenAddress) {
+        alert("Invalid URL format.");
+        return [];
+      }
+
+      try {
+        const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${tokenAddress}`);
+        const data = await response.json();
+        console.log("[main.js] Proxy API response:", data);
+        return data.addresses || [];
+      } catch (err) {
+        console.error("[main.js] Proxy fetch failed:", err);
+        return [];
+      }
+
+    } else if (mode === "create") {
+      const contractInput = document.getElementById("contractInput").value.trim();
+      if (!/^0x[a-fA-F0-9]{40}$/.test(contractInput)) {
+        alert("Invalid contract address.");
+        return [];
+      }
+
+      try {
+        const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${contractInput}`);
+        const data = await response.json();
+        console.log("[main.js] Proxy API response:", data);
+        return data.addresses || [];
+      } catch (err) {
+        console.error("[main.js] Proxy fetch failed:", err);
+        return [];
+      }
+
+    } else if (mode === "random") {
+      const max = parseInt(document.getElementById("maxAddresses").value || "100");
+      try {
+        const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
+        const data = await response.json();
+        console.log("[main.js] Loaded random wallets:", data.length);
+        return data.slice(0, Math.min(max, 1000));
+      } catch (err) {
+        console.error("[main.js] Failed to load random wallets JSON:", err);
+        return [];
+      }
+    }
+
     return [];
   }
-
-  if (mode === "paste") {
-    const url = document.getElementById("polygonScanInput").value.trim();
-    const tokenAddress = extractTokenAddress(url);
-    console.log("[main.js] Extracted token address from URL:", tokenAddress);
-    if (!tokenAddress) {
-      alert("Invalid URL format.");
-      return [];
-    }
-
-    try {
-      const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${tokenAddress}`);
-      const data = await response.json();
-      console.log("[main.js] Proxy API response:", data);
-      return data.addresses || [];
-    } catch (err) {
-      console.error("[main.js] Proxy fetch failed:", err);
-      return [];
-    }
-
-  } else if (mode === "create") {
-    const contractInput = document.getElementById("contractInput").value.trim();
-    if (!/^0x[a-fA-F0-9]{40}$/.test(contractInput)) {
-      alert("Invalid contract address.");
-      return [];
-    }
-
-    try {
-      const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${contractInput}`);
-      const data = await response.json();
-      console.log("[main.js] Proxy API response:", data);
-      return data.addresses || [];
-    } catch (err) {
-      console.error("[main.js] Proxy fetch failed:", err);
-      return [];
-    }
-
-  } else if (mode === "random") {
-    const max = parseInt(document.getElementById("maxAddresses").value || "100");
-    try {
-      const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
-      const data = await response.json();
-      console.log("[main.js] Loaded random wallets:", data.length);
-      return data.slice(0, Math.min(max, 1000));
-    } catch (err) {
-      console.error("[main.js] Failed to load random wallets JSON:", err);
-      return [];
-    }
-  }
-
-  return [];
-}
-
-function extractTokenAddress(url) {
-  const regex = /address\/(0x[a-fA-F0-9]{40})/;
-  const match = url.match(regex);
-  return match ? match[1] : null;
-}
+});
