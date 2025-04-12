@@ -1,27 +1,23 @@
-export function toggleInputFields(mode) {
-  document.getElementById("paste-box").style.display = mode === "paste" ? "block" : "none";
-  document.getElementById("scan-box").style.display = mode === "create" ? "block" : "none";
-  document.getElementById("random-box").style.display = mode === "random" ? "block" : "none";
-  document.getElementById("download-btn").style.display = (mode === "random" || mode === "create") ? "inline-block" : "none";
+export function updateWalletInfo(address, balanceFormatted) {
+  document.getElementById("wallet-info").innerText = `🧾 Connected: ${address}`;
+  document.getElementById("lqx-info").innerText = `💰 LQX Balance: ${balanceFormatted}`;
 }
 
-export function populateAddressList(addressList) {
-  const ul = document.getElementById("address-list");
-  const countEl = document.getElementById("address-count");
+export function showWarning(message) {
+  document.getElementById("requirement-warning").innerText = `⚠️ ${message}`;
+}
 
-  ul.innerHTML = "";
-  addressList.forEach(addr => {
-    const li = document.createElement("li");
-    li.textContent = addr;
-    ul.appendChild(li);
-  });
-
-  countEl.innerText = `✅ ${addressList.length} addresses loaded.`;
+export function clearWarning() {
+  document.getElementById("requirement-warning").innerText = "";
 }
 
 export function clearUI() {
   document.getElementById("address-list").innerHTML = "";
   document.getElementById("address-count").innerText = "";
+  document.getElementById("paste-input").value = "";
+  document.getElementById("scan-link").value = "";
+  document.getElementById("max-addresses").value = "";
+  document.getElementById("random-count").value = "";
 }
 
 export function disableInputs() {
@@ -31,25 +27,12 @@ export function disableInputs() {
 
 export function enableInputs() {
   document.getElementById("mode").disabled = false;
-  document.getElementById("proceed-btn").disabled = false;
+  document.getElementById("proceed-btn").disabled = true;
 }
 
-export function showLQXRequirementWarning(show) {
-  const warningEl = document.getElementById("requirement-warning");
-  if (show) {
-    warningEl.innerText = "⚠️ You must hold at least 1000 LQX tokens to use this tool.";
-  } else {
-    warningEl.innerText = "";
-  }
-}
-
-export function updateWalletUI({ address, lqxBalance }) {
-  document.getElementById("wallet-info").innerText = `🧾 Connected: ${address}`;
-  document.getElementById("lqx-info").innerText = `💰 LQX Balance: ${lqxBalance}`;
-}
-
-export function resetWalletUI() {
-  document.getElementById("wallet-info").innerText = "";
-  document.getElementById("lqx-info").innerText = "";
-  document.getElementById("requirement-warning").innerText = "🔌 Wallet disconnected.";
+export function toggleInputFields(mode) {
+  document.getElementById("paste-box").style.display = mode === "paste" ? "block" : "none";
+  document.getElementById("scan-box").style.display = mode === "create" ? "block" : "none";
+  document.getElementById("random-box").style.display = mode === "random" ? "block" : "none";
+  document.getElementById("download-btn").style.display = (mode === "random" || mode === "create") ? "inline-block" : "none";
 }
