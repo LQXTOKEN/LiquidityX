@@ -104,6 +104,45 @@
             width: 100%;
         }
         
+        /* New Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #2a2a72;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+            top: 100%;
+            left: 0;
+        }
+        
+        .dropdown-content a {
+            color: var(--light);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        
+        .dropdown-content a:hover {
+            background-color: #3a3a8a;
+            color: var(--accent);
+        }
+        
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        .dropdown:hover .dropbtn {
+            color: var(--accent);
+        }
+        
         section {
             padding: 2rem 0;
             margin-bottom: 2rem;
@@ -259,6 +298,10 @@
             section {
                 padding: 1.5rem 0;
             }
+            
+            .dropdown-content {
+                min-width: 120px;
+            }
         }
         
         /* Animation */
@@ -290,6 +333,12 @@
                     <li><a href="#progress">Progress</a></li>
                     <li><a href="#contact">Contact</a></li>
                     <li><a href="LpStaking/index.html">LP Staking</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropbtn">DevTools</a>
+                        <div class="dropdown-content">
+                            <a href="DevTools/AirdropTool/index.html">Airdrop Tool</a>
+                        </div>
+                    </li>
                 </ul>
             </nav>
         </header>
@@ -308,7 +357,7 @@
   <li>Enables seamless asset movement with <strong>cross-chain bridges</strong> for interoperability across multiple blockchain networks.</li>
   <li>Offers decentralized <strong>swap protocols</strong> for secure and fast token and liquidity exchanges.</li>
   <li>Empowers developers, traders, and innovators with everything they need to build and scale in the DeFi ecosystem.</li>
-  <li>LiquidityX is your gateway to building the future of decentralized finance – <strong>secure, flexible, and limitless</strong>.</li>
+  <li>LiquidityX is your gateway to building the future of decentralized finance - <strong>secure, flexible, and limitless</strong>.</li>
 </ul>
 </p>
             <p><strong>Max Supply:</strong> 50,000,000 LQX</p>
@@ -337,6 +386,7 @@
                 <li>✅ Successfully integrated MetaMask and Trust Wallet for seamless user experience.</li>
                 <li>✅ Responsive UI compatible with desktop and mobile devices.</li>
                 <li>✅ Compliant with MiCA regulations for transparency and reporting.</li>
+                <li>✅ Airdrop Tool development completed.</li>
             </ul>
         </section>
 
