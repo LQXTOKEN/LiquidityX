@@ -1,47 +1,64 @@
-// js/wallet_module.js
+// js/modules/wallet_module.js
 
-import { CONFIG } from './config.js';
+window.walletModule = (function () {
+  let provider = null;
+  let signer = null;
+  let userAddress = null;
 
-let provider;
-let signer;
-let userAddress;
+  async function connectWallet() {
+    console.log("[walletModule] Trying to connect wallet...");
 
-export async function connectWallet() {
-  if (window.ethereum) {
-    try {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      userAddress = await signer.getAddress();
-      return { provider, signer, userAddress };
-    } catch (error) {
-      console.error("User rejected wallet connection:", error);
+    if (window.ethereum) {
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        console.log("[walletModule] Provider created:", provider);
+
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        userAddress = await signer.getAddress();
+
+        console.log("[walletModule] Connected:", userAddress);
+        return { provider, signer, userAddress };
+      } catch (error) {
+        console.error("[walletModule] User rejected connection or error occurred:", error);
+        return null;
+      }
+    } else {
+      alert("MetaMask is not installed.");
+      console.warn("[walletModule] No window.ethereum found");
       return null;
     }
-  } else {
-    alert("MetaMask is not installed.");
-    return null;
   }
-}
 
-export function disconnectWallet() {
-  provider = null;
-  signer = null;
-  userAddress = null;
-}
+  function disconnectWallet() {
+    console.log("[walletModule] Disconnecting wallet");
+    provider = null;
+    signer = null;
+    userAddress = null;
+  }
 
-export function isWalletConnected() {
-  return !!userAddress;
-}
+  function isWalletConnected() {
+    return !!userAddress;
+  }
 
-export function getSigner() {
-  return signer;
-}
+  function getSigner() {
+    return signer;
+  }
 
-export function getProvider() {
-  return provider;
-}
+  function getProvider() {
+    return provider;
+  }
 
-export function getUserAddress() {
-  return userAddress;
-}
+  function getUserAddress() {
+    return userAddress;
+  }
+
+  return {
+    connectWallet,
+    disconnectWallet,
+    isWalletConnected,
+    getSigner,
+    getProvider,
+    getUserAddress
+  };
+})();
