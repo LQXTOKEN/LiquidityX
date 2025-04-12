@@ -1,16 +1,26 @@
-// 📁 main.js
-import { connectWallet, disconnectWallet } from "./modules/wallet_module.js";
-import { populateAddressList, clearAddressListUI, toggleInputFields, showWarning } from "./modules/ui_module.js";
-import { fetchAddressesFromToken } from "./modules/proxy_handler.js";
-import { fetchRandomAddresses } from "./modules/random_module.js";
-import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js";
+import { connectWallet, disconnectWallet } from './modules/wallet_module.js';
+import { fetchData } from './modules/fetch_module.js';
+import { populateAddressList, clearUI, toggleInputFields, enableInputs, disableInputs } from './modules/ui_module.js';
+import { LQX_REQUIRED } from './modules/config.js';
 
 let selectedMode = "";
 let addressList = [];
 
-// 🎯 Event Listeners
-document.getElementById("connect-btn").addEventListener("click", connectWallet);
-document.getElementById("disconnect-btn").addEventListener("click", disconnectWallet);
+document.getElementById("connect-btn").addEventListener("click", async () => {
+  const result = await connectWallet();
+  if (result && result.hasEnoughLQX) {
+    enableInputs();
+  } else {
+    disableInputs();
+  }
+});
+
+document.getElementById("disconnect-btn").addEventListener("click", () => {
+  disconnectWallet();
+  disableInputs();
+  clearUI();
+});
+
 document.getElementById("mode").addEventListener("change", handleModeChange);
 document.getElementById("proceed-btn").addEventListener("click", handleProceed);
 document.getElementById("download-btn").addEventListener("click", downloadAddresses);
@@ -27,14 +37,15 @@ function handleModeChange() {
       return;
     }
     addressList = [];
-    clearAddressListUI();
+    clearUI();
   }
+
   selectedMode = mode;
   toggleInputFields(mode);
 }
 
 async function handleProceed() {
-  clearAddressListUI();
+  clearUI();
 
   if (selectedMode === "paste") {
     const raw = document.getElementById("paste-input").value.trim();
@@ -57,24 +68,26 @@ async function handleProceed() {
     const tokenAddress = match[1];
 
     try {
-      const data = await fetchAddressesFromToken(tokenAddress);
+      const data = await fetchData(tokenAddress);
       addressList = data.slice(0, max);
       populateAddressList(addressList);
     } catch (err) {
       console.error("❌ PolygonScan fetch failed:", err);
-      showWarning("⚠️ Failed to fetch from PolygonScan. Try another mode.");
+      alert("⚠️ Failed to fetch PolygonScan data. Please try another mode.");
     }
   }
 
   if (selectedMode === "random") {
     const count = parseInt(document.getElementById("random-count").value) || 100;
     try {
-      const data = await fetchRandomAddresses(count);
-      addressList = data;
+      const res = await fetch('https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json');
+      const all = await res.json();
+      const shuffled = all.sort(() => 0.5 - Math.random());
+      addressList = shuffled.slice(0, count);
       populateAddressList(addressList);
     } catch (err) {
       console.error("❌ Failed to load random wallets:", err);
-      showWarning("⚠️ Failed to load random wallets. Try another mode.");
+      alert("⚠️ Failed to load random wallets. Try another mode.");
     }
   }
 }
@@ -84,6 +97,7 @@ function downloadAddresses() {
     alert("No addresses to download.");
     return;
   }
+
   const blob = new Blob([addressList.join("\n")], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
