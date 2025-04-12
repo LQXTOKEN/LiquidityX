@@ -13,5 +13,4 @@ window.CONFIG = {
   MIN_LQX_REQUIRED: 1000,
   PROXY_API_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon",
   ACTIVE_WALLETS_JSON: "ACTIVE_WALLETS_JSON: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json"
-"
 };
