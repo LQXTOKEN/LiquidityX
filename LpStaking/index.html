@@ -3,46 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiquidityX - Complete Staking DApp</title>
-    <link rel="stylesheet" href="./styles.css">
-
-    <!-- Import των απαραίτητων βιβλιοθηκών -->
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
-    <script src="https://unpkg.com/web3modal"></script>
-    <script src="https://unpkg.com/@walletconnect/web3-provider@1.7.1/dist/umd/index.min.js"></script>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+    <title>LiquidityX LP Staking dApp</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <!-- Διακριτικό Λογότυπο -->
-    <div style="position: absolute; top: 20px; left: 20px;">
-        <img src="https://lqxtoken.github.io/LiquidityX/logo.png" alt="Logo" width="60">
+    <div id="app">
+        <header>
+            <h1>LiquidityX LP Staking</h1>
+            <div id="wallet-address">Not connected</div>
+            <button id="connect-btn">Connect Wallet</button>
+            <button id="disconnect-btn" style="display:none;">Disconnect</button>
+            <!-- Navigation Button: Back to Main Website -->
+            <button id="back-to-main-btn" onclick="window.location.href='https://liquidityx.io/'">Back to Main Website</button>
+        </header>
+
+        <section>
+            <h2>Staking Information</h2>
+            <p id="apr">APR: Loading...</p>
+            <p id="lqx-balance">LQX Balance: Loading...</p>
+            <p id="lp-balance">LP Token Balance: Loading...</p>
+            <p id="staked-amount">Staked Amount: Loading...</p>
+            <p id="earned-rewards">Earned Rewards: Loading...</p>
+        </section>
+
+        <section>
+            <h2>Actions</h2>
+            <input type="number" id="stake-amount" placeholder="Enter amount to stake">
+            <button id="stake-btn">Stake Tokens</button>
+            
+            <input type="number" id="unstake-amount" placeholder="Enter amount to unstake">
+            <button id="unstake-btn">Unstake Tokens</button>
+            
+            <button id="claim-rewards-btn">Claim Rewards</button>
+        </section>
+
+        <footer>
+            <p>LiquidityX - LP Staking dApp Version 1.0</p>
+        </footer>        
     </div>
 
-    <h1>LiquidityX - LP Staking DApp</h1>
-    <button id="connectButton">Connect Wallet</button>
-
-    <div id="balances">
-        <p id="lqxBalance">LQX Balance: </p>
-        <p id="lpBalance">LP Balance: </p>
-        <p id="stakedAmount">Staked Amount: </p>
-        <p id="pendingReward">Pending Reward: </p>
-    </div>
-
-    <div id="actions">
-        <input type="text" id="stakeAmount" placeholder="Enter amount to stake">
-        <button id="stakeButton">Stake</button>
-        
-        <input type="text" id="unstakeAmount" placeholder="Enter amount to unstake">
-        <button id="unstakeButton">Unstake</button>
-        
-        <button id="claimButton">Claim Reward</button>
-    </div>
-
-    <!-- Loading indicator and progress bar -->
-    <div id="loadingIndicator" style="display: none;">Loading... Please wait.</div>
-    <div id="progressBar"></div>
-    <div id="notification"></div>
-
-    <!-- Import του app.js -->
-    <script src="./app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
