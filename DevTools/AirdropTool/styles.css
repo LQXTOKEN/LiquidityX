@@ -1,3 +1,5 @@
+// styles.css
+
 body {
   background-color: #0d1117;
   color: #f0f0f0;
@@ -7,11 +9,11 @@ body {
 }
 
 #app {
-  max-width: 960px;
+  max-width: 900px;
   margin: auto;
   padding: 20px;
   border: 1px solid #333;
-  border-radius: 12px;
+  border-radius: 10px;
   background-color: #161b22;
 }
 
@@ -20,24 +22,14 @@ header, footer {
   margin-bottom: 20px;
 }
 
-header h1 {
-  margin-bottom: 5px;
-}
-
-input, select, textarea {
+input, select {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
-  border-radius: 6px;
+  border-radius: 5px;
   border: 1px solid #444;
   background-color: #0d1117;
   color: white;
-  font-size: 14px;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 100px;
 }
 
 button {
@@ -46,21 +38,33 @@ button {
   border: none;
   padding: 10px 20px;
   margin-top: 15px;
-  margin-right: 10px;
-  border-radius: 6px;
+  border-radius: 5px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+  transition: 0.3s;
 }
 
 button:hover {
   background-color: #3d38a3;
 }
 
+ul {
+  margin-top: 15px;
+  list-style: none;
+  padding-left: 0;
+}
+
+li {
+  margin-bottom: 5px;
+  font-size: 14px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 5px;
+  word-break: break-all;
+}
+
 #wallet-info, #lqx-info {
   font-size: 14px;
   color: #00d4ff;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 #requirement-warning {
@@ -76,57 +80,6 @@ button:hover {
   margin-top: 10px;
 }
 
-.mode-box {
+.hidden {
   display: none;
-  margin-top: 15px;
-  padding: 15px;
-  border: 1px solid #444;
-  border-radius: 10px;
-  background-color: #20262e;
-}
-
-ul#address-list {
-  margin-top: 15px;
-  list-style: none;
-  padding-left: 0;
-  max-height: 250px;
-  overflow-y: auto;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 10px;
-  background-color: #0e111a;
-}
-
-ul#address-list li {
-  margin-bottom: 6px;
-  font-size: 14px;
-  border-bottom: 1px solid #2a2f3a;
-  padding-bottom: 5px;
-  word-break: break-all;
-}
-
-#address-count {
-  font-size: 14px;
-  margin-top: 15px;
-  color: #00ffae;
-}
-
-#mode-section {
-  margin-top: 20px;
-}
-
-#disconnect-btn {
-  background-color: #c93131;
-}
-
-#disconnect-btn:hover {
-  background-color: #a52828;
-}
-
-#back-btn {
-  background-color: #5a5a5a;
-}
-
-#back-btn:hover {
-  background-color: #444;
 }
