@@ -2,85 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- ✅ CORS & security headers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://liquidityx.io https://proxy-git-main-lqxtokens-projects.vercel.app; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src *;">
-  <meta name="referrer" content="no-referrer" />
-  <meta name="robots" content="noindex,nofollow" />
-
+  <meta http-equiv="Access-Control-Allow-Origin" content="*" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>LiquidityX Airdrop Tool</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles.css" />
-
-  <!-- Ethers.js -->
+  <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
-
 <body>
   <div id="app">
     <header>
       <h1>LiquidityX Community Airdrop Tool</h1>
-      <p>Generate an address list to airdrop your token on Polygon.</p>
+      <p>Create your Airdrop list using your preferred method.</p>
     </header>
 
-    <!-- Wallet & Navigation -->
     <section id="wallet-section">
-      <button id="back-btn">🔙 Back to Main Website</button>
+      <button id="back-btn">🏠 Back to Main Website</button>
       <button id="connect-btn">🔗 Connect Wallet</button>
-      <button id="disconnect-btn" style="display: none;">❌ Disconnect</button>
+      <button id="disconnect-btn" style="display:none;">❌ Disconnect</button>
       <div id="wallet-info"></div>
       <div id="lqx-info"></div>
       <div id="requirement-warning"></div>
     </section>
 
-    <!-- ERC20 Selection -->
-    <section id="token-section">
-      <label for="token-address">Choose ERC-20 Token to Airdrop:</label>
-      <input type="text" id="token-address" placeholder="Enter ERC-20 token address on Polygon" />
-      <div id="token-info"></div>
-    </section>
-
-    <!-- Address Source Selection -->
-    <section id="mode-selection">
-      <label for="mode">Select address source:</label>
+    <section id="mode-section">
+      <label for="mode">Choose how to generate your airdrop list:</label>
       <select id="mode">
-        <option value="" selected disabled>-- Choose Mode --</option>
-        <option value="paste">Paste your own addresses</option>
-        <option value="create">Extract from PolygonScan</option>
-        <option value="random">Use Random Verified Wallets</option>
+        <option value="">-- Select Mode --</option>
+        <option value="paste">Paste addresses manually</option>
+        <option value="create">Generate from PolygonScan link</option>
+        <option value="random">Use random active wallets</option>
       </select>
     </section>
 
     <!-- Paste Mode -->
-    <section id="paste-box" style="display: none;">
-      <label for="paste-input">Paste wallet addresses (one per line):</label>
-      <textarea id="paste-input" rows="8" placeholder="0x1234..."></textarea>
+    <section id="paste-box" style="display:none;">
+      <label for="paste-input">Paste addresses (one per line or space-separated):</label>
+      <textarea id="paste-input" rows="6" placeholder="0x123... 0x456..."></textarea>
     </section>
 
     <!-- Create Mode -->
-    <section id="scan-box" style="display: none;">
-      <label for="scan-link">Paste PolygonScan Token Link:</label>
+    <section id="scan-box" style="display:none;">
+      <label for="scan-link">Paste PolygonScan token link:</label>
       <input type="text" id="scan-link" placeholder="https://polygonscan.com/token/0x..." />
-
-      <label for="max-addresses">Enter max number of addresses (max 1000):</label>
-      <input type="number" id="max-addresses" placeholder="e.g. 100" min="1" max="1000" />
+      <label for="max-addresses">Enter max number of addresses to use (max 1000):</label>
+      <input type="number" id="max-addresses" min="1" max="1000" placeholder="e.g. 100" />
     </section>
 
     <!-- Random Mode -->
-    <section id="random-box" style="display: none;">
-      <label for="random-count">Number of random addresses to use (max 1000):</label>
-      <input type="number" id="random-count" value="100" min="1" max="1000" />
+    <section id="random-box" style="display:none;">
+      <label for="random-count">Number of random addresses (max 1000):</label>
+      <input type="number" id="random-count" min="1" max="1000" placeholder="e.g. 100" />
     </section>
 
-    <!-- Proceed + Results -->
-    <section>
+    <section id="action-section">
       <button id="proceed-btn" disabled>🚀 Proceed</button>
-      <button id="download-btn" style="display: none;">📥 Download addresses (.txt)</button>
+      <button id="download-btn" style="display:none;">💾 Download Addresses</button>
+    </section>
 
-      <div id="address-count" style="margin-top: 1rem;"></div>
+    <section id="address-output">
+      <div id="address-count"></div>
       <ul id="address-list"></ul>
     </section>
 
@@ -89,7 +70,7 @@
     </footer>
   </div>
 
-  <!-- Load main orchestrator -->
-  <script src="js/main.js" type="module"></script>
+  <!-- Modules -->
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
