@@ -6,9 +6,6 @@
   <title>LiquidityX Airdrop Tool</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" />
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
-
-  <!-- CSP-safe ethers.js UMD build -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
@@ -29,6 +26,15 @@
     </div>
 
     <div id="airdropTool" style="display: none;">
+      <!-- NEW: Token Selection -->
+      <div id="tokenSection">
+        <label for="tokenAddressInput">Which token do you want to airdrop?</label>
+        <input type="text" id="tokenAddressInput" placeholder="Enter ERC-20 token contract address" />
+        <button id="checkToken">Check Token</button>
+        <p id="tokenStatus"></p>
+      </div>
+
+      <!-- Mode Selection -->
       <label for="modeSelect">Choose input method:</label>
       <select id="modeSelect">
         <option value="paste">Paste</option>
@@ -60,7 +66,7 @@
     </div>
   </div>
 
-  <!-- JS modules (correct paths) -->
+  <!-- Scripts -->
   <script src="js/modules/config.js"></script>
   <script src="js/modules/wallet_module.js"></script>
   <script src="js/modules/erc20_module.js"></script>
