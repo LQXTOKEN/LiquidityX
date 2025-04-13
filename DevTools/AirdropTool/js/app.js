@@ -1,42 +1,39 @@
-// app.js
-
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("[main.js] DOM loaded");
+  console.log("[app.js] DOM loaded");
 
-  // 🔁 Load ABIs first
+  // Περιμένουμε πρώτα να φορτωθούν τα ABIs
   await CONFIG.loadAbis();
-  if (!CONFIG.ERC20_ABI || !CONFIG.AIRDROP_ABI) {
-    alert("Failed to load ABIs. Please refresh and try again.");
-    return;
-  }
-  console.log("[main.js] ABIs loaded and verified");
+  console.log("[app.js] ✅ ABIs loaded and verified");
 
+  // Συνδέουμε το Send button
   const sendButton = document.getElementById("sendButton");
   if (sendButton) {
     sendButton.addEventListener("click", async () => {
-      console.log("[main.js] Send button clicked");
+      console.log("[app.js] Send button clicked");
 
-      const resultsText = document.getElementById("results").textContent.trim();
-      const addresses = resultsText
-        .split("\n")
-        .map(line => line.trim())
-        .filter(line => line.startsWith("0x") && line.length === 42);
+      // Παίρνουμε τις παραμέτρους από την global κατάσταση (που έχει οριστεί στο main.js)
+      const selectedToken = window.selectedToken;
+      const tokenAmountPerUser = window.tokenAmountPerUser;
+      const addresses = window.selectedAddresses;
 
-      const tokenAmountPerUser = document.getElementById("tokenAmountPerUser")?.value || "0";
-
-      console.log("[main.js] Executing airdrop with", {
-        token: window.selectedToken,
+      console.log("[app.js] Executing airdrop with", {
+        token: selectedToken,
         amountPerUser: tokenAmountPerUser,
-        addresses
+        addresses: addresses
       });
 
-      await airdropExecutor.executeAirdrop(
-        window.selectedToken,
-        tokenAmountPerUser,
-        addresses
-      );
+      // Εφόσον έχουμε τα απαραίτητα στοιχεία, καλούμε το executor
+      if (selectedToken && tokenAmountPerUser && addresses?.length > 0) {
+        await window.airdropExecutor.executeAirdrop({
+          token: selectedToken,
+          amountPerUser: tokenAmountPerUser,
+          addresses: addresses
+        });
+      } else {
+        console.warn("[app.js] ⚠️ Missing token, amount, or addresses!");
+      }
     });
   } else {
-    console.warn("[main.js] Send button not found in DOM.");
+    console.error("[app.js] ❌ sendButton not found in DOM!");
   }
 });
