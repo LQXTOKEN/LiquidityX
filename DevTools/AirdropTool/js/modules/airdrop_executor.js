@@ -1,72 +1,64 @@
 // js/modules/airdrop_executor.js
 
 window.airdropExecutor = (function () {
-  async function executeAirdrop(selectedToken, provider) {
+  async function executeAirdrop(selectedToken, provider, amountPerUser) {
+    console.log("[airdrop_executor] Starting airdrop execution...");
+
+    const signer = provider.getSigner();
+    const userAddress = await signer.getAddress();
+    const recipientListRaw = document.getElementById("results").textContent.trim();
+
+    if (!recipientListRaw) {
+      alert("Address list is empty.");
+      return;
+    }
+
+    const recipients = recipientListRaw.split("\n").map(addr => addr.trim()).filter(addr => addr);
+    console.log("[airdrop_executor] Recipients count:", recipients.length);
+
+    if (recipients.length === 0 || recipients.length > 1000) {
+      alert("Recipient list must contain between 1 and 1000 addresses.");
+      return;
+    }
+
+    if (!selectedToken?.contract || !selectedToken.decimals) {
+      alert("Token contract not properly selected.");
+      return;
+    }
+
+    const amountRaw = ethers.utils.parseUnits(amountPerUser, selectedToken.decimals);
+    const totalAmount = amountRaw.mul(recipients.length);
+    console.log("[airdrop_executor] Amount per user:", amountRaw.toString());
+    console.log("[airdrop_executor] Total amount to approve and send:", totalAmount.toString());
+
+    // Approve the airdrop contract to spend tokens
+    const erc20 = new ethers.Contract(selectedToken.address, CONFIG.ERC20_ABI, signer);
+    const allowance = await erc20.allowance(userAddress, CONFIG.AIRDROP_PROXY_ADDRESS);
+
+    if (allowance.lt(totalAmount)) {
+      console.log("[airdrop_executor] Approving contract for total amount...");
+      const approveTx = await erc20.approve(CONFIG.AIRDROP_PROXY_ADDRESS, totalAmount);
+      await approveTx.wait();
+      console.log("[airdrop_executor] Approval successful");
+    } else {
+      console.log("[airdrop_executor] Sufficient allowance already exists");
+    }
+
+    // Execute the airdrop
+    const airdropContract = new ethers.Contract(CONFIG.AIRDROP_PROXY_ADDRESS, CONFIG.AIRDROP_ABI, signer);
+
     try {
-      if (!selectedToken || !selectedToken.address || !selectedToken.decimals) {
-        alert("Token not properly selected.");
-        return;
-      }
-
-      const addressesRaw = document.getElementById("results").textContent.trim();
-      const recipients = addressesRaw
-        .split("\n")
-        .map(addr => addr.trim())
-        .filter(addr => /^0x[a-fA-F0-9]{40}$/.test(addr));
-
-      if (recipients.length === 0) {
-        alert("No valid recipient addresses found.");
-        return;
-      }
-
-      const amountPerUserRaw = document.getElementById("tokenAmountPerUser").value.trim();
-      if (!amountPerUserRaw || isNaN(amountPerUserRaw) || parseFloat(amountPerUserRaw) <= 0) {
-        alert("Invalid token amount per user.");
-        return;
-      }
-
-      const signer = provider.getSigner();
-      const userAddress = await signer.getAddress();
-
-      // Convert to correct units
-      const amountPerUser = ethers.utils.parseUnits(amountPerUserRaw, selectedToken.decimals);
-      const totalAmount = amountPerUser.mul(recipients.length);
-
-      // Approve tokens to the airdrop contract
-      const tokenContract = new ethers.Contract(
-        selectedToken.address,
-        CONFIG.ERC20_ABI,
-        signer
-      );
-
-      const currentAllowance = await tokenContract.allowance(userAddress, CONFIG.AIRDROP_CONTRACT);
-      if (currentAllowance.lt(totalAmount)) {
-        const approveTx = await tokenContract.approve(CONFIG.AIRDROP_CONTRACT, totalAmount);
-        await approveTx.wait();
-        console.log("[airdropExecutor] Tokens approved");
-      } else {
-        console.log("[airdropExecutor] Sufficient allowance exists");
-      }
-
-      // Execute airdrop
-      const airdropContract = new ethers.Contract(
-        CONFIG.AIRDROP_CONTRACT,
-        CONFIG.AIRDROP_ABI,
-        signer
-      );
-
       const tx = await airdropContract.batchTransferSameAmount(
         selectedToken.address,
         recipients,
-        amountPerUser
+        amountRaw
       );
 
-      console.log("[airdropExecutor] Airdrop TX sent:", tx.hash);
-      alert(`✅ Airdrop transaction sent! TX Hash: ${tx.hash}`);
-
+      console.log("[airdrop_executor] Airdrop transaction sent:", tx.hash);
+      alert("Airdrop transaction sent! Tx hash: " + tx.hash);
     } catch (err) {
-      console.error("[airdropExecutor] Error executing airdrop:", err);
-      alert(`❌ Error during airdrop: ${err.message}`);
+      console.error("[airdrop_executor] Airdrop failed:", err);
+      alert("Airdrop failed: " + err.message);
     }
   }
 
