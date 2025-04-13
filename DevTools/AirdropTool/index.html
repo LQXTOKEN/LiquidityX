@@ -11,10 +11,9 @@
   <div class="container">
     <h1>LiquidityX Airdrop Tool</h1>
 
-    <!-- WALLET SECTION -->
     <div class="card wallet-card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <button id="backToMain" class="btn-outline">← Back to Main Website</button>
+      <div class="wallet-bar">
+        <button id="backToMain" class="btn-outline">Back to Main Website</button>
         <button id="disconnectWallet" class="btn" style="display: none;">Disconnect Wallet</button>
       </div>
 
@@ -30,7 +29,6 @@
       </div>
     </div>
 
-    <!-- AIRDROP TOOL SECTION -->
     <div id="airdropTool" class="card" style="display: none;">
       <div class="input-group">
         <label for="tokenAddressInput">Which token do you want to airdrop?</label>
@@ -53,15 +51,13 @@
         </select>
       </div>
 
-      <!-- Paste -->
       <div id="pasteSection" class="modeSection">
         <div class="input-group">
           <label for="polygonScanInput">Paste list of wallet addresses (one per line):</label>
-          <textarea id="polygonScanInput" placeholder="0x1234...\n0xabcd..."></textarea>
+          <textarea id="polygonScanInput" placeholder="0x1234...\n0xabcd...\n0x5678..."></textarea>
         </div>
       </div>
 
-      <!-- Create -->
       <div id="createSection" class="modeSection" style="display:none;">
         <div class="input-group">
           <label for="contractInput">Enter token address you want to build your list from (e.g. MATIC):</label>
@@ -73,7 +69,6 @@
         </div>
       </div>
 
-      <!-- Random -->
       <div id="randomSection" class="modeSection" style="display:none;">
         <div class="input-group">
           <label for="maxAddresses">Enter max number of addresses to use (max 1000):</label>
@@ -91,7 +86,6 @@
       </button>
     </div>
 
-    <!-- ABOUT SECTION -->
     <div class="card about-section">
       <h2>What is the LiquidityX Airdrop Tool?</h2>
       <p>
@@ -107,12 +101,6 @@
         <strong>LiquidityX LP Staking Contract</strong>, directly contributing to higher APRs for stakers.
       </p>
       <p>
-        This model rewards both the sender (gasless), and the LQX ecosystem (sustainable staking rewards).
-      </p>
-      <p>
-        Built with transparency, proxy-secured APIs, and a decentralized backend — LiquidityX continues to deliver real tools for real users.
-      </p>
-      <p>
         <strong>Grow the network. Boost the APR. Make every token work.</strong> 💧
       </p>
     </div>
@@ -122,7 +110,7 @@
     </footer>
   </div>
 
-  <!-- ✅ ALL JS SCRIPTS LOADED IN ORDER -->
+  <!-- Scripts -->
   <script src="js/modules/config.js"></script>
   <script src="js/modules/wallet_module.js"></script>
   <script src="js/modules/erc20_module.js"></script>
@@ -130,7 +118,7 @@
   <script src="js/modules/address_module.js"></script>
   <script src="js/modules/token_module.js"></script>
   <script src="js/modules/airdrop_executor.js"></script>
-  <script src="js/app.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
