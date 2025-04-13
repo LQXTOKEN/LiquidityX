@@ -12,7 +12,7 @@
     <h1>LiquidityX Airdrop Tool</h1>
 
     <div class="card wallet-card">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="button-row">
         <button id="backToMain" class="btn-outline">← Back to Main Website</button>
         <button id="disconnectWallet" class="btn" style="display: none;">Disconnect Wallet</button>
       </div>
@@ -65,7 +65,7 @@
       <!-- Create Mode -->
       <div id="createSection" class="modeSection" style="display:none;">
         <div class="input-group">
-          <label for="contractInput">Enter token address you want to build your list from:</label>
+          <label for="contractInput">Enter token address to extract holders:</label>
           <input type="text" id="contractInput" placeholder="Enter token contract address..." />
         </div>
         <div class="input-group">
@@ -95,25 +95,13 @@
     <div class="card about-section">
       <h2>What is the LiquidityX Airdrop Tool?</h2>
       <p>
-        The <strong>LiquidityX Airdrop Tool</strong> is a powerful utility built for the community, allowing any wallet to perform
-        gas-efficient ERC-20 airdrops on the <strong>Polygon network</strong>.
+        The <strong>LiquidityX Airdrop Tool</strong> allows you to airdrop ERC-20 tokens efficiently on the Polygon network using a smart contract-based batch system.
       </p>
       <p>
-        Using a <strong>Batch Transfer Smart Contract</strong>, thousands of transfers are executed in a single transaction —
-        reducing fees and eliminating the need for recipients to claim tokens.
+        Each airdrop sends <strong>500 LQX</strong> as protocol fee to increase APR in the LP staking contract, promoting sustainability.
       </p>
       <p>
-        Every airdrop sends <span class="protocol-fee">500 LQX</span> as protocol fee to the
-        <strong>LiquidityX LP Staking Contract</strong>, directly contributing to higher APRs for stakers.
-      </p>
-      <p>
-        This model rewards both the sender (gasless), and the LQX ecosystem (sustainable staking rewards).
-      </p>
-      <p>
-        Built with transparency, proxy-secured APIs, and a decentralized backend — LiquidityX continues to deliver real tools for real users.
-      </p>
-      <p>
-        <strong>Grow the network. Boost the APR. Make every token work.</strong> 💧
+        No more manual claims, no more high gas costs — just pure automated power for your airdrop strategy.
       </p>
     </div>
 
