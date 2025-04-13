@@ -4,18 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedToken = null;
 
   const modeSelect = document.getElementById("modeSelect");
-  const proceedBtn = document.getElementById("proceedButton");
-
   modeSelect.addEventListener("change", function () {
     console.log("[main.js] Mode changed:", this.value);
-    uiModule.showSectionByMode(this.value);
 
-    // ✅ Show/hide Proceed button depending on mode
-    if (this.value === "paste") {
-      proceedBtn.style.display = "none";
-    } else {
-      proceedBtn.style.display = "inline-block";
-    }
+    alert("⚠️ Changing mode will clear your current address list.");
+    uiModule.clearResults();
+    uiModule.showSectionByMode(this.value);
   });
 
   document.getElementById("connectWallet").addEventListener("click", async () => {
@@ -129,24 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (mode === "paste") {
-      const url = document.getElementById("polygonScanInput").value.trim();
-      const tokenAddress = addressModule.extractTokenAddress(url);
-      console.log("[main.js] Extracted token address from URL:", tokenAddress);
-      if (!tokenAddress) {
-        alert("Invalid URL format.");
-        return [];
-      }
-
-      try {
-        const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${tokenAddress}`);
-        const data = await response.json();
-        console.log("[main.js] Proxy API response (paste):", data);
-        return data.addresses || [];
-      } catch (err) {
-        console.error("[main.js] Proxy fetch failed (paste mode):", err);
-        return [];
-      }
-
+      const raw = document.getElementById("polygonScanInput").value.trim();
+      const lines = raw.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+      return lines.slice(0, 1000);
     } else if (mode === "create") {
       const contractInput = document.getElementById("contractInput").value.trim();
       const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
