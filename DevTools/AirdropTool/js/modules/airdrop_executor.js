@@ -1,60 +1,63 @@
 // js/modules/airdrop_executor.js
 
 window.airdropExecutor = (function () {
-  async function executeAirdrop({ token, amountPerUser, addresses }) {
+  async function executeAirdrop(token, amountPerUser, addresses) {
     console.log("[airdropExecutor] Starting airdrop process...");
 
-    if (!token || !token.address || !token.contract || !Array.isArray(addresses) || addresses.length === 0) {
+    if (!token || !token.address || !token.decimals || !token.contract) {
       console.error("[airdropExecutor] Token info invalid:", { token, amountPerUser, addresses });
-      alert("Missing token information or no recipients.");
+      alert("Token not selected or invalid.");
+      return;
+    }
+
+    if (!CONFIG.ERC20_ABI || !CONFIG.AIRDROP_ABI) {
+      console.error("[airdropExecutor] ABIs not loaded");
+      alert("Internal error: ABI not loaded. Please refresh.");
       return;
     }
 
     const provider = walletModule.getProvider();
+    const signer = provider.getSigner();
     const userAddress = walletModule.getUserAddress();
 
-    if (!provider || !userAddress) {
-      alert("Wallet not connected.");
+    if (!provider || !signer || !userAddress) {
+      alert("Please connect your wallet.");
       return;
     }
 
-    const signer = provider.getSigner(userAddress);
-
-    const airdropContract = new ethers.Contract(
-      CONFIG.AIRDROP_CONTRACT_PROXY,
-      CONFIG.AIRDROP_ABI,
-      signer
-    );
-
-    const tokenContract = new ethers.Contract(
-      token.address,
-      CONFIG.ERC20_ABI,
-      signer
-    );
+    const tokenAmount = ethers.utils.parseUnits(amountPerUser.trim(), token.decimals);
+    const totalAmount = tokenAmount.mul(addresses.length);
 
     try {
-      const decimals = token.decimals;
-      const amount = ethers.utils.parseUnits(amountPerUser.trim(), decimals);
-      const totalAmount = amount.mul(addresses.length);
+      const tokenContract = new ethers.Contract(token.address, CONFIG.ERC20_ABI, signer);
 
-      console.log(`[airdropExecutor] Approving ${totalAmount.toString()} tokens for airdrop...`);
-
-      const approveTx = await tokenContract.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalAmount);
-      console.log("[airdropExecutor] Approve TX sent:", approveTx.hash);
+      // Approve tokens
+      console.log(`[airdropExecutor] Approving ${totalAmount.toString()} tokens...`);
+      const approveTx = await tokenContract.approve(CONFIG.AIRDROP_CONTRACT_ADDRESS, totalAmount);
       await approveTx.wait();
-      console.log("[airdropExecutor] Approve TX confirmed.");
+      console.log("[airdropExecutor] ✅ Approve successful:", approveTx.hash);
 
-      console.log("[airdropExecutor] Sending batchTransferSameAmount...");
-      const airdropTx = await airdropContract.batchTransferSameAmount(token.address, addresses, amount);
-      console.log("[airdropExecutor] Airdrop TX sent:", airdropTx.hash);
+      // Call batchTransfer
+      const airdropContract = new ethers.Contract(
+        CONFIG.AIRDROP_CONTRACT_ADDRESS,
+        CONFIG.AIRDROP_ABI,
+        signer
+      );
 
-      await airdropTx.wait();
-      console.log("[airdropExecutor] Airdrop completed!");
+      console.log(`[airdropExecutor] Executing batchTransferSameAmount to ${addresses.length} addresses...`);
+      const tx = await airdropContract.batchTransferSameAmount(
+        token.address,
+        addresses,
+        tokenAmount
+      );
+      await tx.wait();
 
+      console.log("[airdropExecutor] ✅ Airdrop successful:", tx.hash);
       alert("✅ Airdrop completed successfully!");
+
     } catch (err) {
-      console.error("[airdropExecutor] Error during airdrop:", err);
-      alert("❌ Airdrop failed: " + (err.message || "Unknown error"));
+      console.error("[airdropExecutor] ❌ Airdrop failed:", err);
+      alert("❌ Airdrop failed. Check console for details.");
     }
   }
 
