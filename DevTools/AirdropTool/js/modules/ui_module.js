@@ -12,44 +12,31 @@ window.uiModule = (function () {
   }
 
   function showSectionByMode(mode) {
-    const sections = {
-      paste: document.getElementById("pasteSection"),
-      create: document.getElementById("createSection"),
-      random: document.getElementById("randomSection"),
-    };
+    const sections = ["pasteSection", "createSection", "randomSection"];
+    const proceedButton = document.getElementById("proceedButton");
 
-    // Κρύβουμε όλα τα sections
-    Object.values(sections).forEach(section => {
-      section.style.display = "none";
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = id.startsWith(mode) ? "block" : "none";
     });
 
-    // Εμφανίζουμε το επιλεγμένο section
-    if (sections[mode]) {
-      sections[mode].style.display = "block";
-    }
-
-    // Ελέγχουμε αν θα εμφανιστεί το κουμπί Proceed
-    const proceedBtn = document.getElementById("proceedButton");
-    if (proceedBtn) {
-      proceedBtn.style.display = (mode === "paste") ? "none" : "inline-block";
+    // Hide proceed button in paste mode (not needed)
+    if (mode === "paste") {
+      proceedButton.style.display = "none";
+    } else {
+      proceedButton.style.display = "inline-block";
     }
   }
 
   function setProceedButtonEnabled(enabled) {
     const btn = document.getElementById("proceedButton");
-    if (btn) {
-      btn.disabled = !enabled;
-    }
+    if (btn) btn.disabled = !enabled;
   }
 
   function displayResults(addresses) {
     const resultsEl = document.getElementById("results");
     resultsEl.textContent = addresses.join("\n");
-
-    const downloadBtn = document.getElementById("downloadButton");
-    if (downloadBtn) {
-      downloadBtn.style.display = "block";
-    }
+    document.getElementById("downloadButton").style.display = "block";
   }
 
   function downloadAddressesAsTxt(addresses) {
@@ -62,12 +49,29 @@ window.uiModule = (function () {
     URL.revokeObjectURL(url);
   }
 
+  function clearResults() {
+    document.getElementById("results").textContent = "";
+    document.getElementById("downloadButton").style.display = "none";
+
+    const resetFields = [
+      "polygonScanInput",
+      "contractInput",
+      "maxCreateAddresses",
+      "maxAddresses"
+    ];
+    resetFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = el.type === "number" ? el.defaultValue || 100 : "";
+    });
+  }
+
   return {
     setWalletInfo,
     setAccessDenied,
     showSectionByMode,
     setProceedButtonEnabled,
     displayResults,
-    downloadAddressesAsTxt
+    downloadAddressesAsTxt,
+    clearResults
   };
 })();
