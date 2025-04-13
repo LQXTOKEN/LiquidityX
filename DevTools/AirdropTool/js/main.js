@@ -4,26 +4,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedToken = null;
 
   const modeSelect = document.getElementById("modeSelect");
-
-  // ✅ Αρχική εμφάνιση σωστού input box
-  uiModule.showSectionByMode(modeSelect.value);
-  uiModule.setCurrentMode(modeSelect.value);
-
   modeSelect.addEventListener("change", function () {
     console.log("[main.js] Mode changed:", this.value);
-
-    const currentResults = document.getElementById("results").textContent.trim();
-    if (currentResults.length > 0) {
-      const confirmClear = confirm("⚠️ This will clear your current address list. Proceed?");
-      if (!confirmClear) {
-        this.value = uiModule.getCurrentMode();
-        return;
-      }
-    }
-
     uiModule.clearResults();
     uiModule.showSectionByMode(this.value);
-    uiModule.setCurrentMode(this.value);
   });
 
   document.getElementById("connectWallet").addEventListener("click", async () => {
@@ -47,8 +31,21 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("[main.js] LQX balance info:", balanceInfo);
 
     const meetsRequirement = parseFloat(balanceInfo.formatted) >= CONFIG.MIN_LQX_REQUIRED;
+
     uiModule.setWalletInfo(userAddress, balanceInfo.formatted, balanceInfo.symbol);
     uiModule.setAccessDenied(!meetsRequirement);
+
+    // ✅ Εμφάνιση μηνύματος κάτω από το balance
+    const msg = document.getElementById("requirementMessage");
+    if (meetsRequirement) {
+      msg.textContent = "✅ You meet the requirement to use this tool.";
+      msg.style.color = "var(--accent-green)";
+    } else {
+      msg.textContent = "⚠️ You need at least 1000 LQX to use this tool.";
+      msg.style.color = "var(--accent-red)";
+      alert("❌ You must hold at least 1000 LQX to use the Airdrop Tool.\nPlease acquire more LQX and reconnect your wallet.");
+      return;
+    }
 
     document.getElementById("connectWallet").style.display = "none";
     document.getElementById("disconnectWallet").style.display = "inline-block";
@@ -137,9 +134,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (mode === "paste") {
-      const raw = document.getElementById("polygonScanInput").value.trim();
-      const lines = raw.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+      const rawInput = document.getElementById("polygonScanInput").value.trim();
+      const lines = rawInput.split("\n").map(l => l.trim()).filter(Boolean);
       return lines.slice(0, 1000);
+
     } else if (mode === "create") {
       const contractInput = document.getElementById("contractInput").value.trim();
       const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
