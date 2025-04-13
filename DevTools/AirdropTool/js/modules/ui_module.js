@@ -1,66 +1,74 @@
 window.uiModule = (function () {
-  function toggleElementsBasedOnEligibility(isEligible) {
-    const elements = document.querySelectorAll(".requires-eligibility");
-    elements.forEach((el) => {
-      el.disabled = !isEligible;
-      el.style.opacity = isEligible ? "1" : "0.5";
-    });
-  }
-
-  function setEligibilityMessage(isEligible) {
-    const el = document.getElementById("eligibilityMessage");
-    if (!el) return;
-
-    if (isEligible) {
-      el.textContent = "✅ You are eligible to use the tool.";
-      el.style.color = "#00ff7f"; // Πράσινο
-    } else {
-      el.textContent = "❌ You need at least 1000 LQX tokens.";
-      el.style.color = "#ff5555"; // Κόκκινο
+  function updateLQXBalanceDisplay(balanceFormatted) {
+    const balanceDiv = document.getElementById("lqxBalance");
+    if (balanceDiv) {
+      balanceDiv.textContent = `${balanceFormatted} LQX`;
     }
   }
 
-  function updateAddressResults(addresses) {
-    const resultsContainer = document.getElementById("results");
-    if (!resultsContainer) return;
-    resultsContainer.innerHTML = "";
-    addresses.forEach((addr) => {
-      const div = document.createElement("div");
-      div.className = "address-entry";
-      div.textContent = addr;
-      resultsContainer.appendChild(div);
+  function toggleEligibilityUI(isEligible) {
+    const eligibilityDiv = document.getElementById("eligibilityMessage");
+    if (eligibilityDiv) {
+      if (isEligible) {
+        eligibilityDiv.textContent = "✅ You are eligible to use this tool.";
+        eligibilityDiv.style.color = "#00ff88";
+      } else {
+        eligibilityDiv.textContent = "❌ Minimum 1000 LQX tokens required to use this tool.";
+        eligibilityDiv.style.color = "#ff5c5c";
+      }
+    }
+  }
+
+  function toggleMainUI(isEnabled) {
+    const elementsToToggle = document.querySelectorAll(".main-ui input, .main-ui select, .main-ui button, .main-ui textarea");
+    elementsToToggle.forEach(el => {
+      el.disabled = !isEnabled;
+      el.classList.toggle("disabled", !isEnabled);
     });
   }
 
-  function toggleProceedButton(show) {
-    const btn = document.getElementById("proceedButton");
-    if (btn) {
-      btn.style.display = show ? "inline-block" : "none";
+  function showResults(addresses) {
+    const resultsDiv = document.getElementById("results");
+    if (resultsDiv) {
+      resultsDiv.innerHTML = "";
+      const ul = document.createElement("ul");
+      addresses.forEach(addr => {
+        const li = document.createElement("li");
+        li.textContent = addr;
+        ul.appendChild(li);
+      });
+      resultsDiv.appendChild(ul);
     }
   }
 
   function clearResults() {
-    const resultsContainer = document.getElementById("results");
-    if (resultsContainer) resultsContainer.innerHTML = "";
+    const resultsDiv = document.getElementById("results");
+    if (resultsDiv) {
+      resultsDiv.innerHTML = "";
+    }
   }
 
-  function clearPasteArea() {
-    const textarea = document.getElementById("pasteTextarea");
-    if (textarea) textarea.value = "";
+  function toggleProceedButton(show) {
+    const proceedButton = document.getElementById("proceedButton");
+    if (proceedButton) {
+      proceedButton.style.display = show ? "inline-block" : "none";
+    }
   }
 
-  function clearRandomInput() {
-    const input = document.getElementById("randomCountInput");
-    if (input) input.value = "";
+  function clearPasteTextarea() {
+    const textarea = document.getElementById("pasteInput");
+    if (textarea) {
+      textarea.value = "";
+    }
   }
 
   return {
-    toggleElementsBasedOnEligibility,
-    setEligibilityMessage,
-    updateAddressResults,
-    toggleProceedButton,
+    updateLQXBalanceDisplay,
+    toggleEligibilityUI,
+    toggleMainUI,
+    showResults,
     clearResults,
-    clearPasteArea,
-    clearRandomInput,
+    toggleProceedButton,
+    clearPasteTextarea
   };
 })();
