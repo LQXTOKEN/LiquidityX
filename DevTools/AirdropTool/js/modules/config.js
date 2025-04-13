@@ -11,11 +11,11 @@ window.CONFIG = {
   ERC20_ABI_PATH: "abis/erc20_abi.json",
   AIRDROP_ABI_PATH: "abis/airdrop_abi.json",
 
-  // ABI Holders (to be loaded dynamically)
+  // ABI Holders
   ERC20_ABI: null,
   AIRDROP_ABI: null,
 
-  // Utility to load ABI files
+  // Load ABIs
   async loadAbis() {
     try {
       const [erc20Response, airdropResponse] = await Promise.all([
