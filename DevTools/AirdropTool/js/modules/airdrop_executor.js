@@ -1,67 +1,65 @@
-// js/modules/airdrop_executor.js
-
 window.airdropExecutor = (function () {
-  async function executeAirdrop(token, amountPerUser, addresses) {
-    console.log("[airdropExecutor] Starting airdrop process...");
-
-    if (!token || !token.address || !token.decimals || !token.contract) {
-      console.error("[airdropExecutor] Token info invalid:", { token, amountPerUser, addresses });
-      alert("Token not selected or invalid.");
-      return;
-    }
-
-    if (!CONFIG.ERC20_ABI || !CONFIG.AIRDROP_ABI) {
-      console.error("[airdropExecutor] ABIs not loaded");
-      alert("Internal error: ABI not loaded. Please refresh.");
-      return;
-    }
-
-    const provider = walletModule.getProvider();
-    const signer = provider.getSigner();
-    const userAddress = walletModule.getUserAddress();
-
-    if (!provider || !signer || !userAddress) {
-      alert("Please connect your wallet.");
-      return;
-    }
-
-    const tokenAmount = ethers.utils.parseUnits(amountPerUser.trim(), token.decimals);
-    const totalAmount = tokenAmount.mul(addresses.length);
-
-    try {
-      const tokenContract = new ethers.Contract(token.address, CONFIG.ERC20_ABI, signer);
-
-      // Approve tokens
-      console.log(`[airdropExecutor] Approving ${totalAmount.toString()} tokens...`);
-      const approveTx = await tokenContract.approve(CONFIG.AIRDROP_CONTRACT_ADDRESS, totalAmount);
-      await approveTx.wait();
-      console.log("[airdropExecutor] ✅ Approve successful:", approveTx.hash);
-
-      // Call batchTransfer
-      const airdropContract = new ethers.Contract(
-        CONFIG.AIRDROP_CONTRACT_ADDRESS,
-        CONFIG.AIRDROP_ABI,
-        signer
-      );
-
-      console.log(`[airdropExecutor] Executing batchTransferSameAmount to ${addresses.length} addresses...`);
-      const tx = await airdropContract.batchTransferSameAmount(
-        token.address,
-        addresses,
-        tokenAmount
-      );
-      await tx.wait();
-
-      console.log("[airdropExecutor] ✅ Airdrop successful:", tx.hash);
-      alert("✅ Airdrop completed successfully!");
-
-    } catch (err) {
-      console.error("[airdropExecutor] ❌ Airdrop failed:", err);
-      alert("❌ Airdrop failed. Check console for details.");
-    }
-  }
+  const { ethers } = window;
 
   return {
-    executeAirdrop
+    async executeAirdrop({ token, amountPerUser, addresses }) {
+      console.log("[airdropExecutor] Starting airdrop process...");
+
+      if (!token || !token.contract || !token.address || !token.decimals) {
+        console.error("[airdropExecutor] Token info invalid:", { token, amountPerUser, addresses });
+        return;
+      }
+
+      if (!Array.isArray(addresses) || addresses.length === 0) {
+        console.error("[airdropExecutor] No recipient addresses provided.");
+        return;
+      }
+
+      if (!amountPerUser || isNaN(amountPerUser)) {
+        console.error("[airdropExecutor] Invalid amount per user:", amountPerUser);
+        return;
+      }
+
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        // Υπολογισμός ποσού με βάση decimals
+        const amountPerUserFormatted = ethers.utils.parseUnits(amountPerUser.toString(), token.decimals);
+        const totalAmount = amountPerUserFormatted.mul(addresses.length);
+
+        console.log(`[airdropExecutor] Approving ${ethers.utils.formatUnits(totalAmount, token.decimals)} tokens...`);
+
+        // Approve tokens στο Airdrop Contract
+        const approveTx = await token.contract.connect(signer).approve(
+          CONFIG.AIRDROP_CONTRACT_ADDRESS,
+          totalAmount
+        );
+        await approveTx.wait();
+        console.log("[airdropExecutor] ✅ Approval transaction confirmed");
+
+        // Δημιουργία instance του Airdrop Contract
+        const airdropContract = new ethers.Contract(
+          CONFIG.AIRDROP_CONTRACT_ADDRESS,
+          CONFIG.AIRDROP_ABI,
+          signer
+        );
+
+        // Κλήση batchTransferSameAmount
+        console.log(`[airdropExecutor] Sending airdrop to ${addresses.length} recipients...`);
+        const tx = await airdropContract.batchTransferSameAmount(
+          token.address,
+          addresses,
+          amountPerUserFormatted
+        );
+        await tx.wait();
+        console.log("[airdropExecutor] ✅ Airdrop transaction confirmed");
+        alert("✅ Airdrop completed successfully!");
+
+      } catch (err) {
+        console.error("[airdropExecutor] ❌ Airdrop failed:", err);
+        alert("❌ Airdrop failed. See console for details.");
+      }
+    }
   };
 })();
