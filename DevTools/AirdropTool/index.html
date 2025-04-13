@@ -7,229 +7,15 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <style>
-    /* ===== LIQUIDITYX MAIN SITE STYLE ===== */
-    :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --gradient-start: #4f46e5;
-      --gradient-end: #9333ea;
-      --dark-bg: #0f172a;
-      --card-bg: #1e293b;
-      --text-light: #f8fafc;
-      --text-gray: #94a3b8;
-      --border-dark: #334155;
-      --accent-green: #10b981;
-      --accent-red: #ef4444;
-      --radius-lg: 12px;
-      --shadow-xl: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--dark-bg);
-      color: var(--text-light);
-      line-height: 1.7;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      background: linear-gradient(90deg, var(--primary), var(--gradient-start), var(--gradient-end));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      margin-bottom: 2rem;
-      letter-spacing: -0.05em;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius-lg);
-      padding: 2rem;
-      border: 1px solid var(--border-dark);
-      box-shadow: var(--shadow-xl);
-      margin-bottom: 2rem;
-    }
-
-    .btn {
-      background: linear-gradient(135deg, var(--primary), var(--gradient-start));
-      border: none;
-      border-radius: var(--radius-lg);
-      padding: 0.875rem 1.75rem;
-      font-weight: 600;
-      color: white;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-      margin: 0.5rem 0;
-    }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-    }
-
-    .btn-outline {
-      background: transparent;
-      border: 1px solid var(--text-gray);
-      color: var(--text-light);
-    }
-
-    .btn-outline:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .input-group {
-      margin-bottom: 1.5rem;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: var(--text-gray);
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-
-    input, textarea, select {
-      width: 100%;
-      padding: 0.875rem;
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid var(--border-dark);
-      border-radius: var(--radius-lg);
-      color: var(--text-light);
-      font-family: 'Inter', sans-serif;
-      transition: all 0.3s ease;
-    }
-
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-    }
-
-    #walletAddress {
-      font-family: 'Roboto Mono', monospace;
-      background: rgba(37, 99, 235, 0.1);
-      color: var(--primary);
-      padding: 0.6rem 1rem;
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(37, 99, 235, 0.3);
-      margin: 1rem 0;
-      word-break: break-all;
-    }
-
-    .wallet-card {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(37, 99, 235, 0.3);
-    }
-
-    .modeSection {
-      display: none;
-    }
-
-    .modeSection.active {
-      display: block;
-    }
-
-    #tokenStatus {
-      padding: 0.75rem;
-      border-radius: var(--radius-lg);
-      margin: 1rem 0;
-    }
-
-    .token-success {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: var(--accent-green);
-    }
-
-    .token-error {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: var(--accent-red);
-    }
-
-    #results {
-      background: rgba(15, 23, 42, 0.5);
-      border: 1px solid var(--border-dark);
-      border-radius: var(--radius-lg);
-      padding: 1rem;
-      font-family: 'Roboto Mono', monospace;
-      font-size: 0.9rem;
-      white-space: pre-wrap;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .about-section {
-      background: linear-gradient(160deg, rgba(30,41,59,0.8), rgba(15,23,42,0.9));
-      border: 1px solid var(--border-dark);
-    }
-
-    .about-section p {
-      color: var(--text-gray);
-      margin: 1rem 0;
-    }
-
-    .about-section strong {
-      color: var(--text-light);
-    }
-
-    .protocol-fee {
-      background: rgba(16, 185, 129, 0.1);
-      color: var(--accent-green);
-      padding: 0.2rem 0.4rem;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-
-    footer {
-      text-align: center;
-      color: var(--text-gray);
-      font-size: 0.9rem;
-      margin-top: 3rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border-dark);
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        padding: 1.5rem;
-      }
-      h1 {
-        font-size: 2rem;
-      }
-      .card {
-        padding: 1.5rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="container">
     <h1>LiquidityX Airdrop Tool</h1>
 
     <div class="card wallet-card">
-      <button id="backToMain" class="btn">Back to Main Website</button>
+      <button id="backToMain" class="btn-outline">Back to Main Website</button>
+
       <div id="walletSection">
         <button id="connectWallet" class="btn">Connect Wallet</button>
         <button id="disconnectWallet" class="btn" style="display: none;">Disconnect Wallet</button>
@@ -252,6 +38,12 @@
         <p id="tokenStatus"></p>
       </div>
 
+      <!-- ✅ Token Amount per Address -->
+      <div class="input-group">
+        <label for="tokenAmountPerUser">Amount of tokens to send per address:</label>
+        <input type="number" id="tokenAmountPerUser" min="0" placeholder="e.g. 500" />
+      </div>
+
       <!-- Mode Selection -->
       <div class="input-group">
         <label for="modeSelect">Choose input method:</label>
@@ -262,23 +54,13 @@
         </select>
       </div>
 
-      
-    <!-- Paste -->
-<div id="pasteSection" class="modeSection">
-  <div class="input-group">
-    <label for="polygonScanInput">Paste Wallet Addresses</label>
-    <textarea
-      id="polygonScanInput"
-      placeholder="Paste wallet addresses here, one per line (max 1000 addresses)..."
-    ></textarea>
-    <small style="color: var(--text-gray); font-size: 0.85rem; display: block; margin-top: 0.5rem;">
-      Example:<br>
-      0xabc1234567890abcdef1234567890abcdef1234<br>
-      0xdef9876543210fedcba9876543210fedcba9876<br>
-      0x789abc0123456789abcdef0123456789abcdef01
-    </small>
-  </div>
-</div>
+      <!-- Paste -->
+      <div id="pasteSection" class="modeSection">
+        <div class="input-group">
+          <label for="polygonScanInput">Paste wallet addresses (one per line):</label>
+          <textarea id="polygonScanInput" placeholder="0x123...\n0xabc...\n0x..." rows="6"></textarea>
+        </div>
+      </div>
 
       <!-- Create -->
       <div id="createSection" class="modeSection" style="display:none;">
@@ -313,8 +95,7 @@
         gas-efficient ERC-20 airdrops on the <strong>Polygon network</strong>.
       </p>
       <p>
-        Using a <strong>Batch Transfer Smart Contract</strong>, thousands of transfers are executed in a single transaction —
-        reducing fees and eliminating the need for recipients to claim tokens.
+        Using a <strong>Batch Transfer Smart Contract</strong>, thousands of transfers are executed in a single transaction — reducing fees and eliminating the need for recipients to claim tokens.
       </p>
       <p>
         Every airdrop sends <span class="protocol-fee">500 LQX</span> as protocol fee to the
