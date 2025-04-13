@@ -1,184 +1,103 @@
 // main.js
-
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   console.log("[main.js] DOM loaded");
 
+  await CONFIG.loadAbis();
+  console.log("[main.js] ✅ ABIs loaded and verified");
+
+  const connectButton = document.getElementById("connectButton");
+  const proceedButton = document.getElementById("proceedButton");
+  const sendButton = document.getElementById("sendButton");
+  const disconnectButton = document.getElementById("disconnectButton");
+  const modeSelector = document.getElementById("modeSelector");
+  const tokenAddressInput = document.getElementById("tokenAddress");
+  const amountPerUserInput = document.getElementById("tokenAmountPerUser");
+
   let selectedToken = null;
+  let fetchedAddresses = [];
+  let currentMode = null;
 
-  const modeSelect = document.getElementById("modeSelect");
-  modeSelect.addEventListener("change", function () {
-    console.log("[main.js] Mode changed:", this.value);
+  connectButton.addEventListener("click", async () => {
+    console.log("[main.js] Connect button clicked");
+    const address = await walletModule.connectWallet();
+    if (address) {
+      console.log("[main.js] Wallet connected:", address);
+      const balanceInfo = await erc20Module.checkLQXBalance(address);
+      console.log("[main.js] LQX balance info:", balanceInfo);
+      uiModule.updateBalance(balanceInfo.formatted);
+      uiModule.setEligibility(balanceInfo.raw);
+      uiModule.enableUI(balanceInfo.raw);
+    }
+  });
 
-    // Ερώτηση αν υπάρχουν ήδη διευθύνσεις πριν γίνει αλλαγή
-    const currentResults = document.getElementById("results").textContent.trim();
-    if (currentResults.length > 0) {
-      const confirmClear = confirm("⚠️ Changing mode will clear your current address list. Continue?");
-      if (!confirmClear) {
-        this.value = window.currentMode || "paste";
+  disconnectButton.addEventListener("click", () => {
+    walletModule.disconnectWallet();
+    uiModule.disableUI();
+  });
+
+  tokenAddressInput.addEventListener("change", async (e) => {
+    const address = e.target.value.trim();
+    if (address && ethers.utils.isAddress(address)) {
+      console.log("[main.js] Token check initiated for:", address);
+      selectedToken = await erc20Module.loadToken(address);
+      console.log("[main.js] Token selected:", selectedToken);
+      uiModule.updateTokenInfo(selectedToken.symbol, selectedToken.decimals);
+    } else {
+      selectedToken = null;
+      uiModule.updateTokenInfo("Invalid", 18);
+    }
+  });
+
+  modeSelector.addEventListener("change", async (e) => {
+    const newMode = e.target.value;
+    console.log("[main.js] Mode changed:", newMode);
+
+    if (fetchedAddresses.length > 0 && newMode !== currentMode) {
+      const confirmChange = confirm("Switching mode will clear current addresses. Continue?");
+      if (!confirmChange) {
+        modeSelector.value = currentMode;
         return;
       }
     }
 
-    window.currentMode = this.value;
+    currentMode = newMode;
     uiModule.clearResults();
-    uiModule.showSectionByMode(this.value);
+    uiModule.clearAllInputs();
+    uiModule.toggleInputSections(newMode);
   });
 
-  document.getElementById("connectWallet").addEventListener("click", async () => {
-    console.log("[main.js] Connect button clicked");
-
-    const result = await walletModule.connectWallet();
-    if (!result) {
-      console.warn("[main.js] Wallet connection failed or cancelled");
-      return;
-    }
-
-    const { provider, userAddress } = result;
-    console.log("[main.js] Wallet connected:", userAddress);
-
-    const balanceInfo = await erc20Module.getERC20Balance(CONFIG.LQX_TOKEN_ADDRESS, userAddress, provider);
-    if (!balanceInfo) {
-      console.error("[main.js] Could not fetch LQX balance");
-      return;
-    }
-
-    console.log("[main.js] LQX balance info:", balanceInfo);
-
-    const meetsRequirement = parseFloat(balanceInfo.formatted) >= CONFIG.MIN_LQX_REQUIRED;
-    uiModule.setWalletInfo(userAddress, balanceInfo.formatted, balanceInfo.symbol);
-    uiModule.setAccessDenied(!meetsRequirement);
-    uiModule.setEligibilityMessage(meetsRequirement);
-
-    document.getElementById("connectWallet").style.display = "none";
-    document.getElementById("disconnectWallet").style.display = "inline-block";
-  });
-
-  document.getElementById("disconnectWallet").addEventListener("click", () => {
-    console.log("[main.js] Disconnect clicked");
-    walletModule.disconnectWallet();
-    window.location.reload();
-  });
-
-  document.getElementById("backToMain").addEventListener("click", () => {
-    console.log("[main.js] Back to Main Website");
-    window.location.href = "https://liquidityx.io";
-  });
-
-  document.getElementById("checkToken").addEventListener("click", async () => {
-    const tokenInput = document.getElementById("tokenAddressInput").value.trim();
-    console.log("[main.js] Token check initiated for:", tokenInput);
-
-    if (!addressModule.isValidAddress(tokenInput)) {
-      document.getElementById("tokenStatus").textContent = "❌ Invalid token address.";
-      selectedToken = null;
-      return;
-    }
-
-    const provider = walletModule.getProvider();
-    const userAddress = walletModule.getUserAddress();
-    if (!provider || !userAddress) {
-      document.getElementById("tokenStatus").textContent = "Please connect wallet first.";
-      return;
-    }
-
-    const tokenDetails = await tokenModule.getTokenDetails(tokenInput, provider);
-    if (!tokenDetails) {
-      document.getElementById("tokenStatus").textContent = "❌ Could not read token metadata.";
-      return;
-    }
-
-    const balance = await tokenModule.getFormattedBalance(tokenDetails.contract, userAddress, tokenDetails.decimals);
-
-    if (parseFloat(balance) <= 0) {
-      document.getElementById("tokenStatus").textContent = `⚠️ You have 0 ${tokenDetails.symbol} tokens.`;
-    } else {
-      document.getElementById("tokenStatus").textContent = `✅ Token: ${tokenDetails.symbol}, Balance: ${balance}`;
-      selectedToken = {
-        address: tokenInput,
-        symbol: tokenDetails.symbol,
-        decimals: tokenDetails.decimals,
-        contract: tokenDetails.contract
-      };
-      window.selectedToken = selectedToken;
-      console.log("[main.js] Token selected:", selectedToken);
-    }
-  });
-
-  document.getElementById("proceedButton").addEventListener("click", async () => {
+  proceedButton.addEventListener("click", async () => {
+    const mode = modeSelector.value;
     console.log("[main.js] Proceed button clicked");
 
-    const mode = document.getElementById("modeSelect").value;
-    const addresses = await fetchAddresses(mode);
-    console.log("[main.js] Fetched addresses:", addresses);
-
-    if (addresses && addresses.length > 0) {
-      uiModule.displayResults(addresses);
-    } else {
-      alert("No addresses found.");
+    try {
+      const addresses = await uiModule.fetchAddresses(mode);
+      console.log("[main.js] Fetched addresses:", addresses);
+      fetchedAddresses = addresses;
+      uiModule.displayAddresses(addresses);
+    } catch (err) {
+      console.error("[main.js] Failed to fetch addresses:", err);
     }
   });
 
-  document.getElementById("downloadButton").addEventListener("click", () => {
-    console.log("[main.js] Download button clicked");
-    const results = document.getElementById("results").textContent.trim().split("\n");
-    if (results.length > 0) {
-      uiModule.downloadAddressesAsTxt(results);
+  sendButton.addEventListener("click", async () => {
+    console.log("[main.js] Send button clicked");
+
+    const amountPerUser = amountPerUserInput.value.trim();
+
+    if (!selectedToken || !amountPerUser || fetchedAddresses.length === 0) {
+      console.warn("[main.js] Missing input for airdrop");
+      alert("Token, amount or addresses missing.");
+      return;
     }
+
+    const payload = {
+      token: selectedToken,
+      amountPerUser,
+      addresses: fetchedAddresses,
+    };
+
+    console.log("[main.js] Executing airdrop with", payload);
+    await airdropExecutor.executeAirdrop(payload);
   });
-
-  async function fetchAddresses(mode) {
-    console.log("[main.js] Fetching addresses for mode:", mode);
-
-    const provider = walletModule.getProvider();
-    const userAddress = walletModule.getUserAddress();
-    if (!provider || !userAddress) {
-      console.warn("[main.js] Provider or user address not available");
-      return [];
-    }
-
-    if (mode === "paste") {
-      const pasted = document.getElementById("polygonScanInput").value.trim();
-      const lines = pasted.split("\n").map(addr => addr.trim());
-      const valid = lines.filter(addr => addressModule.isValidAddress(addr));
-      return valid.slice(0, 1000);
-    }
-
-    if (mode === "create") {
-      const contractInput = document.getElementById("contractInput").value.trim();
-      const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
-
-      if (!addressModule.isValidAddress(contractInput)) {
-        alert("Please enter a valid contract address to create your list from.");
-        return [];
-      }
-
-      try {
-        const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${contractInput}`);
-        const data = await response.json();
-        console.log("[main.js] Proxy API response (create):", data);
-
-        const finalList = data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
-        return finalList;
-
-      } catch (err) {
-        console.error("[main.js] Proxy fetch failed (create mode):", err);
-        return [];
-      }
-    }
-
-    if (mode === "random") {
-      const max = parseInt(document.getElementById("maxAddresses").value || "100");
-      try {
-        const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
-        const data = await response.json();
-        console.log("[main.js] Loaded random wallets:", data.length);
-        return data.slice(0, Math.min(max, 1000));
-      } catch (err) {
-        console.error("[main.js] Failed to load random wallets JSON:", err);
-        return [];
-      }
-    }
-
-    return [];
-  }
 });
