@@ -4,12 +4,26 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedToken = null;
 
   const modeSelect = document.getElementById("modeSelect");
+
+  // ✅ Αρχική εμφάνιση σωστού input box
+  uiModule.showSectionByMode(modeSelect.value);
+  uiModule.setCurrentMode(modeSelect.value);
+
   modeSelect.addEventListener("change", function () {
     console.log("[main.js] Mode changed:", this.value);
 
-    alert("⚠️ Changing mode will clear your current address list.");
+    const currentResults = document.getElementById("results").textContent.trim();
+    if (currentResults.length > 0) {
+      const confirmClear = confirm("⚠️ This will clear your current address list. Proceed?");
+      if (!confirmClear) {
+        this.value = uiModule.getCurrentMode();
+        return;
+      }
+    }
+
     uiModule.clearResults();
     uiModule.showSectionByMode(this.value);
+    uiModule.setCurrentMode(this.value);
   });
 
   document.getElementById("connectWallet").addEventListener("click", async () => {
