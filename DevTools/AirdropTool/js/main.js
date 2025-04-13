@@ -4,9 +4,18 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedToken = null;
 
   const modeSelect = document.getElementById("modeSelect");
+  const proceedBtn = document.getElementById("proceedButton");
+
   modeSelect.addEventListener("change", function () {
     console.log("[main.js] Mode changed:", this.value);
     uiModule.showSectionByMode(this.value);
+
+    // ✅ Show/hide Proceed button depending on mode
+    if (this.value === "paste") {
+      proceedBtn.style.display = "none";
+    } else {
+      proceedBtn.style.display = "inline-block";
+    }
   });
 
   document.getElementById("connectWallet").addEventListener("click", async () => {
