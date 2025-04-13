@@ -1,6 +1,8 @@
 // js/modules/ui_module.js
 
 window.uiModule = (function () {
+  let currentMode = "paste"; // default active
+
   function setWalletInfo(address, balanceFormatted, symbol) {
     document.getElementById("walletAddress").textContent = `Wallet: ${address}`;
     document.getElementById("lqxBalance").textContent = `LQX Balance: ${balanceFormatted} ${symbol}`;
@@ -20,7 +22,6 @@ window.uiModule = (function () {
       if (el) el.style.display = id.startsWith(mode) ? "block" : "none";
     });
 
-    // Hide proceed button in paste mode (not needed)
     if (mode === "paste") {
       proceedButton.style.display = "none";
     } else {
@@ -65,6 +66,14 @@ window.uiModule = (function () {
     });
   }
 
+  function getCurrentMode() {
+    return currentMode;
+  }
+
+  function setCurrentMode(mode) {
+    currentMode = mode;
+  }
+
   return {
     setWalletInfo,
     setAccessDenied,
@@ -72,6 +81,8 @@ window.uiModule = (function () {
     setProceedButtonEnabled,
     displayResults,
     downloadAddressesAsTxt,
-    clearResults
+    clearResults,
+    getCurrentMode,
+    setCurrentMode
   };
 })();
