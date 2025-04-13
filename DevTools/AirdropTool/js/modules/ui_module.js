@@ -11,48 +11,46 @@ window.uiModule = (function () {
     document.getElementById("airdropTool").style.display = denied ? "none" : "block";
   }
 
-  function showSectionByMode(mode) {
-    const sections = ["pasteSection", "createSection", "randomSection"];
-    sections.forEach(id => {
-      document.getElementById(id).style.display = id.startsWith(mode) ? "block" : "none";
-    });
+  function setEligibilityMessage(eligible) {
+    const msg = document.getElementById("eligibilityMessage");
+    if (!msg) return;
 
-    // Also toggle proceed button visibility
-    toggleProceedButton(mode);
-
-    // Clear results if changing mode
-    const results = document.getElementById("results");
-    if (results && results.textContent.trim().length > 0) {
-      const confirmChange = confirm("Switching mode will clear your current list. Continue?");
-      if (confirmChange) {
-        results.textContent = "";
-        document.getElementById("downloadButton").style.display = "none";
-      }
+    if (eligible) {
+      msg.textContent = "✅ You meet the requirement to use this tool.";
+      msg.style.color = "var(--accent-green)";
+    } else {
+      msg.textContent = "❌ You must hold at least 1000 LQX to use this tool.";
+      msg.style.color = "var(--accent-red)";
     }
   }
 
-  function toggleProceedButton(mode) {
+  function showSectionByMode(mode) {
+    const sections = ["pasteSection", "createSection", "randomSection"];
+    sections.forEach((id) => {
+      document.getElementById(id).style.display = id.startsWith(mode) ? "block" : "none";
+    });
+
+    // Εμφάνιση / Απόκρυψη proceed ανά mode
     const proceedBtn = document.getElementById("proceedButton");
-    if (!proceedBtn) return;
-    proceedBtn.style.display = (mode === "paste") ? "none" : "inline-block";
-  }
-
-  function setEligibilityMessage(message, isValid) {
-    const el = document.getElementById("eligibilityMessage");
-    if (!el) return;
-    el.textContent = message;
-    el.style.color = isValid ? "var(--accent-green)" : "var(--accent-red)";
-  }
-
-  function setProceedButtonEnabled(enabled) {
-    const btn = document.getElementById("proceedButton");
-    if (btn) btn.disabled = !enabled;
+    if (proceedBtn) {
+      proceedBtn.style.display = (mode === "paste") ? "none" : "inline-block";
+    }
   }
 
   function displayResults(addresses) {
     const resultsEl = document.getElementById("results");
+    const sendBtn = document.getElementById("sendButton");
+    const downloadBtn = document.getElementById("downloadButton");
+
     resultsEl.textContent = addresses.join("\n");
-    document.getElementById("downloadButton").style.display = "block";
+
+    if (addresses.length > 0) {
+      if (sendBtn) sendBtn.style.display = "inline-block";
+      if (downloadBtn) downloadBtn.style.display = "inline-block";
+    } else {
+      if (sendBtn) sendBtn.style.display = "none";
+      if (downloadBtn) downloadBtn.style.display = "none";
+    }
   }
 
   function downloadAddressesAsTxt(addresses) {
@@ -68,11 +66,9 @@ window.uiModule = (function () {
   return {
     setWalletInfo,
     setAccessDenied,
-    showSectionByMode,
     setEligibilityMessage,
-    toggleProceedButton,
-    setProceedButtonEnabled,
+    showSectionByMode,
     displayResults,
-    downloadAddressesAsTxt
+    downloadAddressesAsTxt,
   };
 })();
