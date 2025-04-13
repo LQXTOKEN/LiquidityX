@@ -1,4 +1,4 @@
-// js/modules/ui_module.js
+// js/ui_module.js
 
 window.uiModule = (function () {
   function setWalletInfo(address, balanceFormatted, symbol) {
@@ -11,46 +11,29 @@ window.uiModule = (function () {
     document.getElementById("airdropTool").style.display = denied ? "none" : "block";
   }
 
-  function setEligibilityMessage(eligible) {
-    const msg = document.getElementById("eligibilityMessage");
-    if (!msg) return;
-
-    if (eligible) {
-      msg.textContent = "✅ You meet the requirement to use this tool.";
-      msg.style.color = "var(--accent-green)";
-    } else {
-      msg.textContent = "❌ You must hold at least 1000 LQX to use this tool.";
-      msg.style.color = "var(--accent-red)";
-    }
-  }
-
   function showSectionByMode(mode) {
     const sections = ["pasteSection", "createSection", "randomSection"];
-    sections.forEach((id) => {
+    sections.forEach(id => {
       document.getElementById(id).style.display = id.startsWith(mode) ? "block" : "none";
     });
 
-    // Εμφάνιση / Απόκρυψη proceed ανά mode
-    const proceedBtn = document.getElementById("proceedButton");
-    if (proceedBtn) {
-      proceedBtn.style.display = (mode === "paste") ? "none" : "inline-block";
+    // ✅ Clear paste textarea only if mode is not 'paste'
+    if (mode !== "paste") {
+      const pasteInput = document.getElementById("pasteInput");
+      if (pasteInput) pasteInput.value = "";
     }
+  }
+
+  function setProceedButtonEnabled(enabled) {
+    const btn = document.getElementById("proceedButton");
+    if (btn) btn.disabled = !enabled;
   }
 
   function displayResults(addresses) {
     const resultsEl = document.getElementById("results");
-    const sendBtn = document.getElementById("sendButton");
-    const downloadBtn = document.getElementById("downloadButton");
-
     resultsEl.textContent = addresses.join("\n");
-
-    if (addresses.length > 0) {
-      if (sendBtn) sendBtn.style.display = "inline-block";
-      if (downloadBtn) downloadBtn.style.display = "inline-block";
-    } else {
-      if (sendBtn) sendBtn.style.display = "none";
-      if (downloadBtn) downloadBtn.style.display = "none";
-    }
+    document.getElementById("downloadButton").style.display = "block";
+    document.getElementById("sendButton").style.display = "inline-block";
   }
 
   function downloadAddressesAsTxt(addresses) {
@@ -63,12 +46,36 @@ window.uiModule = (function () {
     URL.revokeObjectURL(url);
   }
 
+  function setEligibilityMessage(message, isEligible) {
+    const messageEl = document.getElementById("eligibilityMessage");
+    if (!messageEl) return;
+    messageEl.textContent = message;
+    messageEl.style.color = isEligible ? "limegreen" : "red";
+  }
+
+  function clearResults() {
+    const resultsEl = document.getElementById("results");
+    if (resultsEl) resultsEl.textContent = "";
+
+    const downloadBtn = document.getElementById("downloadButton");
+    if (downloadBtn) downloadBtn.style.display = "none";
+
+    const sendBtn = document.getElementById("sendButton");
+    if (sendBtn) sendBtn.style.display = "none";
+
+    // ✅ ΜΟΝΟ pasteInput καθαρίζεται, όχι το random input
+    const pasteInput = document.getElementById("pasteInput");
+    if (pasteInput) pasteInput.value = "";
+  }
+
   return {
     setWalletInfo,
     setAccessDenied,
-    setEligibilityMessage,
     showSectionByMode,
+    setProceedButtonEnabled,
     displayResults,
     downloadAddressesAsTxt,
+    setEligibilityMessage,
+    clearResults
   };
 })();
