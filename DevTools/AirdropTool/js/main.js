@@ -1,27 +1,9 @@
 // main.js
 
-// Timeout config για ασφάλεια
-const ABI_LOAD_TIMEOUT = 5000; // 5 seconds
-const ABI_CHECK_INTERVAL = 100;
+console.log("[main.js] DOM loaded");
 
-// 🔁 Περιμένει να φορτωθούν και τα δύο ABIs
-const waitForAbis = async () => {
-  let elapsed = 0;
-  while (!window.ERC20_ABI || !window.AIRDROP_ABI) {
-    if (elapsed >= ABI_LOAD_TIMEOUT) {
-      throw new Error("ABI loading timed out");
-    }
-    await new Promise(resolve => setTimeout(resolve, ABI_CHECK_INTERVAL));
-    elapsed += ABI_CHECK_INTERVAL;
-  }
-};
-
-// 🔁 Περιμένει να φορτωθεί το DOM και ξεκινάει την εφαρμογή
-document.addEventListener("DOMContentLoaded", async () => {
-  console.log("[main.js] DOM loaded");
-
+async function initializeApp() {
   try {
-    await waitForAbis();
     console.log("[main.js] ✅ ABIs loaded and verified");
 
     const connectButton = document.getElementById("connectWallet");
@@ -36,7 +18,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     connectButton.addEventListener("click", async () => {
       try {
-        console.log("[main.js] Connect button clicked");
         const result = await walletModule.connectWallet();
         if (result) {
           uiModule.updateWalletUI(result.userAddress);
@@ -82,7 +63,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     proceedButton.addEventListener("click", async () => {
       try {
         const mode = modeSelect.value;
-        console.log("[main.js] Proceed button clicked");
         const addresses = await addressModule.fetchAddresses(mode);
         if (addresses?.length > 0) {
           uiModule.displayAddresses(addresses);
@@ -90,44 +70,31 @@ document.addEventListener("DOMContentLoaded", async () => {
           uiModule.showError("No addresses found");
         }
       } catch (error) {
-        console.error("[main.js] Address fetch error:", error);
+        console.error("[main.js] Fetch error:", error);
         uiModule.showError("Failed to fetch addresses");
       }
     });
 
     sendButton.addEventListener("click", async () => {
       try {
-        console.log("[main.js] Send button clicked");
-
         const token = tokenModule.getSelectedToken();
         const amountPerUser = tokenAmountPerUser.value;
         const addresses = uiModule.getDisplayedAddresses();
 
-        if (!token) {
-          uiModule.showError("No token selected");
-          return;
-        }
-
-        if (!amountPerUser || isNaN(amountPerUser)) {
-          uiModule.showError("Invalid amount");
-          return;
-        }
-
-        if (!addresses || addresses.length === 0) {
-          uiModule.showError("No addresses available");
-          return;
-        }
+        if (!token) return uiModule.showError("No token selected");
+        if (!amountPerUser || isNaN(amountPerUser)) return uiModule.showError("Invalid amount");
+        if (!addresses || addresses.length === 0) return uiModule.showError("No addresses");
 
         await airdropExecutor.executeAirdrop(token, amountPerUser, addresses);
       } catch (error) {
-        console.error("[main.js] Airdrop execution error:", error);
+        console.error("[main.js] Airdrop error:", error);
         uiModule.showError("Airdrop failed");
       }
     });
 
     console.log("[main.js] Initialization complete ✅");
-  } catch (error) {
-    console.error("[main.js] ❌ Initialization failed:", error);
+  } catch (err) {
+    console.error("[main.js] ❌ Initialization failed:", err);
     uiModule.showError("Application failed to initialize");
   }
-});
+}
