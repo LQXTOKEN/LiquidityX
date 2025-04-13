@@ -1,38 +1,43 @@
-window.CONFIG = {
-  // Basic Settings
-  POLYGON_RPC: "https://polygon-rpc.com",
-  LQX_TOKEN_ADDRESS: "0x9E27F48659B1005b1aBc0F58465137E531430d4b",
-  AIRDROP_CONTRACT_ADDRESS: "0x2012508a1dbE6BE9c1B666eBD86431b326ef6EF6",
-  PROXY_API_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon",
-  ACTIVE_WALLETS_JSON: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json",
-  MIN_LQX_REQUIRED: 1000,
+// config.js
 
-  // ABI Paths
-  ERC20_ABI_PATH: "abis/erc20_abi.json",
-  AIRDROP_ABI_PATH: "abis/airdrop_abi.json",
-
-  // ABI Holders (to be loaded dynamically)
-  ERC20_ABI: null,
-  AIRDROP_ABI: null,
-
-  // Load ABI Files
-  async loadAbis() {
-    try {
-      const [erc20Response, airdropResponse] = await Promise.all([
-        fetch(this.ERC20_ABI_PATH),
-        fetch(this.AIRDROP_ABI_PATH)
-      ]);
-
-      if (!erc20Response.ok || !airdropResponse.ok) {
-        throw new Error("One or both ABI files failed to load");
-      }
-
-      this.ERC20_ABI = await erc20Response.json();
-      this.AIRDROP_ABI = await airdropResponse.json();
-
-      console.log("[config.js] ✅ ABIs loaded successfully");
-    } catch (err) {
-      console.error("[config.js] ❌ Failed to load ABIs:", err);
-    }
-  }
+const CONFIG = {
+  ABI_PATHS: {
+    ERC20: "https://liquidityx.io/DevTools/AirdropTool/abis/erc20_abi.json",
+    AIRDROP: "https://liquidityx.io/DevTools/AirdropTool/abis/airdrop_abi.json"
+  },
+  AirdropContract: {
+    address: "0x2012508a1dbE6BE9c1B666eBD86431b326ef6EF6"
+  },
+  LQX: {
+    address: "0x9E27F48659B1005b1aBc0F58465137E531430d4b",
+    minimumRequired: "1000"
+  },
+  ProxyAPI: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon",
+  RandomWalletList: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json"
 };
+
+async function loadAbis() {
+  try {
+    const [erc20Abi, airdropAbi] = await Promise.all([
+      fetch(CONFIG.ABI_PATHS.ERC20).then(res => res.json()),
+      fetch(CONFIG.ABI_PATHS.AIRDROP).then(res => res.json())
+    ]);
+
+    window.ERC20_ABI = erc20Abi;
+    window.AIRDROP_ABI = airdropAbi;
+
+    console.log("[config.js] ✅ ABIs loaded successfully");
+
+    // Start app only if main.js loaded and defined initializeApp
+    if (typeof window.initializeApp === "function") {
+      window.initializeApp();
+    } else {
+      console.warn("[config.js] ⚠️ initializeApp not yet defined");
+    }
+  } catch (error) {
+    console.error("[config.js] ❌ ABI loading error:", error);
+  }
+}
+
+// Start loading ABIs immediately
+loadAbis();
