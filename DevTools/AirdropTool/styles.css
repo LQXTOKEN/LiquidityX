@@ -27,6 +27,21 @@ body {
 }
 
 /* ===== HEADER STYLE MATCH ===== */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+#backToMain {
+  justify-self: flex-start;
+}
+
+#disconnectWallet {
+  justify-self: flex-end;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
