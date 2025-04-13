@@ -1,50 +1,50 @@
-// js/ui_module.js
+// js/modules/ui_module.js
 
-window.uiModule = (function () {
-  function setWalletInfo(address, balanceFormatted, symbol) {
-    document.getElementById("walletAddress").textContent = `Wallet: ${address}`;
-    document.getElementById("lqxBalance").textContent = `LQX Balance: ${balanceFormatted} ${symbol}`;
-  }
-
-  function setAccessDenied(denied) {
-    document.getElementById("accessDenied").style.display = denied ? "block" : "none";
-    document.getElementById("airdropTool").style.display = denied ? "none" : "block";
-  }
-
-  function showSectionByMode(mode) {
-    const sections = ["pasteSection", "createSection", "randomSection"];
-    sections.forEach(id => {
-      document.getElementById(id).style.display = id.startsWith(mode) ? "block" : "none";
-    });
-  }
-
-  function setProceedButtonEnabled(enabled) {
-    const btn = document.getElementById("proceedButton");
-    btn.disabled = !enabled;
-  }
-
-  function displayResults(addresses) {
-    const resultsEl = document.getElementById("results");
-    resultsEl.textContent = addresses.join("\n");
-    document.getElementById("downloadButton").style.display = "block";
-  }
-
-  function downloadAddressesAsTxt(addresses) {
-    const blob = new Blob([addresses.join("\n")], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "airdrop_addresses.txt";
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  return {
-    setWalletInfo,
-    setAccessDenied,
-    showSectionByMode,
-    setProceedButtonEnabled,
-    displayResults,
-    downloadAddressesAsTxt
+export function showSectionByMode(mode) {
+  const sections = {
+    paste: document.getElementById("pasteSection"),
+    create: document.getElementById("createSection"),
+    random: document.getElementById("randomSection"),
   };
-})();
+
+  Object.values(sections).forEach(section => {
+    section.style.display = "none";
+  });
+
+  if (sections[mode]) {
+    sections[mode].style.display = "block";
+  }
+
+  // Εμφάνιση ή απόκρυψη κουμπιού Proceed μόνο για paste mode
+  const proceedBtn = document.getElementById("proceedButton");
+  if (mode === "paste") {
+    proceedBtn.style.display = "none";
+  } else {
+    proceedBtn.style.display = "inline-block";
+  }
+}
+
+export function setWalletInfo(address, balance, symbol) {
+  document.getElementById("walletAddress").textContent = `Wallet: ${address}`;
+  document.getElementById("lqxBalance").textContent = `LQX Balance: ${balance} ${symbol}`;
+}
+
+export function setAccessDenied(denied) {
+  document.getElementById("airdropTool").style.display = denied ? "none" : "block";
+  document.getElementById("accessDenied").style.display = denied ? "block" : "none";
+}
+
+export function displayResults(addressList) {
+  document.getElementById("results").textContent = addressList.join("\n");
+  document.getElementById("downloadButton").style.display = "inline-block";
+}
+
+export function downloadAddressesAsTxt(addressList) {
+  const blob = new Blob([addressList.join("\n")], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "airdrop_addresses.txt";
+  link.click();
+  URL.revokeObjectURL(url);
+}
