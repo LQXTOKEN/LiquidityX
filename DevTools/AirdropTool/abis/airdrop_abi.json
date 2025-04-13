@@ -1,0 +1,13 @@
+[
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "address[]", "name": "recipients", "type": "address[]" },
+      { "internalType": "uint256", "name": "amountPerRecipient", "type": "uint256" }
+    ],
+    "name": "batchTransferSameAmount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
