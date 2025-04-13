@@ -4,23 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LiquidityX Airdrop Tool</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" />
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>LiquidityX Airdrop Tool</h1>
 
     <div class="card wallet-card">
-      <button id="backToMain" class="btn">Back to Main Website</button>
+      <button id="backToMain" class="btn-outline">Back to Main Website</button>
+
       <div id="walletSection">
         <button id="connectWallet" class="btn">Connect Wallet</button>
         <button id="disconnectWallet" class="btn" style="display: none;">Disconnect Wallet</button>
         <p id="walletAddress"></p>
         <p id="lqxBalance"></p>
-        <p id="requirementMessage" style="color: var(--text-gray); margin-top: 0.5rem;"></p>
+        <p id="eligibilityMessage" style="margin-top: 0.5rem;"></p>
       </div>
 
       <div id="accessDenied" style="display:none;">
@@ -37,10 +36,10 @@
         <p id="tokenStatus"></p>
       </div>
 
-      <!-- ✅ Token Amount per Address -->
+      <!-- Token Amount per User -->
       <div class="input-group">
         <label for="tokenAmountPerUser">Amount of tokens to send per address:</label>
-        <input type="number" id="tokenAmountPerUser" min="0" placeholder="e.g. 500" />
+        <input type="number" id="tokenAmountPerUser" placeholder="Enter token amount per address" />
       </div>
 
       <!-- Mode Selection -->
@@ -53,15 +52,15 @@
         </select>
       </div>
 
-      <!-- Paste -->
+      <!-- Paste Mode -->
       <div id="pasteSection" class="modeSection">
         <div class="input-group">
-          <label for="polygonScanInput">Paste wallet addresses (one per line):</label>
-          <textarea id="polygonScanInput" placeholder="0x123...\n0xabc...\n0x..." rows="6"></textarea>
+          <label for="polygonScanInput">Paste list of wallet addresses (one per line):</label>
+          <textarea id="polygonScanInput" placeholder="0x1234...\n0xabcd...\n0x5678..."></textarea>
         </div>
       </div>
 
-      <!-- Create -->
+      <!-- Create Mode -->
       <div id="createSection" class="modeSection" style="display:none;">
         <div class="input-group">
           <label for="contractInput">Enter token address you want to build your list from (e.g. MATIC):</label>
@@ -73,7 +72,7 @@
         </div>
       </div>
 
-      <!-- Random -->
+      <!-- Random Mode -->
       <div id="randomSection" class="modeSection" style="display:none;">
         <div class="input-group">
           <label for="maxAddresses">Enter max number of addresses to use (max 1000):</label>
@@ -85,7 +84,10 @@
       <button id="downloadButton" class="btn" style="display:none;">Download Addresses (.txt)</button>
 
       <pre id="results"></pre>
-      <button id="sendAirdropButton" class="btn" style="background-color: #10b981; display: none;">Send Airdrop</button>
+
+      <button id="sendButton" class="btn" style="background-color: var(--accent-green); margin-top: 1rem;">
+        Send Airdrop
+      </button>
     </div>
 
     <div class="card about-section">
@@ -95,7 +97,8 @@
         gas-efficient ERC-20 airdrops on the <strong>Polygon network</strong>.
       </p>
       <p>
-        Using a <strong>Batch Transfer Smart Contract</strong>, thousands of transfers are executed in a single transaction — reducing fees and eliminating the need for recipients to claim tokens.
+        Using a <strong>Batch Transfer Smart Contract</strong>, thousands of transfers are executed in a single transaction —
+        reducing fees and eliminating the need for recipients to claim tokens.
       </p>
       <p>
         Every airdrop sends <span class="protocol-fee">500 LQX</span> as protocol fee to the
@@ -117,7 +120,7 @@
     </footer>
   </div>
 
-  <!-- Scripts -->
+  <!-- JS Scripts -->
   <script src="js/modules/config.js"></script>
   <script src="js/modules/wallet_module.js"></script>
   <script src="js/modules/erc20_module.js"></script>
@@ -125,5 +128,7 @@
   <script src="js/modules/address_module.js"></script>
   <script src="js/modules/token_module.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/modules/airdrop_executor.js"></script>
 </body>
 </html>
