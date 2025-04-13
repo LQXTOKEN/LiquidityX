@@ -168,3 +168,14 @@ input:focus, textarea:focus {
     font-size: 2rem;
   }
 }
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.button-row .btn,
+.button-row .btn-outline {
+  flex: 0 0 auto;
+}
