@@ -2,33 +2,23 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("[main.js] DOM loaded");
 
   let selectedToken = null;
-  let currentMode = "paste";
 
   const modeSelect = document.getElementById("modeSelect");
-  const resultsBox = document.getElementById("results");
-
   modeSelect.addEventListener("change", function () {
     console.log("[main.js] Mode changed:", this.value);
-
-    // Αν αλλάξει mode και υπάρχουν ήδη αποτελέσματα
-    if (resultsBox.textContent.trim().length > 0) {
-      const confirmReset = confirm("Changing mode will clear current address list. Proceed?");
-      if (!confirmReset) {
-        this.value = currentMode;
-        return;
-      }
-      resultsBox.textContent = "";
-    }
-
-    currentMode = this.value;
     uiModule.showSectionByMode(this.value);
+    uiModule.toggleProceedButton(this.value !== "paste"); // μόνο paste δεν χρειάζεται Proceed
+    uiModule.clearResultsIfConfirmed();
   });
 
   document.getElementById("connectWallet").addEventListener("click", async () => {
     console.log("[main.js] Connect button clicked");
 
     const result = await walletModule.connectWallet();
-    if (!result) return;
+    if (!result) {
+      console.warn("[main.js] Wallet connection failed or cancelled");
+      return;
+    }
 
     const { provider, userAddress } = result;
     console.log("[main.js] Wallet connected:", userAddress);
@@ -51,11 +41,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("disconnectWallet").addEventListener("click", () => {
+    console.log("[main.js] Disconnect clicked");
     walletModule.disconnectWallet();
     window.location.reload();
   });
 
   document.getElementById("backToMain").addEventListener("click", () => {
+    console.log("[main.js] Back to Main Website");
     window.location.href = "https://liquidityx.io";
   });
 
@@ -92,8 +84,9 @@ document.addEventListener("DOMContentLoaded", () => {
         address: tokenInput,
         symbol: tokenDetails.symbol,
         decimals: tokenDetails.decimals,
-        contract: tokenDetails.contract,
+        contract: tokenDetails.contract
       };
+      window.selectedToken = selectedToken; // ✅ ΜΕΤΑΒΛΗΤΗ ΓΙΑ ΠΡΟΣΒΑΣΗ ΣΕ ΟΛΑ ΤΑ MODULES
       console.log("[main.js] Token selected:", selectedToken);
     }
   });
@@ -113,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("downloadButton").addEventListener("click", () => {
+    console.log("[main.js] Download button clicked");
     const results = document.getElementById("results").textContent.trim().split("\n");
     if (results.length > 0) {
       uiModule.downloadAddressesAsTxt(results);
@@ -122,22 +116,20 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("sendButton").addEventListener("click", async () => {
     console.log("[main.js] Send button clicked");
 
-    const addresses = resultsBox.textContent.trim().split("\n").filter(Boolean);
-    const tokenAmountPerUser = document.getElementById("tokenAmountPerUser")?.value;
+    const tokenAmountPerUser = document.getElementById("tokenAmountPerUser").value;
+    const addresses = document.getElementById("results").textContent.trim().split("\n").filter(Boolean);
 
-    if (!selectedToken || !addresses.length || !tokenAmountPerUser) {
-      alert("Missing token, amount, or addresses.");
-      return;
-    }
-
-    const payload = {
-      token: selectedToken,
+    console.log("[main.js] Executing airdrop with", {
+      token: window.selectedToken,
       amountPerUser: tokenAmountPerUser,
-      addresses,
-    };
+      addresses
+    });
 
-    console.log("[main.js] Executing airdrop with", payload);
-    await airdropExecutor.executeAirdrop(payload);
+    await airdropExecutor.executeAirdrop({
+      token: window.selectedToken,
+      amountPerUser: tokenAmountPerUser,
+      addresses
+    });
   });
 
   async function fetchAddresses(mode) {
@@ -145,13 +137,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const provider = walletModule.getProvider();
     const userAddress = walletModule.getUserAddress();
-    if (!provider || !userAddress) return [];
+    if (!provider || !userAddress) {
+      console.warn("[main.js] Provider or user address not available");
+      return [];
+    }
 
     if (mode === "paste") {
-      const pasted = document.getElementById("polygonScanInput").value.trim();
-      const lines = pasted.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
-      const valid = lines.filter(addressModule.isValidAddress);
-      return valid.slice(0, 1000);
+      const raw = document.getElementById("polygonScanInput").value.trim();
+      const list = raw.split("\n").map(addr => addr.trim()).filter(addr => addressModule.isValidAddress(addr));
+      return list.slice(0, 1000);
     }
 
     if (mode === "create") {
@@ -159,14 +153,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
 
       if (!addressModule.isValidAddress(contractInput)) {
-        alert("Please enter a valid contract address.");
+        alert("Please enter a valid contract address to create your list from.");
         return [];
       }
 
       try {
         const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${contractInput}`);
         const data = await response.json();
-        return data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
+        console.log("[main.js] Proxy API response (create):", data);
+
+        const finalList = data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
+        return finalList;
       } catch (err) {
         console.error("[main.js] Proxy fetch failed (create mode):", err);
         return [];
@@ -175,7 +172,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (mode === "random") {
       const max = parseInt(document.getElementById("maxAddresses").value || "100");
-
       try {
         const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
         const data = await response.json();
