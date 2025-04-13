@@ -1,3 +1,5 @@
+// main.js
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[main.js] DOM loaded");
 
@@ -6,9 +8,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const modeSelect = document.getElementById("modeSelect");
   modeSelect.addEventListener("change", function () {
     console.log("[main.js] Mode changed:", this.value);
+
+    // Ερώτηση αν υπάρχουν ήδη διευθύνσεις πριν γίνει αλλαγή
+    const currentResults = document.getElementById("results").textContent.trim();
+    if (currentResults.length > 0) {
+      const confirmClear = confirm("⚠️ Changing mode will clear your current address list. Continue?");
+      if (!confirmClear) {
+        this.value = window.currentMode || "paste";
+        return;
+      }
+    }
+
+    window.currentMode = this.value;
+    uiModule.clearResults();
     uiModule.showSectionByMode(this.value);
-    uiModule.toggleProceedButton(this.value !== "paste"); // μόνο paste δεν χρειάζεται Proceed
-    uiModule.clearResultsIfConfirmed();
   });
 
   document.getElementById("connectWallet").addEventListener("click", async () => {
@@ -86,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
         decimals: tokenDetails.decimals,
         contract: tokenDetails.contract
       };
-      window.selectedToken = selectedToken; // ✅ ΜΕΤΑΒΛΗΤΗ ΓΙΑ ΠΡΟΣΒΑΣΗ ΣΕ ΟΛΑ ΤΑ MODULES
+      window.selectedToken = selectedToken;
       console.log("[main.js] Token selected:", selectedToken);
     }
   });
@@ -113,25 +126,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.getElementById("sendButton").addEventListener("click", async () => {
-    console.log("[main.js] Send button clicked");
-
-    const tokenAmountPerUser = document.getElementById("tokenAmountPerUser").value;
-    const addresses = document.getElementById("results").textContent.trim().split("\n").filter(Boolean);
-
-    console.log("[main.js] Executing airdrop with", {
-      token: window.selectedToken,
-      amountPerUser: tokenAmountPerUser,
-      addresses
-    });
-
-    await airdropExecutor.executeAirdrop({
-      token: window.selectedToken,
-      amountPerUser: tokenAmountPerUser,
-      addresses
-    });
-  });
-
   async function fetchAddresses(mode) {
     console.log("[main.js] Fetching addresses for mode:", mode);
 
@@ -143,9 +137,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (mode === "paste") {
-      const raw = document.getElementById("polygonScanInput").value.trim();
-      const list = raw.split("\n").map(addr => addr.trim()).filter(addr => addressModule.isValidAddress(addr));
-      return list.slice(0, 1000);
+      const pasted = document.getElementById("polygonScanInput").value.trim();
+      const lines = pasted.split("\n").map(addr => addr.trim());
+      const valid = lines.filter(addr => addressModule.isValidAddress(addr));
+      return valid.slice(0, 1000);
     }
 
     if (mode === "create") {
@@ -164,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const finalList = data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
         return finalList;
+
       } catch (err) {
         console.error("[main.js] Proxy fetch failed (create mode):", err);
         return [];
