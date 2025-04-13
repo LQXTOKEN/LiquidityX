@@ -262,13 +262,23 @@
         </select>
       </div>
 
-      <!-- Paste -->
-      <div id="pasteSection" class="modeSection">
-        <div class="input-group">
-          <label for="polygonScanInput">Paste PolygonScan URL:</label>
-          <textarea id="polygonScanInput" placeholder="Enter PolygonScan token or transaction URL..."></textarea>
-        </div>
-      </div>
+      
+    <!-- Paste -->
+<div id="pasteSection" class="modeSection">
+  <div class="input-group">
+    <label for="polygonScanInput">Paste Wallet Addresses</label>
+    <textarea
+      id="polygonScanInput"
+      placeholder="Paste wallet addresses here, one per line (max 1000 addresses)..."
+    ></textarea>
+    <small style="color: var(--text-gray); font-size: 0.85rem; display: block; margin-top: 0.5rem;">
+      Example:<br>
+      0xabc1234567890abcdef1234567890abcdef1234<br>
+      0xdef9876543210fedcba9876543210fedcba9876<br>
+      0x789abc0123456789abcdef0123456789abcdef01
+    </small>
+  </div>
+</div>
 
       <!-- Create -->
       <div id="createSection" class="modeSection" style="display:none;">
