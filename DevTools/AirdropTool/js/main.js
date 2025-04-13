@@ -6,7 +6,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const modeSelect = document.getElementById("modeSelect");
   modeSelect.addEventListener("change", function () {
     console.log("[main.js] Mode changed:", this.value);
-    uiModule.clearResults();
+
+    if (document.getElementById("results").textContent.trim().length > 0) {
+      const confirmChange = confirm("Changing mode will clear your current address list. Continue?");
+      if (!confirmChange) {
+        this.value = uiModule.lastMode || "paste";
+        return;
+      }
+      document.getElementById("results").textContent = "";
+      document.getElementById("downloadButton").style.display = "none";
+    }
+
+    uiModule.lastMode = this.value;
     uiModule.showSectionByMode(this.value);
   });
 
@@ -31,21 +42,13 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("[main.js] LQX balance info:", balanceInfo);
 
     const meetsRequirement = parseFloat(balanceInfo.formatted) >= CONFIG.MIN_LQX_REQUIRED;
-
     uiModule.setWalletInfo(userAddress, balanceInfo.formatted, balanceInfo.symbol);
     uiModule.setAccessDenied(!meetsRequirement);
 
-    // ✅ Εμφάνιση μηνύματος κάτω από το balance
-    const msg = document.getElementById("requirementMessage");
-    if (meetsRequirement) {
-      msg.textContent = "✅ You meet the requirement to use this tool.";
-      msg.style.color = "var(--accent-green)";
-    } else {
-      msg.textContent = "⚠️ You need at least 1000 LQX to use this tool.";
-      msg.style.color = "var(--accent-red)";
-      alert("❌ You must hold at least 1000 LQX to use the Airdrop Tool.\nPlease acquire more LQX and reconnect your wallet.");
-      return;
-    }
+    const message = meetsRequirement
+      ? "✅ You meet the requirement to use this tool."
+      : "⚠️ You need at least 1000 LQX to use this tool.";
+    document.getElementById("requirementMessage").textContent = message;
 
     document.getElementById("connectWallet").style.display = "none";
     document.getElementById("disconnectWallet").style.display = "inline-block";
@@ -86,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const balance = await tokenModule.getFormattedBalance(tokenDetails.contract, userAddress, tokenDetails.decimals);
+    const amountPerUser = parseFloat(document.getElementById("tokenAmountPerUser").value || "0");
 
     if (parseFloat(balance) <= 0) {
       document.getElementById("tokenStatus").textContent = `⚠️ You have 0 ${tokenDetails.symbol} tokens.`;
@@ -95,7 +99,8 @@ document.addEventListener("DOMContentLoaded", () => {
         address: tokenInput,
         symbol: tokenDetails.symbol,
         decimals: tokenDetails.decimals,
-        contract: tokenDetails.contract
+        contract: tokenDetails.contract,
+        amountPerUser: amountPerUser
       };
       console.log("[main.js] Token selected:", selectedToken);
     }
@@ -135,10 +140,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (mode === "paste") {
       const rawInput = document.getElementById("polygonScanInput").value.trim();
-      const lines = rawInput.split("\n").map(l => l.trim()).filter(Boolean);
+      const lines = rawInput.split("\n").map(line => line.trim()).filter(line => addressModule.isValidAddress(line));
       return lines.slice(0, 1000);
+    }
 
-    } else if (mode === "create") {
+    if (mode === "create") {
       const contractInput = document.getElementById("contractInput").value.trim();
       const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
 
@@ -152,15 +158,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
         console.log("[main.js] Proxy API response (create):", data);
 
-        const finalList = data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
-        return finalList;
+        return data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
 
       } catch (err) {
         console.error("[main.js] Proxy fetch failed (create mode):", err);
         return [];
       }
+    }
 
-    } else if (mode === "random") {
+    if (mode === "random") {
       const max = parseInt(document.getElementById("maxAddresses").value || "100");
       try {
         const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
