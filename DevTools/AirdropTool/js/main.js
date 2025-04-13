@@ -1,40 +1,34 @@
-// js/main.js
-
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[main.js] DOM loaded");
 
   let selectedToken = null;
-  let lastFetchedMode = null;
-  let lastFetchedAddresses = [];
+  let currentMode = "paste";
 
   const modeSelect = document.getElementById("modeSelect");
-  modeSelect.addEventListener("change", function () {
-    const newMode = this.value;
-    console.log("[main.js] Mode changed:", newMode);
+  const resultsBox = document.getElementById("results");
 
-    if (lastFetchedAddresses.length > 0 && newMode !== lastFetchedMode) {
-      const confirmReset = confirm("You will lose your current address list. Continue?");
+  modeSelect.addEventListener("change", function () {
+    console.log("[main.js] Mode changed:", this.value);
+
+    // Αν αλλάξει mode και υπάρχουν ήδη αποτελέσματα
+    if (resultsBox.textContent.trim().length > 0) {
+      const confirmReset = confirm("Changing mode will clear current address list. Proceed?");
       if (!confirmReset) {
-        this.value = lastFetchedMode;
+        this.value = currentMode;
         return;
       }
-      uiModule.displayResults([]);
-      lastFetchedAddresses = [];
+      resultsBox.textContent = "";
     }
 
-    uiModule.showSectionByMode(newMode);
-    uiModule.toggleProceedButton(newMode !== "paste");
-    lastFetchedMode = newMode;
+    currentMode = this.value;
+    uiModule.showSectionByMode(this.value);
   });
 
   document.getElementById("connectWallet").addEventListener("click", async () => {
     console.log("[main.js] Connect button clicked");
 
     const result = await walletModule.connectWallet();
-    if (!result) {
-      console.warn("[main.js] Wallet connection failed or cancelled");
-      return;
-    }
+    if (!result) return;
 
     const { provider, userAddress } = result;
     console.log("[main.js] Wallet connected:", userAddress);
@@ -54,19 +48,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("connectWallet").style.display = "none";
     document.getElementById("disconnectWallet").style.display = "inline-block";
-
-    // Ensure correct section displays on first load
-    uiModule.showSectionByMode(modeSelect.value);
   });
 
   document.getElementById("disconnectWallet").addEventListener("click", () => {
-    console.log("[main.js] Disconnect clicked");
     walletModule.disconnectWallet();
     window.location.reload();
   });
 
   document.getElementById("backToMain").addEventListener("click", () => {
-    console.log("[main.js] Back to Main Website");
     window.location.href = "https://liquidityx.io";
   });
 
@@ -103,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
         address: tokenInput,
         symbol: tokenDetails.symbol,
         decimals: tokenDetails.decimals,
-        contract: tokenDetails.contract
+        contract: tokenDetails.contract,
       };
       console.log("[main.js] Token selected:", selectedToken);
     }
@@ -112,13 +101,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("proceedButton").addEventListener("click", async () => {
     console.log("[main.js] Proceed button clicked");
 
-    const mode = modeSelect.value;
+    const mode = document.getElementById("modeSelect").value;
     const addresses = await fetchAddresses(mode);
     console.log("[main.js] Fetched addresses:", addresses);
 
     if (addresses && addresses.length > 0) {
-      lastFetchedMode = mode;
-      lastFetchedAddresses = addresses;
       uiModule.displayResults(addresses);
     } else {
       alert("No addresses found.");
@@ -126,32 +113,31 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("downloadButton").addEventListener("click", () => {
-    console.log("[main.js] Download button clicked");
     const results = document.getElementById("results").textContent.trim().split("\n");
     if (results.length > 0) {
       uiModule.downloadAddressesAsTxt(results);
     }
   });
 
-  document.getElementById("sendButton").addEventListener("click", () => {
+  document.getElementById("sendButton").addEventListener("click", async () => {
     console.log("[main.js] Send button clicked");
 
-    const addresses = document.getElementById("results").textContent.trim().split("\n").filter(addr => addr.length > 0);
-    const amountPerUser = document.getElementById("tokenAmountPerUser").value.trim();
-    const token = selectedToken;
+    const addresses = resultsBox.textContent.trim().split("\n").filter(Boolean);
+    const tokenAmountPerUser = document.getElementById("tokenAmountPerUser")?.value;
 
-    if (!token || addresses.length === 0 || !amountPerUser) {
-      alert("Please make sure you've selected a token, entered an amount, and fetched a list.");
+    if (!selectedToken || !addresses.length || !tokenAmountPerUser) {
+      alert("Missing token, amount, or addresses.");
       return;
     }
 
-    console.log("[main.js] Executing airdrop with", {
-      token,
-      amountPerUser,
-      addresses
-    });
+    const payload = {
+      token: selectedToken,
+      amountPerUser: tokenAmountPerUser,
+      addresses,
+    };
 
-    airdropExecutor.executeAirdrop(token, addresses, amountPerUser);
+    console.log("[main.js] Executing airdrop with", payload);
+    await airdropExecutor.executeAirdrop(payload);
   });
 
   async function fetchAddresses(mode) {
@@ -159,15 +145,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const provider = walletModule.getProvider();
     const userAddress = walletModule.getUserAddress();
-    if (!provider || !userAddress) {
-      console.warn("[main.js] Provider or user address not available");
-      return [];
-    }
+    if (!provider || !userAddress) return [];
 
     if (mode === "paste") {
       const pasted = document.getElementById("polygonScanInput").value.trim();
-      const lines = pasted.split("\n").map(line => line.trim()).filter(Boolean);
-      return lines.slice(0, 1000);
+      const lines = pasted.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
+      const valid = lines.filter(addressModule.isValidAddress);
+      return valid.slice(0, 1000);
     }
 
     if (mode === "create") {
@@ -175,18 +159,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
 
       if (!addressModule.isValidAddress(contractInput)) {
-        alert("Please enter a valid contract address to create your list from.");
+        alert("Please enter a valid contract address.");
         return [];
       }
 
       try {
         const response = await fetch(`${CONFIG.PROXY_API_URL}?contract=${contractInput}`);
         const data = await response.json();
-        console.log("[main.js] Proxy API response (create):", data);
-
-        const finalList = data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
-        return finalList;
-
+        return data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
       } catch (err) {
         console.error("[main.js] Proxy fetch failed (create mode):", err);
         return [];
@@ -195,6 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (mode === "random") {
       const max = parseInt(document.getElementById("maxAddresses").value || "100");
+
       try {
         const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
         const data = await response.json();
