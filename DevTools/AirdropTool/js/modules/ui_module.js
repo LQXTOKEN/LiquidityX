@@ -1,81 +1,66 @@
-// js/ui_module.js
-
 window.uiModule = (function () {
-  function setWalletInfo(address, balanceFormatted, symbol) {
-    document.getElementById("walletAddress").textContent = `Wallet: ${address}`;
-    document.getElementById("lqxBalance").textContent = `LQX Balance: ${balanceFormatted} ${symbol}`;
-  }
-
-  function setAccessDenied(denied) {
-    document.getElementById("accessDenied").style.display = denied ? "block" : "none";
-    document.getElementById("airdropTool").style.display = denied ? "none" : "block";
-  }
-
-  function showSectionByMode(mode) {
-    const sections = ["pasteSection", "createSection", "randomSection"];
-    sections.forEach(id => {
-      document.getElementById(id).style.display = id.startsWith(mode) ? "block" : "none";
+  function toggleElementsBasedOnEligibility(isEligible) {
+    const elements = document.querySelectorAll(".requires-eligibility");
+    elements.forEach((el) => {
+      el.disabled = !isEligible;
+      el.style.opacity = isEligible ? "1" : "0.5";
     });
+  }
 
-    // ✅ Clear paste textarea only if mode is not 'paste'
-    if (mode !== "paste") {
-      const pasteInput = document.getElementById("pasteInput");
-      if (pasteInput) pasteInput.value = "";
+  function setEligibilityMessage(isEligible) {
+    const el = document.getElementById("eligibilityMessage");
+    if (!el) return;
+
+    if (isEligible) {
+      el.textContent = "✅ You are eligible to use the tool.";
+      el.style.color = "#00ff7f"; // Πράσινο
+    } else {
+      el.textContent = "❌ You need at least 1000 LQX tokens.";
+      el.style.color = "#ff5555"; // Κόκκινο
     }
   }
 
-  function setProceedButtonEnabled(enabled) {
+  function updateAddressResults(addresses) {
+    const resultsContainer = document.getElementById("results");
+    if (!resultsContainer) return;
+    resultsContainer.innerHTML = "";
+    addresses.forEach((addr) => {
+      const div = document.createElement("div");
+      div.className = "address-entry";
+      div.textContent = addr;
+      resultsContainer.appendChild(div);
+    });
+  }
+
+  function toggleProceedButton(show) {
     const btn = document.getElementById("proceedButton");
-    if (btn) btn.disabled = !enabled;
-  }
-
-  function displayResults(addresses) {
-    const resultsEl = document.getElementById("results");
-    resultsEl.textContent = addresses.join("\n");
-    document.getElementById("downloadButton").style.display = "block";
-    document.getElementById("sendButton").style.display = "inline-block";
-  }
-
-  function downloadAddressesAsTxt(addresses) {
-    const blob = new Blob([addresses.join("\n")], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "airdrop_addresses.txt";
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function setEligibilityMessage(message, isEligible) {
-    const messageEl = document.getElementById("eligibilityMessage");
-    if (!messageEl) return;
-    messageEl.textContent = message;
-    messageEl.style.color = isEligible ? "limegreen" : "red";
+    if (btn) {
+      btn.style.display = show ? "inline-block" : "none";
+    }
   }
 
   function clearResults() {
-    const resultsEl = document.getElementById("results");
-    if (resultsEl) resultsEl.textContent = "";
+    const resultsContainer = document.getElementById("results");
+    if (resultsContainer) resultsContainer.innerHTML = "";
+  }
 
-    const downloadBtn = document.getElementById("downloadButton");
-    if (downloadBtn) downloadBtn.style.display = "none";
+  function clearPasteArea() {
+    const textarea = document.getElementById("pasteTextarea");
+    if (textarea) textarea.value = "";
+  }
 
-    const sendBtn = document.getElementById("sendButton");
-    if (sendBtn) sendBtn.style.display = "none";
-
-    // ✅ ΜΟΝΟ pasteInput καθαρίζεται, όχι το random input
-    const pasteInput = document.getElementById("pasteInput");
-    if (pasteInput) pasteInput.value = "";
+  function clearRandomInput() {
+    const input = document.getElementById("randomCountInput");
+    if (input) input.value = "";
   }
 
   return {
-    setWalletInfo,
-    setAccessDenied,
-    showSectionByMode,
-    setProceedButtonEnabled,
-    displayResults,
-    downloadAddressesAsTxt,
+    toggleElementsBasedOnEligibility,
     setEligibilityMessage,
-    clearResults
+    updateAddressResults,
+    toggleProceedButton,
+    clearResults,
+    clearPasteArea,
+    clearRandomInput,
   };
 })();
