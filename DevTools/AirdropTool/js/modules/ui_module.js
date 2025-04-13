@@ -8,6 +8,17 @@ window.uiModule = (function () {
     document.getElementById("lqxBalance").textContent = `LQX Balance: ${balanceFormatted} ${symbol}`;
   }
 
+  function displayResults(addresses) {
+  const resultsEl = document.getElementById("results");
+  resultsEl.textContent = addresses.join("\n");
+
+  const downloadBtn = document.getElementById("downloadButton");
+  const sendBtn = document.getElementById("sendAirdropButton");
+
+  downloadBtn.style.display = "block";
+  sendBtn.style.display = addresses.length > 0 ? "block" : "none";
+}
+
   function setAccessDenied(denied) {
     document.getElementById("accessDenied").style.display = denied ? "block" : "none";
     document.getElementById("airdropTool").style.display = denied ? "none" : "block";
