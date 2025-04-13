@@ -1,6 +1,8 @@
-// js/erc20_module.js
+// js/modules/erc20_module.js
 
 window.erc20Module = (function () {
+  const LQX_ADDRESS = "0x9E27F48659B1005b1aBc0F58465137E531430d4b";
+
   function getTokenContract(address, provider) {
     const abi = [
       "function balanceOf(address owner) view returns (uint256)",
@@ -29,8 +31,13 @@ window.erc20Module = (function () {
     }
   }
 
+  async function getLQXBalance(userAddress, provider) {
+    return await getERC20Balance(LQX_ADDRESS, userAddress, provider);
+  }
+
   return {
     getTokenContract,
-    getERC20Balance
+    getERC20Balance,
+    getLQXBalance
   };
 })();
