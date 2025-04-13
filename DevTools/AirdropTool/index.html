@@ -12,17 +12,21 @@
     <h1>LiquidityX Airdrop Tool</h1>
 
     <div class="card wallet-card">
-      <button id="backToMain" class="btn-outline">Back to Main Website</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <button id="backToMain" class="btn-outline">← Back to Main Website</button>
 
-      <div id="walletSection">
-        <button id="connectWallet" class="btn">Connect Wallet</button>
-        <button id="disconnectWallet" class="btn" style="display: none;">Disconnect Wallet</button>
-        <p id="walletAddress"></p>
-        <p id="lqxBalance"></p>
-        <p id="eligibilityMessage" style="margin-top: 0.5rem;"></p>
+        <div id="walletSection" style="display: flex; flex-direction: column; align-items: flex-end;">
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="connectWallet" class="btn">Connect Wallet</button>
+            <button id="disconnectWallet" class="btn" style="display: none;">Disconnect</button>
+          </div>
+          <p id="walletAddress"></p>
+          <p id="lqxBalance"></p>
+          <p id="eligibilityMessage" style="margin-top: 0.5rem;"></p>
+        </div>
       </div>
 
-      <div id="accessDenied" style="display:none;">
+      <div id="accessDenied" style="display:none; margin-top: 1rem;">
         <p style="color: var(--accent-red);">You need at least 1000 LQX to use this tool.</p>
       </div>
     </div>
@@ -97,11 +101,11 @@
         gas-efficient ERC-20 airdrops on the <strong>Polygon network</strong>.
       </p>
       <p>
-        Using a <strong>Batch Transfer Smart Contract</strong>, thousands of transfers are executed in a single transaction —
+        Using a <strong>Batch Transfer Smart Contract</strong>, thousands of transfers are executed in a single transaction — 
         reducing fees and eliminating the need for recipients to claim tokens.
       </p>
       <p>
-        Every airdrop sends <span class="protocol-fee">500 LQX</span> as protocol fee to the
+        Every airdrop sends <span class="protocol-fee">500 LQX</span> as protocol fee to the 
         <strong>LiquidityX LP Staking Contract</strong>, directly contributing to higher APRs for stakers.
       </p>
       <p>
@@ -120,16 +124,15 @@
     </footer>
   </div>
 
-  <!-- JS Scripts --> 
-<script src="js/modules/config.js"></script>
-<script src="js/modules/wallet_module.js"></script>
-<script src="js/modules/erc20_module.js"></script>
-<script src="js/modules/ui_module.js"></script>
-<script src="js/modules/address_module.js"></script>
-<script src="js/modules/token_module.js"></script>
-<script src="js/modules/airdrop_executor.js"></script>
-<script src="js/app.js"></script>
-<script src="js/main.js"></script>
-
+  <!-- JS Scripts -->
+  <script src="js/modules/config.js"></script>
+  <script src="js/modules/wallet_module.js"></script>
+  <script src="js/modules/erc20_module.js"></script>
+  <script src="js/modules/ui_module.js"></script>
+  <script src="js/modules/address_module.js"></script>
+  <script src="js/modules/token_module.js"></script>
+  <script src="js/modules/airdrop_executor.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
