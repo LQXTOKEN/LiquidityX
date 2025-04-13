@@ -27,6 +27,13 @@ body {
 }
 
 /* ===== HEADER STYLE MATCH ===== */
+.wallet-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .header-row {
   display: flex;
   justify-content: space-between;
