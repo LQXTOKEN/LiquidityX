@@ -1,103 +1,120 @@
-// main.js
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[main.js] DOM loaded");
 
+  // === Load ABIs ===
   await CONFIG.loadAbis();
+  if (!CONFIG.ERC20_ABI || !CONFIG.AIRDROP_ABI) {
+    console.error("[main.js] ❌ ABIs not loaded, stopping.");
+    return;
+  }
   console.log("[main.js] ✅ ABIs loaded and verified");
 
-  const connectButton = document.getElementById("connectButton");
-  const proceedButton = document.getElementById("proceedButton");
+  // === Elements ===
+  const connectButton = document.getElementById("connectWallet");
   const sendButton = document.getElementById("sendButton");
-  const disconnectButton = document.getElementById("disconnectButton");
-  const modeSelector = document.getElementById("modeSelector");
-  const tokenAddressInput = document.getElementById("tokenAddress");
-  const amountPerUserInput = document.getElementById("tokenAmountPerUser");
+  const proceedButton = document.getElementById("proceedButton");
+  const modeSelector = document.getElementById("mode");
+  const tokenInput = document.getElementById("tokenInput");
+  const amountInput = document.getElementById("tokenAmount");
+  const randomCountInput = document.getElementById("randomCount");
 
   let selectedToken = null;
-  let fetchedAddresses = [];
-  let currentMode = null;
+  let selectedAddresses = [];
 
+  // === Handle Wallet Connect ===
   connectButton.addEventListener("click", async () => {
     console.log("[main.js] Connect button clicked");
-    const address = await walletModule.connectWallet();
-    if (address) {
-      console.log("[main.js] Wallet connected:", address);
-      const balanceInfo = await erc20Module.checkLQXBalance(address);
-      console.log("[main.js] LQX balance info:", balanceInfo);
-      uiModule.updateBalance(balanceInfo.formatted);
-      uiModule.setEligibility(balanceInfo.raw);
-      uiModule.enableUI(balanceInfo.raw);
+    const account = await walletModule.connectWallet();
+    if (!account) return;
+    console.log("[main.js] Wallet connected:", account);
+
+    const lqxBalance = await erc20Module.getTokenBalance(CONFIG.LQX_TOKEN_ADDRESS, account);
+    console.log("[main.js] LQX balance info:", lqxBalance);
+
+    const isEligible = parseFloat(lqxBalance.formatted) >= CONFIG.MIN_LQX_REQUIRED;
+    uiModule.updateLQXBalanceDisplay(lqxBalance.formatted);
+    uiModule.toggleEligibilityUI(isEligible);
+    uiModule.toggleMainUI(isEligible);
+  });
+
+  // === Handle Token Input ===
+  tokenInput.addEventListener("change", async () => {
+    const tokenAddress = tokenInput.value.trim();
+    if (!ethers.utils.isAddress(tokenAddress)) return;
+    console.log("[main.js] Token check initiated for:", tokenAddress);
+    selectedToken = await erc20Module.loadTokenInfo(tokenAddress);
+    console.log("[main.js] Token selected:", selectedToken);
+  });
+
+  // === Handle Mode Change ===
+  modeSelector.addEventListener("change", (e) => {
+    const mode = e.target.value;
+    console.log("[main.js] Mode changed:", mode);
+    uiModule.clearResults();
+    uiModule.toggleProceedButton(mode !== "paste");
+    if (mode === "paste") {
+      uiModule.clearPasteTextarea();
     }
   });
 
-  disconnectButton.addEventListener("click", () => {
-    walletModule.disconnectWallet();
-    uiModule.disableUI();
-  });
+  // === Proceed Button ===
+  proceedButton.addEventListener("click", async () => {
+    const mode = modeSelector.value;
+    console.log("[main.js] Proceed button clicked");
+    uiModule.clearResults();
 
-  tokenAddressInput.addEventListener("change", async (e) => {
-    const address = e.target.value.trim();
-    if (address && ethers.utils.isAddress(address)) {
-      console.log("[main.js] Token check initiated for:", address);
-      selectedToken = await erc20Module.loadToken(address);
-      console.log("[main.js] Token selected:", selectedToken);
-      uiModule.updateTokenInfo(selectedToken.symbol, selectedToken.decimals);
-    } else {
-      selectedToken = null;
-      uiModule.updateTokenInfo("Invalid", 18);
+    let addresses = [];
+    console.log("[main.js] Fetching addresses for mode:", mode);
+
+    if (mode === "random") {
+      const count = parseInt(randomCountInput.value);
+      const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
+      const allWallets = await response.json();
+      const shuffled = allWallets.sort(() => 0.5 - Math.random());
+      addresses = shuffled.slice(0, count);
+      console.log("[main.js] Loaded random wallets:", allWallets.length);
     }
-  });
 
-  modeSelector.addEventListener("change", async (e) => {
-    const newMode = e.target.value;
-    console.log("[main.js] Mode changed:", newMode);
+    if (mode === "paste") {
+      const raw = document.getElementById("pasteInput").value;
+      addresses = raw.split("\n").map(line => line.trim()).filter(addr => ethers.utils.isAddress(addr));
+    }
 
-    if (fetchedAddresses.length > 0 && newMode !== currentMode) {
-      const confirmChange = confirm("Switching mode will clear current addresses. Continue?");
-      if (!confirmChange) {
-        modeSelector.value = currentMode;
+    if (mode === "create") {
+      const url = document.getElementById("createUrl").value.trim();
+      const res = await fetch(`${CONFIG.PROXY_API_URL}?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      if (data.success && data.addresses) {
+        addresses = data.addresses.slice(0, 1000);
+        console.log("[main.js] Proxy API response (create):", data);
+      } else {
+        console.error("[main.js] Invalid response from API.");
         return;
       }
     }
 
-    currentMode = newMode;
-    uiModule.clearResults();
-    uiModule.clearAllInputs();
-    uiModule.toggleInputSections(newMode);
+    console.log("[main.js] Fetched addresses:", addresses);
+    selectedAddresses = addresses;
+    uiModule.showResults(addresses);
   });
 
-  proceedButton.addEventListener("click", async () => {
-    const mode = modeSelector.value;
-    console.log("[main.js] Proceed button clicked");
-
-    try {
-      const addresses = await uiModule.fetchAddresses(mode);
-      console.log("[main.js] Fetched addresses:", addresses);
-      fetchedAddresses = addresses;
-      uiModule.displayAddresses(addresses);
-    } catch (err) {
-      console.error("[main.js] Failed to fetch addresses:", err);
-    }
-  });
-
+  // === Send Button ===
   sendButton.addEventListener("click", async () => {
     console.log("[main.js] Send button clicked");
 
-    const amountPerUser = amountPerUserInput.value.trim();
+    const token = selectedToken;
+    const amountPerUser = amountInput.value.trim();
 
-    if (!selectedToken || !amountPerUser || fetchedAddresses.length === 0) {
-      console.warn("[main.js] Missing input for airdrop");
-      alert("Token, amount or addresses missing.");
-      return;
-    }
-
-    const payload = {
-      token: selectedToken,
+    console.log("[main.js] Executing airdrop with", {
+      token,
       amountPerUser,
-      addresses: fetchedAddresses,
-    };
+      addresses: selectedAddresses
+    });
 
-    console.log("[main.js] Executing airdrop with", payload);
-    await airdropExecutor.executeAirdrop(payload);
+    await airdropExecutor.executeAirdrop({
+      token,
+      amountPerUser,
+      addresses: selectedAddresses
+    });
   });
 });
