@@ -5,20 +5,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const modeSelect = document.getElementById("modeSelect");
   modeSelect.addEventListener("change", function () {
-    console.log("[main.js] Mode changed:", this.value);
+    const newMode = this.value;
+    console.log("[main.js] Mode changed:", newMode);
 
-    if (document.getElementById("results").textContent.trim().length > 0) {
-      const confirmChange = confirm("Changing mode will clear your current address list. Continue?");
-      if (!confirmChange) {
-        this.value = uiModule.lastMode || "paste";
+    if (document.getElementById("results").textContent.trim() !== "") {
+      const confirmed = confirm("Changing mode will clear your address list. Continue?");
+      if (!confirmed) {
+        this.value = window.lastMode || "paste";
         return;
       }
-      document.getElementById("results").textContent = "";
-      document.getElementById("downloadButton").style.display = "none";
     }
 
-    uiModule.lastMode = this.value;
-    uiModule.showSectionByMode(this.value);
+    document.getElementById("results").textContent = "";
+    document.getElementById("downloadButton").style.display = "none";
+    uiModule.showSectionByMode(newMode);
+    window.lastMode = newMode;
   });
 
   document.getElementById("connectWallet").addEventListener("click", async () => {
@@ -44,11 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const meetsRequirement = parseFloat(balanceInfo.formatted) >= CONFIG.MIN_LQX_REQUIRED;
     uiModule.setWalletInfo(userAddress, balanceInfo.formatted, balanceInfo.symbol);
     uiModule.setAccessDenied(!meetsRequirement);
-
-    const message = meetsRequirement
-      ? "✅ You meet the requirement to use this tool."
-      : "⚠️ You need at least 1000 LQX to use this tool.";
-    document.getElementById("requirementMessage").textContent = message;
 
     document.getElementById("connectWallet").style.display = "none";
     document.getElementById("disconnectWallet").style.display = "inline-block";
@@ -89,7 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const balance = await tokenModule.getFormattedBalance(tokenDetails.contract, userAddress, tokenDetails.decimals);
-    const amountPerUser = parseFloat(document.getElementById("tokenAmountPerUser").value || "0");
 
     if (parseFloat(balance) <= 0) {
       document.getElementById("tokenStatus").textContent = `⚠️ You have 0 ${tokenDetails.symbol} tokens.`;
@@ -99,8 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
         address: tokenInput,
         symbol: tokenDetails.symbol,
         decimals: tokenDetails.decimals,
-        contract: tokenDetails.contract,
-        amountPerUser: amountPerUser
+        contract: tokenDetails.contract
       };
       console.log("[main.js] Token selected:", selectedToken);
     }
@@ -128,6 +122,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  document.getElementById("sendButton").addEventListener("click", () => {
+    console.log("[main.js] Send Airdrop button clicked");
+
+    const addresses = document.getElementById("results").textContent.trim().split("\n").filter(x => x);
+    const amountPerUser = document.getElementById("tokenAmountPerUser").value.trim();
+
+    if (!selectedToken) {
+      alert("Please check and select a valid token first.");
+      return;
+    }
+
+    if (addresses.length === 0 || parseFloat(amountPerUser) <= 0) {
+      alert("Please provide valid address list and token amount.");
+      return;
+    }
+
+    airdropExecutor.executeAirdrop(selectedToken, addresses, amountPerUser);
+  });
+
   async function fetchAddresses(mode) {
     console.log("[main.js] Fetching addresses for mode:", mode);
 
@@ -139,12 +152,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (mode === "paste") {
-      const rawInput = document.getElementById("polygonScanInput").value.trim();
-      const lines = rawInput.split("\n").map(line => line.trim()).filter(line => addressModule.isValidAddress(line));
-      return lines.slice(0, 1000);
-    }
+      const pasted = document.getElementById("polygonScanInput").value.trim();
+      const addressList = pasted.split("\n").map(a => a.trim()).filter(a => addressModule.isValidAddress(a));
+      return addressList.slice(0, 1000);
 
-    if (mode === "create") {
+    } else if (mode === "create") {
       const contractInput = document.getElementById("contractInput").value.trim();
       const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
 
@@ -158,15 +170,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
         console.log("[main.js] Proxy API response (create):", data);
 
-        return data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
+        const finalList = data.addresses ? data.addresses.slice(0, Math.min(max, 1000)) : [];
+        return finalList;
 
       } catch (err) {
         console.error("[main.js] Proxy fetch failed (create mode):", err);
         return [];
       }
-    }
 
-    if (mode === "random") {
+    } else if (mode === "random") {
       const max = parseInt(document.getElementById("maxAddresses").value || "100");
       try {
         const response = await fetch(CONFIG.ACTIVE_WALLETS_JSON);
