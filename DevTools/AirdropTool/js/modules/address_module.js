@@ -1,32 +1,37 @@
 // js/modules/address_module.js
 
 window.addressModule = (function () {
+  const PROXY_BASE = "https://proxy-git-main-lqxtokens-projects.vercel.app"; // ✅ Σωστό proxy
+
   async function fetchAddresses(mode) {
-    if (mode === "paste") {
-      const input = document.getElementById("polygonScanInput").value.trim();
-      const lines = input.split("\n").map(line => line.trim());
-      const addresses = lines.filter(line => /^0x[a-fA-F0-9]{40}$/.test(line));
-      return addresses;
+    console.log("[addressModule] Fetching addresses for mode:", mode);
+
+    if (mode === "random") {
+      const response = await fetch(`${PROXY_BASE}/abis/active_polygon_wallets.json`);
+      if (!response.ok) throw new Error("Failed to load random addresses");
+      const data = await response.json();
+      return data.addresses?.slice(0, 1000) || [];
     }
 
     if (mode === "create") {
-      const tokenAddress = document.getElementById("contractInput").value.trim();
-      const max = parseInt(document.getElementById("maxCreateAddresses").value, 10);
-      const url = `https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon?contract=${tokenAddress}&limit=${max}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch addresses");
-      const data = await res.json();
-      return data?.addresses || [];
+      const contractAddress = document.getElementById("contractInput").value.trim();
+      const max = parseInt(document.getElementById("maxCreateAddresses").value.trim());
+
+      if (!contractAddress || isNaN(max) || max < 1) {
+        throw new Error("Invalid input for create mode");
+      }
+
+      const res = await fetch(`${PROXY_BASE}/api/polygon?contract=${contractAddress}&max=${max}`);
+      const json = await res.json();
+      return json.addresses || [];
     }
 
-    if (mode === "random") {
-      const max = parseInt(document.getElementById("maxAddresses").value, 10);
-      const res = await fetch("/abis/active_polygon_wallets.json");
-      const data = await res.json();
-      return data?.slice(0, max) || [];
+    if (mode === "paste") {
+      const input = document.getElementById("polygonScanInput").value.trim();
+      return input.split("\n").map(addr => addr.trim()).filter(addr => addr);
     }
 
-    return [];
+    throw new Error("Invalid mode");
   }
 
   return {
