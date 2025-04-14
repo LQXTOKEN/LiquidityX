@@ -1,40 +1,42 @@
 // js/modules/token_module.js
 
 window.tokenModule = (function () {
-  function getTokenContract(tokenAddress, provider) {
-    const abi = [
-      "function symbol() view returns (string)",
-      "function decimals() view returns (uint8)",
-      "function balanceOf(address owner) view returns (uint256)"
-    ];
-    return new ethers.Contract(tokenAddress, abi, provider);
-  }
+  let selectedToken = null;
 
-  async function getTokenDetails(tokenAddress, provider) {
+  async function checkToken(address) {
     try {
-      const contract = getTokenContract(tokenAddress, provider);
+      const provider = walletModule.getProvider();
+      if (!provider) {
+        uiModule.updateTokenStatus("❌ Wallet not connected", "error");
+        return;
+      }
+
+      const contract = new ethers.Contract(address, window.ERC20_ABI, provider);
       const symbol = await contract.symbol();
       const decimals = await contract.decimals();
-      return { contract, symbol, decimals };
+
+      selectedToken = {
+        address,
+        contract,
+        symbol,
+        decimals
+      };
+
+      console.log("[tokenModule] ✅ Token loaded:", symbol);
+      uiModule.updateTokenStatus(`✅ Token loaded: ${symbol}`, "success");
     } catch (error) {
-      console.error("Token metadata fetch failed:", error);
-      return null;
+      console.error("[tokenModule] ❌ Token check failed:", error);
+      selectedToken = null;
+      uiModule.updateTokenStatus("❌ Invalid token address", "error");
     }
   }
 
-  async function getFormattedBalance(contract, userAddress, decimals) {
-    try {
-      const raw = await contract.balanceOf(userAddress);
-      return ethers.utils.formatUnits(raw, decimals);
-    } catch (error) {
-      console.error("Balance read failed:", error);
-      return "0";
-    }
+  function getSelectedToken() {
+    return selectedToken;
   }
 
   return {
-    getTokenContract,
-    getTokenDetails,
-    getFormattedBalance
+    checkToken,
+    getSelectedToken
   };
 })();
