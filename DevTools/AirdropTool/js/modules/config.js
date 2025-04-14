@@ -7,6 +7,10 @@ window.CONFIG = {
   PROXY_API_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon",
   ACTIVE_WALLETS_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json",
 
+  // ✅ Οι ABIs αποθηκεύονται στο CONFIG και στο window
+  ERC20_ABI: null,
+  BATCH_AIRDROP_ABI: null,
+
   async loadAbis() {
     try {
       const [erc20Res, airdropRes] = await Promise.all([
@@ -16,8 +20,16 @@ window.CONFIG = {
 
       if (!erc20Res.ok || !airdropRes.ok) throw new Error("ABI fetch failed");
 
-      window.ERC20_ABI = await erc20Res.json();
-      window.AIRDROP_ABI = await airdropRes.json();
+      const erc20Abi = await erc20Res.json();
+      const airdropAbi = await airdropRes.json();
+
+      // ✅ Αποθήκευση σε CONFIG
+      this.ERC20_ABI = erc20Abi;
+      this.BATCH_AIRDROP_ABI = airdropAbi;
+
+      // ✅ Και global (αν χρειάζεται από modules που δεν βλέπουν CONFIG)
+      window.ERC20_ABI = erc20Abi;
+      window.AIRDROP_ABI = airdropAbi;
 
       console.log("[config.js] ✅ ABIs loaded successfully");
     } catch (err) {
