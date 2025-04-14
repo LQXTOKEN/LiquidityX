@@ -16,7 +16,7 @@ window.tokenModule = (function () {
       const decimals = await contract.decimals();
 
       selectedToken = {
-        address,
+        contractAddress: address, // ✅ προσθήκη
         contract,
         symbol,
         decimals
