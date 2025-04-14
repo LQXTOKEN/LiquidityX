@@ -1,9 +1,5 @@
 // js/main.js
 
-import { updateLastAirdrops } from "./ui_module.js";
-import { checkMyRecord, retryFailed, recoverTokens } from "./send.js";
-import { signer } from "./wallet_module.js"; // Αν δεν υπάρχει ήδη αυτό, πρόσθεσέ το!
-
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[main.js] DOM loaded");
 
@@ -12,7 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("[main.js] ✅ ABIs loaded and verified");
 
     // ✅ Φόρτωσε τα τελευταία airdrops κατά το load
-    updateLastAirdrops();
+    uiModule.updateLastAirdrops();
   } catch (err) {
     console.error("[main.js] ❌ Initialization failed: ABI loading error");
     return;
@@ -36,7 +32,7 @@ async function initializeApp() {
     const sendButton = document.getElementById("sendButton");
     const downloadButton = document.getElementById("downloadButton");
 
-    // ✅ Νέα κουμπιά recovery
+    // ✅ Κουμπιά για Recovery
     const checkRecordButton = document.getElementById("checkRecordButton");
     const retryFailedButton = document.getElementById("retryFailedButton");
     const recoverTokensButton = document.getElementById("recoverTokensButton");
@@ -46,7 +42,9 @@ async function initializeApp() {
       const result = await walletModule.connectWallet();
 
       if (result) {
+        window.signer = result.signer;
         uiModule.updateWalletUI(result.userAddress);
+
         const lqx = await erc20Module.getLQXBalance(result.userAddress);
         if (lqx) {
           uiModule.updateLQXBalance(lqx);
@@ -54,7 +52,6 @@ async function initializeApp() {
           uiModule.showError("Could not fetch LQX balance.");
         }
 
-        // ✅ Ενεργοποίησε την κάρτα recovery
         document.getElementById("recoveryCard").style.display = "block";
       }
     });
@@ -82,7 +79,7 @@ async function initializeApp() {
         const selected = tokenModule.getSelectedToken();
         if (selected) {
           window.selectedToken = selected;
-          window.currentTokenAddress = selected.contract.address; // ✅ Σώζουμε token για recovery
+          window.currentTokenAddress = selected.contract.address;
         }
       } catch (err) {
         console.error("[main.js] Token check error:", err);
@@ -143,10 +140,16 @@ async function initializeApp() {
         return;
       }
 
-      // Τα υπόλοιπα τα χειρίζεται το app.js (airdropExecutor)
+      // Εκτέλεση αποστολής
+      sendModule.sendAirdrop(
+        window.selectedToken.contract.address,
+        window.selectedToken.symbol,
+        ethers.utils.parseUnits(window.tokenAmountPerUser, window.selectedToken.decimals),
+        window.selectedAddresses,
+        window.signer
+      );
     });
 
-    // ✅ Download Button Handler
     downloadButton.addEventListener("click", () => {
       if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
         uiModule.showError("❌ No addresses to download.");
@@ -165,10 +168,10 @@ async function initializeApp() {
       URL.revokeObjectURL(url);
     });
 
-    // ✅ Νέα: Κουμπιά recovery
-    checkRecordButton.addEventListener("click", () => checkMyRecord(signer));
-    retryFailedButton.addEventListener("click", () => retryFailed(signer, window.currentTokenAddress));
-    recoverTokensButton.addEventListener("click", () => recoverTokens(signer, window.currentTokenAddress));
+    // ✅ Recovery κουμπιά
+    checkRecordButton.addEventListener("click", () => sendModule.checkMyRecord(window.signer));
+    retryFailedButton.addEventListener("click", () => sendModule.retryFailed(window.signer, window.currentTokenAddress));
+    recoverTokensButton.addEventListener("click", () => sendModule.recoverTokens(window.signer, window.currentTokenAddress));
 
     console.log("[main.js] Initialization complete ✅");
   } catch (err) {
