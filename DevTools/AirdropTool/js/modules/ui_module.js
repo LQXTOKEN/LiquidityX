@@ -1,27 +1,33 @@
+// js/modules/ui_module.js
+
 window.uiModule = (function () {
   function updateWalletUI(address) {
-    const walletAddressEl = document.getElementById("walletAddress");
-    walletAddressEl.textContent = `Connected: ${address}`;
+    document.getElementById("walletAddress").textContent = `Connected: ${address}`;
     document.getElementById("connectWallet").style.display = "none";
     document.getElementById("disconnectWallet").style.display = "inline-block";
+    document.getElementById("airdropTool").style.display = "block";
   }
 
-  function updateLQXBalance(balance) {
-    const balanceEl = document.getElementById("lqxBalance");
-    const messageEl = document.getElementById("eligibilityMessage");
-    const accessEl = document.getElementById("accessDenied");
-    const toolEl = document.getElementById("airdropTool");
+  function updateLQXBalance(balanceInfo) {
+    const balanceText = `${balanceInfo.formatted} ${balanceInfo.symbol}`;
+    const balanceElement = document.getElementById("lqxBalance");
+    balanceElement.textContent = `LQX Balance: ${balanceText}`;
 
-    balanceEl.textContent = `LQX Balance: ${balance.formatted}`;
+    const eligible = parseFloat(balanceInfo.formatted) >= 1000;
+    const message = document.getElementById("eligibilityMessage");
+    const toolSection = document.getElementById("airdropTool");
+    const accessDenied = document.getElementById("accessDenied");
 
-    if (parseFloat(balance.formatted) >= 1000) {
-      toolEl.style.display = "block";
-      accessEl.style.display = "none";
-      messageEl.textContent = "";
+    if (eligible) {
+      message.textContent = "✅ You are eligible to use the airdrop tool.";
+      message.style.color = "var(--accent-green)";
+      toolSection.style.display = "block";
+      accessDenied.style.display = "none";
     } else {
-      toolEl.style.display = "none";
-      accessEl.style.display = "block";
-      messageEl.textContent = "You need at least 1000 LQX to use this tool.";
+      message.textContent = "❌ You need at least 1000 LQX to use this tool.";
+      message.style.color = "var(--accent-red)";
+      toolSection.style.display = "none";
+      accessDenied.style.display = "block";
     }
   }
 
@@ -32,33 +38,41 @@ window.uiModule = (function () {
     document.getElementById("connectWallet").style.display = "inline-block";
     document.getElementById("disconnectWallet").style.display = "none";
     document.getElementById("airdropTool").style.display = "none";
-    document.getElementById("accessDenied").style.display = "none";
+    document.getElementById("tokenStatus").textContent = "";
+    clearResults();
   }
 
   function showError(message) {
-    alert(message);
+    const results = document.getElementById("results");
+    results.textContent = `❌ ${message}`;
+    results.style.color = "var(--accent-red)";
+  }
+
+  function clearResults() {
+    const results = document.getElementById("results");
+    results.textContent = "";
+    results.style.color = "";
   }
 
   function showModeSection(mode) {
-    document.querySelectorAll(".modeSection").forEach((section) => {
+    document.querySelectorAll(".modeSection").forEach(section => {
       section.style.display = "none";
     });
 
     if (mode === "paste") {
       document.getElementById("pasteSection").style.display = "block";
       document.getElementById("proceedButton").style.display = "none";
-    } else if (mode === "create") {
-      document.getElementById("createSection").style.display = "block";
+    } else {
       document.getElementById("proceedButton").style.display = "inline-block";
-    } else if (mode === "random") {
-      document.getElementById("randomSection").style.display = "block";
-      document.getElementById("proceedButton").style.display = "inline-block";
+      const target = mode === "create" ? "createSection" : "randomSection";
+      document.getElementById(target).style.display = "block";
     }
   }
 
   function displayAddresses(addresses) {
-    const resultsEl = document.getElementById("results");
-    resultsEl.textContent = addresses.join("\n");
+    const results = document.getElementById("results");
+    results.textContent = addresses.join("\n");
+    results.style.color = "var(--text-light)";
     document.getElementById("downloadButton").style.display = "inline-block";
   }
 
@@ -67,16 +81,10 @@ window.uiModule = (function () {
     return results ? results.split("\n") : [];
   }
 
-  function clearResults() {
-    const resultsEl = document.getElementById("results");
-    resultsEl.textContent = "";
-    document.getElementById("downloadButton").style.display = "none";
-
-    // Clear all input fields
-    document.getElementById("polygonScanInput").value = "";
-    document.getElementById("contractInput").value = "";
-    document.getElementById("maxCreateAddresses").value = 100;
-    document.getElementById("maxAddresses").value = 100;
+  function updateTokenStatus(message, isSuccess = true) {
+    const status = document.getElementById("tokenStatus");
+    status.textContent = message;
+    status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
   }
 
   return {
@@ -84,9 +92,10 @@ window.uiModule = (function () {
     updateLQXBalance,
     resetUI,
     showError,
+    clearResults,
     showModeSection,
     displayAddresses,
     getDisplayedAddresses,
-    clearResults
+    updateTokenStatus
   };
 })();
