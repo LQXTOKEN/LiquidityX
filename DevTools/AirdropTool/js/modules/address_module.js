@@ -1,37 +1,52 @@
 // js/modules/address_module.js
 
 window.addressModule = (function () {
-  const PROXY_BASE = "https://proxy-git-main-lqxtokens-projects.vercel.app"; // ✅ Σωστό proxy
+  const MAX_LIMIT = 1000;
 
   async function fetchAddresses(mode) {
-    console.log("[addressModule] Fetching addresses for mode:", mode);
+    try {
+      console.log("[addressModule] Fetching addresses with mode:", mode);
 
-    if (mode === "random") {
-      const response = await fetch(`${PROXY_BASE}/abis/active_polygon_wallets.json`);
-      if (!response.ok) throw new Error("Failed to load random addresses");
-      const data = await response.json();
-      return data.addresses?.slice(0, 1000) || [];
-    }
-
-    if (mode === "create") {
-      const contractAddress = document.getElementById("contractInput").value.trim();
-      const max = parseInt(document.getElementById("maxCreateAddresses").value.trim());
-
-      if (!contractAddress || isNaN(max) || max < 1) {
-        throw new Error("Invalid input for create mode");
+      if (mode === "paste") {
+        const raw = document.getElementById("polygonScanInput").value.trim();
+        const lines = raw.split("\n").map(addr => addr.trim()).filter(Boolean);
+        const unique = [...new Set(lines)].slice(0, MAX_LIMIT);
+        console.log("[addressModule] Paste mode: ", unique.length, "addresses");
+        return unique;
       }
 
-      const res = await fetch(`${PROXY_BASE}/api/polygon?contract=${contractAddress}&max=${max}`);
-      const json = await res.json();
-      return json.addresses || [];
-    }
+      if (mode === "random") {
+        const limit = parseInt(document.getElementById("maxAddresses").value, 10) || 100;
+        const response = await fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json");
+        const data = await response.json();
+        const shuffled = data.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, Math.min(limit, MAX_LIMIT));
+        console.log("[addressModule] Random mode:", selected.length, "addresses");
+        return selected;
+      }
 
-    if (mode === "paste") {
-      const input = document.getElementById("polygonScanInput").value.trim();
-      return input.split("\n").map(addr => addr.trim()).filter(addr => addr);
-    }
+      if (mode === "create") {
+        const contract = document.getElementById("contractInput").value.trim();
+        const limit = parseInt(document.getElementById("maxCreateAddresses").value, 10) || 100;
 
-    throw new Error("Invalid mode");
+        const proxyUrl = "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon";
+        const response = await fetch(proxyUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contractAddress: contract })
+        });
+
+        const result = await response.json();
+        const addresses = [...new Set(result.addresses || [])].slice(0, Math.min(limit, MAX_LIMIT));
+        console.log("[addressModule] Create mode:", addresses.length, "addresses");
+        return addresses;
+      }
+
+      return [];
+    } catch (error) {
+      console.error("[addressModule] Fetch error:", error);
+      throw error;
+    }
   }
 
   return {
