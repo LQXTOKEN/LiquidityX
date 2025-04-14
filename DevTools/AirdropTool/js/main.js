@@ -21,12 +21,12 @@ async function initializeApp() {
     const connectBtn = document.getElementById("connectWallet");
     const disconnectBtn = document.getElementById("disconnectWallet");
     const backBtn = document.getElementById("backToMain");
-    const checkTokenBtn = document.getElementById("checkToken");
-    const tokenInput = document.getElementById("tokenAddressInput");
-    const proceedBtn = document.getElementById("proceedButton");
-    const sendBtn = document.getElementById("sendButton");
+    const checkTokenButton = document.getElementById("checkToken");
+    const tokenAddressInput = document.getElementById("tokenAddressInput");
+    const tokenAmountInput = document.getElementById("tokenAmountPerUser");
     const modeSelect = document.getElementById("modeSelect");
-    const amountInput = document.getElementById("tokenAmountPerUser");
+    const proceedButton = document.getElementById("proceedButton");
+    const sendButton = document.getElementById("sendButton");
 
     connectBtn.addEventListener("click", async () => {
       console.log("[main.js] Connect button clicked");
@@ -52,77 +52,83 @@ async function initializeApp() {
       window.location.href = "https://liquidityx.io";
     });
 
-    checkTokenBtn.addEventListener("click", async () => {
+    checkTokenButton.addEventListener("click", async () => {
       console.log("[main.js] Check Token button clicked");
-      const tokenAddress = tokenInput.value.trim();
-      if (!tokenAddress) {
-        uiModule.showError("Please enter a token address");
-        return;
-      }
-
       try {
+        const tokenAddress = tokenAddressInput.value.trim();
+        if (!tokenAddress) {
+          uiModule.showError("Please enter a token address");
+          return;
+        }
+
         await tokenModule.checkToken(tokenAddress);
+        const selected = tokenModule.getSelectedToken();
+        if (selected) {
+          window.selectedToken = selected;
+        }
       } catch (err) {
         console.error("[main.js] Token check error:", err);
         uiModule.showError("Token verification failed");
       }
     });
 
-    modeSelect.addEventListener("change", (e) => {
-      const selectedMode = e.target.value;
-      console.log("[main.js] Mode changed:", selectedMode);
+    modeSelect.addEventListener("change", (event) => {
+      const mode = event.target.value;
+      console.log("[main.js] Mode changed:", mode);
       uiModule.clearResults();
-      uiModule.showModeSection(selectedMode);
+      uiModule.showModeSection(mode);
     });
 
-    proceedBtn.addEventListener("click", async () => {
-      try {
-        console.log("[main.js] Proceed button clicked");
-        const selectedMode = modeSelect.value;
-        const addresses = await addressModule.fetchAddresses(selectedMode);
+    proceedButton.addEventListener("click", async () => {
+      console.log("[main.js] Proceed button clicked");
 
-        if (addresses && addresses.length > 0) {
+      const mode = modeSelect.value;
+      try {
+        const addresses = await addressModule.fetchAddresses(mode);
+        if (addresses?.length > 0) {
+          window.selectedAddresses = addresses;
           uiModule.displayAddresses(addresses);
         } else {
-          uiModule.showError("No addresses found.");
+          uiModule.showError("No addresses found");
         }
-      } catch (err) {
-        console.error("[main.js] Address fetch error:", err);
-        uiModule.showError("Address fetch failed.");
+      } catch (error) {
+        console.error("[main.js] Address fetch error:", error);
+        uiModule.showError("Failed to fetch addresses");
       }
+
+      const amount = tokenAmountInput.value;
+      if (!amount || isNaN(amount)) {
+        uiModule.showError("Invalid amount per user");
+        return;
+      }
+      window.tokenAmountPerUser = amount;
     });
 
-    sendBtn.addEventListener("click", async () => {
-      try {
-        console.log("[main.js] Send button clicked");
+    sendButton.addEventListener("click", () => {
+      console.log("[main.js] Send button clicked");
 
-        const token = tokenModule.getSelectedToken();
-        const amount = amountInput.value;
-        const addresses = uiModule.getDisplayedAddresses();
-
-        if (!token) {
-          uiModule.showError("No token selected.");
-          return;
-        }
-        if (!amount || isNaN(amount)) {
-          uiModule.showError("Invalid amount.");
-          return;
-        }
-        if (!addresses || addresses.length === 0) {
-          uiModule.showError("No recipient addresses.");
-          return;
-        }
-
-        await airdropExecutor.executeAirdrop(token, amount, addresses);
-      } catch (err) {
-        console.error("[main.js] Airdrop execution error:", err);
-        uiModule.showError("Airdrop failed.");
+      // Εδώ επιβεβαιώνουμε ότι έχουμε τις global μεταβλητές σωστά
+      if (!window.selectedToken) {
+        uiModule.showError("❌ Token not selected.");
+        return;
       }
+
+      if (!window.tokenAmountPerUser || isNaN(window.tokenAmountPerUser)) {
+        uiModule.showError("❌ Invalid amount per address.");
+        return;
+      }
+
+      if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
+        uiModule.showError("❌ No recipient addresses.");
+        return;
+      }
+
+      // Δεν κάνουμε execute εδώ. Το app.js διαχειρίζεται το airdropExecutor.
+      // Εμείς ενημερώνουμε μόνο τις global παραμέτρους.
     });
 
     console.log("[main.js] Initialization complete ✅");
   } catch (err) {
     console.error("[main.js] ❌ Unexpected error:", err);
-    uiModule.showError("Unexpected initialization error.");
   }
 }
