@@ -95,3 +95,65 @@ export async function sendAirdrop(tokenAddress, tokenSymbol, amountPerRecipient,
     addLog("❌ Airdrop failed: " + err.message, "error");
   }
 }
+import { getBatchAirdropContract } from "./erc20_module.js";
+import { addLog } from "./ui_module.js";
+import { LQX_TOKEN_ADDRESS } from "./config.js";
+
+// Εύρεση και εμφάνιση αποτυχημένων
+export async function checkMyRecord(signer) {
+  try {
+    const contract = getBatchAirdropContract(signer);
+    const recordId = await contract.getRecordId();
+    const failed = await contract.getFailedRecipients(recordId);
+
+    const recoveryResults = document.getElementById("recoveryResults");
+    recoveryResults.innerHTML = "";
+
+    if (failed.length === 0) {
+      recoveryResults.innerHTML = "<p>✅ No failed recipients found for your last airdrop.</p>";
+      return;
+    }
+
+    const list = document.createElement("ul");
+    failed.forEach(addr => {
+      const li = document.createElement("li");
+      li.textContent = addr;
+      list.appendChild(li);
+    });
+    recoveryResults.appendChild(list);
+
+    document.getElementById("retryFailedButton").style.display = "inline-block";
+    document.getElementById("recoverTokensButton").style.display = "inline-block";
+
+    // Αποθηκεύουμε το recordId για χρήση στα buttons
+    window.lastRecordId = recordId;
+
+  } catch (err) {
+    addLog("❌ Failed to fetch airdrop record: " + err.message, "error");
+  }
+}
+
+// Retry για αποτυχημένους
+export async function retryFailed(signer, tokenAddress) {
+  try {
+    const contract = getBatchAirdropContract(signer);
+    const tx = await contract.recoverFailedTransfers(window.lastRecordId, tokenAddress);
+    await tx.wait();
+    addLog("✅ Retry successful", "success");
+  } catch (err) {
+    addLog("❌ Retry failed: " + err.message, "error");
+  }
+}
+
+// Επιστροφή tokens στον χρήστη
+export async function recoverTokens(signer, tokenAddress) {
+  try {
+    const contract = getBatchAirdropContract(signer);
+    const tx = await contract.recoverFailedTransfers(window.lastRecordId, tokenAddress);
+    await tx.wait();
+    addLog("✅ Recovery complete. Tokens returned.", "success");
+  } catch (err) {
+    addLog("❌ Recovery failed: " + err.message, "error");
+  }
+}
+
