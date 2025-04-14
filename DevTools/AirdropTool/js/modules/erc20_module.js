@@ -24,9 +24,21 @@ window.erc20Module = (function () {
     return await getERC20Balance(CONFIG.LQX_TOKEN_ADDRESS, userAddress, provider);
   }
 
+  // ✅ ΝΕΑ: ERC-20 contract με signer για send.js
+  function getERC20Contract(tokenAddress, signer) {
+    return new ethers.Contract(tokenAddress, CONFIG.ERC20_ABI, signer);
+  }
+
+  // ✅ ΝΕΑ: Batch Airdrop Contract με signer
+  function getBatchAirdropContract(signer) {
+    return new ethers.Contract(CONFIG.BATCH_AIRDROP_ADDRESS, CONFIG.BATCH_AIRDROP_ABI, signer);
+  }
+
   return {
     getTokenContract,
     getERC20Balance,
-    getLQXBalance
+    getLQXBalance,
+    getERC20Contract,         // ✅ required by send.js
+    getBatchAirdropContract   // ✅ required by send.js & recovery
   };
 })();
