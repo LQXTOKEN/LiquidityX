@@ -24,7 +24,7 @@ async function initializeApp() {
     const connectBtn = document.getElementById("connectWallet");
     const disconnectBtn = document.getElementById("disconnectWallet");
     const backBtn = document.getElementById("backToMain");
-    const TokenButton = document.getElementById("checkToken");
+    const checkTokenButton = document.getElementById("checkToken");
     const tokenAddressInput = document.getElementById("tokenAddressInput");
     const tokenAmountInput = document.getElementById("tokenAmountPerUser");
     const modeSelect = document.getElementById("modeSelect");
@@ -32,7 +32,7 @@ async function initializeApp() {
     const sendButton = document.getElementById("sendButton");
     const downloadButton = document.getElementById("downloadButton");
 
-    // ✅ Κουμπιά για Recovery
+    // ✅ Recovery κουμπιά
     const checkRecordButton = document.getElementById("checkRecordButton");
     const retryFailedButton = document.getElementById("retryFailedButton");
     const recoverTokensButton = document.getElementById("recoverTokensButton");
@@ -66,32 +66,21 @@ async function initializeApp() {
       window.location.href = "https://liquidityx.io";
     });
 
- checkTokenButton.addEventListener("click", async () => {
-  console.log("[main.js] Check Token button clicked");
-  try {
-    const tokenAddress = tokenAddressInput.value.trim();
-    if (!tokenAddress) {
-      uiModule.showError("Please enter a token address");
-      return;
-    }
+    checkTokenButton.addEventListener("click", async () => {
+      console.log("[main.js] Check Token button clicked");
+      try {
+        const tokenAddress = tokenAddressInput.value.trim();
+        if (!tokenAddress) {
+          uiModule.showError("Please enter a token address");
+          return;
+        }
 
-    await tokenModule.checkToken(tokenAddress);
-    const selected = tokenModule.getSelectedToken();
-    if (selected) {
-      window.selectedToken = selected;
-      window.currentTokenAddress = selected.contractAddress;
-    }
-  } catch (err) {
-    console.error("[main.js] Token check error:", err);
-    uiModule.showError("Token verification failed");
-  }
-});
-  } catch (err) {
-    console.error("[main.js] Token check error:", err);
-    uiModule.showError("Token verification failed");
-  }
-});
-
+        await tokenModule.checkToken(tokenAddress);
+        const selected = tokenModule.getSelectedToken();
+        if (selected) {
+          window.selectedToken = selected;
+          window.currentTokenAddress = selected.contractAddress; // ✅ διορθωμένο
+        }
       } catch (err) {
         console.error("[main.js] Token check error:", err);
         uiModule.showError("Token verification failed");
@@ -151,9 +140,8 @@ async function initializeApp() {
         return;
       }
 
-      // Εκτέλεση αποστολής
       sendModule.sendAirdrop(
-        window.selectedToken.contract.address,
+        window.selectedToken.contractAddress,
         window.selectedToken.symbol,
         ethers.utils.parseUnits(window.tokenAmountPerUser, window.selectedToken.decimals),
         window.selectedAddresses,
