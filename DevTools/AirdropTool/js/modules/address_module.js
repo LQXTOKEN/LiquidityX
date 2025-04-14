@@ -30,10 +30,11 @@ window.addressModule = (function () {
         const limit = parseInt(document.getElementById("maxCreateAddresses").value, 10) || 100;
 
         const proxyUrl = "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon";
-        const response = await fetch(proxyUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contractAddress: contract })
+        const urlWithParams = proxyUrl + "?contract=" + encodeURIComponent(contract);
+
+        const response = await fetch(urlWithParams, {
+          method: "GET",
+          headers: { "Accept": "application/json" }
         });
 
         const result = await response.json();
