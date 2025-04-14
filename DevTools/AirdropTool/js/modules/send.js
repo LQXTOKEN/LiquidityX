@@ -3,27 +3,48 @@
 window.sendModule = (function () {
   async function sendAirdrop(tokenAddress, symbol, amountPerUser, recipients, signer) {
     try {
-      uiModule.addLog(`🔄 Approving ${symbol} token for batch airdrop...`);
-      const token = new ethers.Contract(tokenAddress, CONFIG.ERC20_ABI, signer);
+      const userAddress = await signer.getAddress();
 
-      const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, amountPerUser.mul(recipients.length));
+      // ✅ Έλεγχος για invalid διευθύνσεις
+      const invalids = recipients.filter(addr => !ethers.utils.isAddress(addr) || addr === ethers.constants.AddressZero);
+      if (invalids.length > 0) {
+        uiModule.showError(`❌ Invalid address found: ${invalids[0]}`);
+        return;
+      }
+
+      const token = new ethers.Contract(tokenAddress, CONFIG.ERC20_ABI, signer);
+      const userBalance = await token.balanceOf(userAddress);
+      const totalRequired = amountPerUser.mul(recipients.length);
+
+      // ✅ Έλεγχος balance
+      if (userBalance.lt(totalRequired)) {
+        const userFormatted = ethers.utils.formatUnits(userBalance);
+        const requiredFormatted = ethers.utils.formatUnits(totalRequired);
+        uiModule.showError(`❌ Insufficient balance: You need ${requiredFormatted} ${symbol}, but only have ${userFormatted}`);
+        return;
+      }
+
+      // ✅ APPROVE
+      uiModule.addLog(`🔄 Approving ${symbol} for ${recipients.length} recipients...`);
+      const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalRequired);
       uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`);
       await approveTx.wait();
       uiModule.addLog(`✅ Approved successfully.`);
 
+      // ✅ Airdrop Execution
       const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+      uiModule.addLog(`🚀 Sending airdrop to ${recipients.length} recipients...`);
 
-      uiModule.addLog(`🚀 Sending batchTransferSameAmount to ${recipients.length} recipients...`);
-      const batchTx = await airdrop.batchTransferSameAmount(tokenAddress, recipients, amountPerUser);
-      uiModule.addLog(`⛽ Airdrop TX sent: ${batchTx.hash}`);
-      const receipt = await batchTx.wait();
-      uiModule.addLog(`✅ Airdrop executed successfully.`);
+      const tx = await airdrop.batchTransferSameAmount(tokenAddress, recipients, amountPerUser);
+      uiModule.addLog(`⛽ Airdrop TX sent: ${tx.hash}`);
+      await tx.wait();
+      uiModule.addLog(`✅ Airdrop completed.`);
 
-      // Προσπάθεια λήψης failedRecipients (αν εκπέμπεται στο event)
+      // ✅ Έλεγχος αποτυχημένων παραληπτών
       try {
-        const failed = await airdrop.getFailedRecipients(tokenAddress, await signer.getAddress());
+        const failed = await airdrop.getFailedRecipients(tokenAddress, userAddress);
         if (failed.length > 0) {
-          uiModule.addLog(`⚠️ ${failed.length} recipients failed. You can retry or recover them.`);
+          uiModule.addLog(`⚠️ ${failed.length} failed recipients. Retry or recover available.`);
 
           uiModule.enableDownloadFailed(failed, (arr) => {
             const blob = new Blob([arr.join("\n")], { type: "text/plain" });
@@ -40,15 +61,16 @@ window.sendModule = (function () {
           document.getElementById("retryFailedButton").style.display = "inline-block";
           document.getElementById("recoverTokensButton").style.display = "inline-block";
         } else {
-          uiModule.addLog(`🎉 No failed recipients.`);
+          uiModule.addLog(`🎉 All recipients succeeded!`);
         }
       } catch (e) {
-        uiModule.addLog(`ℹ️ Could not fetch failed recipients`, "warn");
-        console.warn(e);
+        uiModule.addLog(`ℹ️ Could not verify failed recipients.`, "warn");
+        console.warn("[getFailedRecipients]", e);
       }
+
     } catch (err) {
       console.error("[sendAirdrop] ❌ Error:", err);
-      uiModule.addLog("❌ Airdrop failed: " + (err.message || "Unknown error"), "error");
+      uiModule.addLog("❌ Airdrop failed: " + (err.reason || err.message || "Unknown error"), "error");
     }
   }
 
