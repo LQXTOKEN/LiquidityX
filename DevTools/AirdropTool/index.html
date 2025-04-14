@@ -11,6 +11,7 @@
   <div class="container">
     <h1>LiquidityX Airdrop Tool</h1>
 
+    <!-- ✅ WALLET SECTION -->
     <div class="card wallet-card">
       <div class="button-row">
         <button id="backToMain" class="btn">← Back to Main Website</button>
@@ -29,6 +30,7 @@
       </div>
     </div>
 
+    <!-- ✅ AIRDROP TOOL SECTION -->
     <div id="airdropTool" class="card" style="display: none;">
       <!-- Token Selection -->
       <div class="input-group">
@@ -82,42 +84,33 @@
         </div>
       </div>
 
+      <!-- Action Buttons -->
       <button id="proceedButton" class="btn">Proceed</button>
       <button id="downloadButton" class="btn" style="display:none;">Download Addresses (.txt)</button>
+      <button id="downloadFailedButton" class="btn" style="display:none;">Download Failed (.txt)</button>
 
+      <!-- Address Results -->
       <pre id="results"></pre>
 
+      <!-- Send -->
       <button id="sendButton" class="btn" style="background-color: var(--accent-green); margin-top: 1rem;">
         Send Airdrop
       </button>
 
-      <!-- ✅ Live Logs -->
-      <div id="logOutput" style="max-height: 200px; overflow-y: auto; font-family: monospace; padding: 10px; background: #1f2937; border-radius: 8px; margin-top: 1rem;"></div>
-
-      <!-- ✅ Retry / Download Buttons -->
-      <div class="button-row" style="margin-top: 1rem;">
-        <button id="retryButton" class="btn" style="display: none;">Retry Failed</button>
-        <button id="downloadFailedBtn" class="btn" style="display: none;">Download Failed</button>
-      </div>
+      <!-- Log Output -->
+      <div id="logOutput" class="card" style="margin-top: 1rem;"></div>
     </div>
 
-    <!-- ✅ Recovery Section -->
-    <div id="recoveryCard" class="card" style="margin-top: 2rem; display: none;">
-      <h2>🛡️ Recover Failed Transfers</h2>
-      <p>You can check if any of your previous airdrops had failed recipients and retry or recover tokens.</p>
-      <button id="checkRecordButton" class="btn">Check My Airdrop Record</button>
+    <!-- ✅ RECOVERY CARD -->
+    <div id="recoveryCard" class="card" style="display: none; margin-top: 1.5rem;">
+      <h2>🔁 Recovery & Retry</h2>
+      <button id="checkRecordButton" class="btn">Check My Last Airdrop</button>
+      <button id="retryFailedButton" class="btn" style="display: none;">Retry Failed</button>
+      <button id="recoverTokensButton" class="btn" style="display: none;">Recover Tokens</button>
       <div id="recoveryResults" style="margin-top: 1rem;"></div>
-      <button id="retryFailedButton" class="btn" style="display: none; background-color: var(--accent-blue);">Retry Failed</button>
-      <button id="recoverTokensButton" class="btn" style="display: none; background-color: var(--accent-red);">Recover Failed Tokens</button>
     </div>
 
-    <!-- ✅ Last Airdrops -->
-    <div class="card" style="margin-top: 2rem;">
-      <h2>📢 Last Airdrop Tokens</h2>
-      <div id="lastAirdrops"></div>
-    </div>
-
-    <!-- About Section -->
+    <!-- ✅ ABOUT SECTION -->
     <div class="card about-section">
       <h2>What is the LiquidityX Airdrop Tool?</h2>
       <p>
@@ -136,7 +129,7 @@
     </footer>
   </div>
 
-  <!-- JS Scripts -->
+  <!-- ✅ JS MODULES -->
   <script src="js/modules/config.js"></script>
   <script src="js/modules/wallet_module.js"></script>
   <script src="js/modules/erc20_module.js"></script>
