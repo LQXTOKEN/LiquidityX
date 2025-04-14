@@ -67,20 +67,26 @@ async function initializeApp() {
     });
 
     checkTokenButton.addEventListener("click", async () => {
-      console.log("[main.js] Check Token button clicked");
-      try {
-        const tokenAddress = tokenAddressInput.value.trim();
-        if (!tokenAddress) {
-          uiModule.showError("Please enter a token address");
-          return;
-        }
+  console.log("[main.js] Check Token button clicked");
+  try {
+    const tokenAddress = tokenAddressInput.value.trim();
+    if (!tokenAddress) {
+      uiModule.showError("Please enter a token address");
+      return;
+    }
 
-        await tokenModule.checkToken(tokenAddress);
-        const selected = tokenModule.getSelectedToken();
-        if (selected) {
-          window.selectedToken = selected;
-          window.currentTokenAddress = selected.contract.address;
-        }
+    await tokenModule.checkToken(tokenAddress);
+    const selected = tokenModule.getSelectedToken();
+    if (selected) {
+      window.selectedToken = selected;
+      window.currentTokenAddress = selected.contractAddress;
+    }
+  } catch (err) {
+    console.error("[main.js] Token check error:", err);
+    uiModule.showError("Token verification failed");
+  }
+});
+
       } catch (err) {
         console.error("[main.js] Token check error:", err);
         uiModule.showError("Token verification failed");
