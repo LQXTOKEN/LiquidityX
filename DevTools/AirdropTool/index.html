@@ -89,25 +89,35 @@
 
       <button id="sendButton" class="btn" style="background-color: var(--accent-green); margin-top: 1rem;">
         Send Airdrop
-      </button>    
-      
-<!-- ✅ Live Logs (κάτω από Send Airdrop) -->
-<div id="logOutput" style="max-height: 200px; overflow-y: auto; font-family: monospace; padding: 10px; background: #1f2937; border-radius: 8px; margin-top: 1rem;"></div>
+      </button>
 
-<!-- ✅ Retry / Download Buttons (μόνο ενεργοποιούνται αν χρειαστεί) -->
-<div class="button-row" style="margin-top: 1rem;">
-  <button id="retryButton" class="btn" style="display: none;">Retry Failed</button>
-  <button id="downloadFailedBtn" class="btn" style="display: none;">Download Failed</button>
-</div>
+      <!-- ✅ Live Logs -->
+      <div id="logOutput" style="max-height: 200px; overflow-y: auto; font-family: monospace; padding: 10px; background: #1f2937; border-radius: 8px; margin-top: 1rem;"></div>
 
-<!-- ✅ LAST AIRDROP TOKENS -->
-<div class="card" style="margin-top: 2rem;">
-  <h2>📢 Last Airdrop Tokens</h2>
-  <div id="lastAirdrops"></div>
-</div>
-
+      <!-- ✅ Retry / Download Buttons -->
+      <div class="button-row" style="margin-top: 1rem;">
+        <button id="retryButton" class="btn" style="display: none;">Retry Failed</button>
+        <button id="downloadFailedBtn" class="btn" style="display: none;">Download Failed</button>
+      </div>
     </div>
 
+    <!-- ✅ Recovery Section -->
+    <div id="recoveryCard" class="card" style="margin-top: 2rem; display: none;">
+      <h2>🛡️ Recover Failed Transfers</h2>
+      <p>You can check if any of your previous airdrops had failed recipients and retry or recover tokens.</p>
+      <button id="checkRecordButton" class="btn">Check My Airdrop Record</button>
+      <div id="recoveryResults" style="margin-top: 1rem;"></div>
+      <button id="retryFailedButton" class="btn" style="display: none; background-color: var(--accent-blue);">Retry Failed</button>
+      <button id="recoverTokensButton" class="btn" style="display: none; background-color: var(--accent-red);">Recover Failed Tokens</button>
+    </div>
+
+    <!-- ✅ Last Airdrops -->
+    <div class="card" style="margin-top: 2rem;">
+      <h2>📢 Last Airdrop Tokens</h2>
+      <div id="lastAirdrops"></div>
+    </div>
+
+    <!-- About Section -->
     <div class="card about-section">
       <h2>What is the LiquidityX Airdrop Tool?</h2>
       <p>
@@ -133,8 +143,7 @@
   <script src="js/modules/ui_module.js"></script>
   <script src="js/modules/address_module.js"></script>
   <script src="js/modules/token_module.js"></script>
-  <script src="js/modules/airdrop_executor.js"></script>
+  <script src="js/modules/send.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/app.js"></script>
 </body>
 </html>
