@@ -27,6 +27,7 @@ async function initializeApp() {
     const modeSelect = document.getElementById("modeSelect");
     const proceedButton = document.getElementById("proceedButton");
     const sendButton = document.getElementById("sendButton");
+    const downloadButton = document.getElementById("downloadButton");
 
     connectBtn.addEventListener("click", async () => {
       console.log("[main.js] Connect button clicked");
@@ -88,12 +89,15 @@ async function initializeApp() {
         if (addresses?.length > 0) {
           window.selectedAddresses = addresses;
           uiModule.displayAddresses(addresses);
+          downloadButton.style.display = "inline-block";
         } else {
           uiModule.showError("No addresses found");
+          downloadButton.style.display = "none";
         }
       } catch (error) {
         console.error("[main.js] Address fetch error:", error);
         uiModule.showError("Failed to fetch addresses");
+        downloadButton.style.display = "none";
       }
 
       const amount = tokenAmountInput.value;
@@ -107,7 +111,6 @@ async function initializeApp() {
     sendButton.addEventListener("click", () => {
       console.log("[main.js] Send button clicked");
 
-      // Εδώ επιβεβαιώνουμε ότι έχουμε τις global μεταβλητές σωστά
       if (!window.selectedToken) {
         uiModule.showError("❌ Token not selected.");
         return;
@@ -123,8 +126,26 @@ async function initializeApp() {
         return;
       }
 
-      // Δεν κάνουμε execute εδώ. Το app.js διαχειρίζεται το airdropExecutor.
-      // Εμείς ενημερώνουμε μόνο τις global παραμέτρους.
+      // Τα υπόλοιπα τα χειρίζεται το app.js (airdropExecutor)
+    });
+
+    // ✅ Download Button Handler
+    downloadButton.addEventListener("click", () => {
+      if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
+        uiModule.showError("❌ No addresses to download.");
+        return;
+      }
+
+      const content = window.selectedAddresses.join("\n");
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "airdrop_addresses.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
 
     console.log("[main.js] Initialization complete ✅");
