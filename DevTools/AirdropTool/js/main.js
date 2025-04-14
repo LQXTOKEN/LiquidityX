@@ -24,7 +24,7 @@ async function initializeApp() {
     const connectBtn = document.getElementById("connectWallet");
     const disconnectBtn = document.getElementById("disconnectWallet");
     const backBtn = document.getElementById("backToMain");
-    const checkTokenButton = document.getElementById("checkToken");
+    const TokenButton = document.getElementById("checkToken");
     const tokenAddressInput = document.getElementById("tokenAddressInput");
     const tokenAmountInput = document.getElementById("tokenAmountPerUser");
     const modeSelect = document.getElementById("modeSelect");
@@ -66,7 +66,7 @@ async function initializeApp() {
       window.location.href = "https://liquidityx.io";
     });
 
-    checkTokenButton.addEventListener("click", async () => {
+ checkTokenButton.addEventListener("click", async () => {
   console.log("[main.js] Check Token button clicked");
   try {
     const tokenAddress = tokenAddressInput.value.trim();
@@ -81,6 +81,11 @@ async function initializeApp() {
       window.selectedToken = selected;
       window.currentTokenAddress = selected.contractAddress;
     }
+  } catch (err) {
+    console.error("[main.js] Token check error:", err);
+    uiModule.showError("Token verification failed");
+  }
+});
   } catch (err) {
     console.error("[main.js] Token check error:", err);
     uiModule.showError("Token verification failed");
