@@ -1,11 +1,18 @@
 // js/main.js
 
+import { updateLastAirdrops } from "./ui_module.js";
+import { checkMyRecord, retryFailed, recoverTokens } from "./send.js";
+import { signer } from "./wallet_module.js"; // Αν δεν υπάρχει ήδη αυτό, πρόσθεσέ το!
+
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[main.js] DOM loaded");
 
   try {
     await CONFIG.loadAbis();
     console.log("[main.js] ✅ ABIs loaded and verified");
+
+    // ✅ Φόρτωσε τα τελευταία airdrops κατά το load
+    updateLastAirdrops();
   } catch (err) {
     console.error("[main.js] ❌ Initialization failed: ABI loading error");
     return;
@@ -29,6 +36,11 @@ async function initializeApp() {
     const sendButton = document.getElementById("sendButton");
     const downloadButton = document.getElementById("downloadButton");
 
+    // ✅ Νέα κουμπιά recovery
+    const checkRecordButton = document.getElementById("checkRecordButton");
+    const retryFailedButton = document.getElementById("retryFailedButton");
+    const recoverTokensButton = document.getElementById("recoverTokensButton");
+
     connectBtn.addEventListener("click", async () => {
       console.log("[main.js] Connect button clicked");
       const result = await walletModule.connectWallet();
@@ -41,12 +53,16 @@ async function initializeApp() {
         } else {
           uiModule.showError("Could not fetch LQX balance.");
         }
+
+        // ✅ Ενεργοποίησε την κάρτα recovery
+        document.getElementById("recoveryCard").style.display = "block";
       }
     });
 
     disconnectBtn.addEventListener("click", () => {
       walletModule.disconnectWallet();
       uiModule.resetUI();
+      document.getElementById("recoveryCard").style.display = "none";
     });
 
     backBtn.addEventListener("click", () => {
@@ -66,6 +82,7 @@ async function initializeApp() {
         const selected = tokenModule.getSelectedToken();
         if (selected) {
           window.selectedToken = selected;
+          window.currentTokenAddress = selected.contract.address; // ✅ Σώζουμε token για recovery
         }
       } catch (err) {
         console.error("[main.js] Token check error:", err);
@@ -147,6 +164,11 @@ async function initializeApp() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     });
+
+    // ✅ Νέα: Κουμπιά recovery
+    checkRecordButton.addEventListener("click", () => checkMyRecord(signer));
+    retryFailedButton.addEventListener("click", () => retryFailed(signer, window.currentTokenAddress));
+    recoverTokensButton.addEventListener("click", () => recoverTokens(signer, window.currentTokenAddress));
 
     console.log("[main.js] Initialization complete ✅");
   } catch (err) {
