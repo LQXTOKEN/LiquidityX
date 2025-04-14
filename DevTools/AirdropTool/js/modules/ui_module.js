@@ -86,8 +86,20 @@ window.uiModule = (function () {
     status.textContent = message;
     status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
   }
+  window.uiModule = (function () {
+  function enableRecoverButton() {
+    const btn = document.getElementById("recoverButton");
+    if (btn) btn.style.display = "inline-block";
+  }
+
+  function disableRecoverButton() {
+    const btn = document.getElementById("recoverButton");
+    if (btn) btn.style.display = "none";
+  }
 
   return {
+    enableRecoverButton,
+    disableRecoverButton,
     updateWalletUI,
     updateLQXBalance,
     resetUI,
