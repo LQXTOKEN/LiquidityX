@@ -87,7 +87,65 @@ window.uiModule = (function () {
     status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
   }
 
+  // 🔹 Νέες προσθήκες για στάδιο 3
 
+  // Live Logs στο UI
+  function addLog(message, type = "info") {
+    const logBox = document.getElementById("logOutput");
+    if (!logBox) return;
+    const p = document.createElement("p");
+    p.textContent = message;
+
+    if (type === "success") p.style.color = "#4ade80";      // green
+    else if (type === "error") p.style.color = "#f87171";   // red
+    else if (type === "warn") p.style.color = "#facc15";    // yellow
+    else p.style.color = "#93c5fd";                         // blue
+
+    logBox.appendChild(p);
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  // Ενεργοποίηση κουμπιού Download Failed
+  function enableDownloadFailed(failed, callback) {
+    const btn = document.getElementById("downloadFailedBtn");
+    if (!btn) return;
+    btn.style.display = "inline-block";
+    btn.onclick = () => callback(failed);
+  }
+
+  // Δυναμική εμφάνιση των τελευταίων airdrops
+  async function updateLastAirdrops() {
+    const container = document.getElementById("lastAirdrops");
+    if (!container) return;
+
+    try {
+      const res = await fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/api/logs");
+      const data = await res.json();
+
+      container.innerHTML = "";
+      data.forEach(entry => {
+        const div = document.createElement("div");
+        div.className = "airdrop-log-entry";
+        div.innerHTML = `
+          <p><strong>Sender:</strong> ${shorten(entry.sender)}</p>
+          <p><strong>Token:</strong> ${entry.symbol}</p>
+          <p><strong>Recipients:</strong> ${entry.recipientCount}</p>
+          <p><strong>Amount:</strong> ${ethers.utils.formatUnits(entry.amountPerRecipient, 18)}</p>
+          <p><strong>TX:</strong> <a href="https://polygonscan.com/tx/${entry.txHash}" target="_blank">View</a></p>
+          <hr>
+        `;
+        container.appendChild(div);
+      });
+    } catch (err) {
+      console.error("Failed to load last airdrops:", err);
+    }
+  }
+
+  function shorten(addr) {
+    return addr.slice(0, 6) + "..." + addr.slice(-4);
+  }
+
+  // 🔚 Επιστρέφουμε τα πάντα στο module
   return {
     updateWalletUI,
     updateLQXBalance,
@@ -97,6 +155,9 @@ window.uiModule = (function () {
     showModeSection,
     displayAddresses,
     getDisplayedAddresses,
-    updateTokenStatus
+    updateTokenStatus,
+    addLog,
+    enableDownloadFailed,
+    updateLastAirdrops
   };
 })();
