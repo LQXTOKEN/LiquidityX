@@ -1,157 +1,104 @@
 // js/modules/send.js
 
 window.sendModule = (function () {
-  // ✅ Υποθέτουμε ότι ethers, erc20Module, uiModule, CONFIG έχουν φορτωθεί global
-
-  const BATCH_AIRDROP_ADDRESS = CONFIG.BATCH_AIRDROP_ADDRESS;
-  const LQX_TOKEN_ADDRESS = CONFIG.LQX_TOKEN_ADDRESS;
-
-  // ⛏ Helper για download .txt αρχείου
-  function downloadFailedRecipients(failed) {
-    const blob = new Blob([failed.join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "failed_recipients.txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  // ⛏ POST log στο backend
-  async function logAirdropToServer(data) {
+  async function sendAirdrop(tokenAddress, symbol, amountPerUser, recipients, signer) {
     try {
-      await fetch(`${CONFIG.PROXY_API}/api/logs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      uiModule.addLog("📡 Airdrop logged successfully", "success");
-    } catch (err) {
-      uiModule.addLog("⚠️ Failed to log airdrop", "error");
-    }
-  }
+      uiModule.addLog(`🔄 Approving ${symbol} token for batch airdrop...`);
+      const token = new ethers.Contract(tokenAddress, CONFIG.ERC20_ABI, signer);
 
-  // ✅ Εκτέλεση Airdrop
-  async function sendAirdrop(tokenAddress, tokenSymbol, amountPerRecipient, recipients, signer) {
-    const token = erc20Module.getERC20Contract(tokenAddress, signer);
-    const contract = erc20Module.getBatchAirdropContract(signer);
-    const sender = await signer.getAddress();
-    const totalAmount = ethers.BigNumber.from(amountPerRecipient).mul(recipients.length);
-
-    try {
-      uiModule.addLog("⏳ Approving token transfer...", "info");
-      const approveTx = await token.approve(BATCH_AIRDROP_ADDRESS, totalAmount);
+      const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, amountPerUser.mul(recipients.length));
+      uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`);
       await approveTx.wait();
-      uiModule.addLog("✅ Token approved", "success");
-    } catch (err) {
-      uiModule.addLog("❌ Approve failed: " + err.message, "error");
-      return;
-    }
+      uiModule.addLog(`✅ Approved successfully.`);
 
-    try {
-      uiModule.addLog("🚀 Sending airdrop transaction...", "info");
-      const tx = await contract.batchTransferSameAmount(recipients, amountPerRecipient, tokenAddress);
-      const receipt = await tx.wait();
-      uiModule.addLog(`✅ Airdrop confirmed! TX: ${tx.hash}`, "success");
+      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
 
-      const recordId = await contract.getRecordId();
+      uiModule.addLog(`🚀 Sending batchTransferSameAmount to ${recipients.length} recipients...`);
+      const batchTx = await airdrop.batchTransferSameAmount(tokenAddress, recipients, amountPerUser);
+      uiModule.addLog(`⛽ Airdrop TX sent: ${batchTx.hash}`);
+      const receipt = await batchTx.wait();
+      uiModule.addLog(`✅ Airdrop executed successfully.`);
 
-      const logData = {
-        sender,
-        token: tokenAddress,
-        symbol: tokenSymbol,
-        amountPerRecipient: amountPerRecipient.toString(),
-        recipients,
-        txHash: tx.hash
-      };
-      await logAirdropToServer(logData);
-      uiModule.updateLastAirdrops();
+      // Προσπάθεια λήψης failedRecipients (αν εκπέμπεται στο event)
+      try {
+        const failed = await airdrop.getFailedRecipients(tokenAddress, await signer.getAddress());
+        if (failed.length > 0) {
+          uiModule.addLog(`⚠️ ${failed.length} recipients failed. You can retry or recover them.`);
 
-      const failed = await contract.getFailedRecipients(recordId);
-      if (failed.length > 0) {
-        uiModule.addLog(`⚠️ ${failed.length} failed recipients`, "warn");
-        uiModule.enableDownloadFailed(failed, () => downloadFailedRecipients(failed));
+          uiModule.enableDownloadFailed(failed, (arr) => {
+            const blob = new Blob([arr.join("\n")], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "failed_recipients.txt";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          });
 
-        const retryBtn = document.getElementById("retryButton");
-        retryBtn.style.display = "inline-block";
-        retryBtn.onclick = async () => {
-          try {
-            uiModule.addLog("🔁 Retrying failed transfers...", "info");
-            const retryTx = await contract.recoverFailedTransfers(recordId, tokenAddress);
-            await retryTx.wait();
-            uiModule.addLog("✅ Retry successful", "success");
-          } catch (e) {
-            uiModule.addLog("❌ Retry failed: " + e.message, "error");
-          }
-        };
-      } else {
-        uiModule.addLog("🎉 No failed recipients!", "success");
+          document.getElementById("retryFailedButton").style.display = "inline-block";
+          document.getElementById("recoverTokensButton").style.display = "inline-block";
+        } else {
+          uiModule.addLog(`🎉 No failed recipients.`);
+        }
+      } catch (e) {
+        uiModule.addLog(`ℹ️ Could not fetch failed recipients`, "warn");
+        console.warn(e);
       }
-
     } catch (err) {
-      uiModule.addLog("❌ Airdrop failed: " + err.message, "error");
+      console.error("[sendAirdrop] ❌ Error:", err);
+      uiModule.addLog("❌ Airdrop failed: " + (err.message || "Unknown error"), "error");
     }
   }
 
-  // ✅ Έλεγχος υπάρχοντος Record και εμφάνιση
   async function checkMyRecord(signer) {
     try {
-      const contract = erc20Module.getBatchAirdropContract(signer);
-      const recordId = await contract.getRecordId();
-      const failed = await contract.getFailedRecipients(recordId);
+      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+      const user = await signer.getAddress();
+      const records = await airdrop.getUserRecords(user);
 
-      const recoveryResults = document.getElementById("recoveryResults");
-      recoveryResults.innerHTML = "";
-
-      if (failed.length === 0) {
-        recoveryResults.innerHTML = "<p>✅ No failed recipients found for your last airdrop.</p>";
-        return;
-      }
-
-      const list = document.createElement("ul");
-      failed.forEach(addr => {
-        const li = document.createElement("li");
-        li.textContent = addr;
-        list.appendChild(li);
+      const out = document.getElementById("recoveryResults");
+      out.innerHTML = `<p><strong>Total Records:</strong> ${records.length}</p>`;
+      records.forEach((r, i) => {
+        out.innerHTML += `<p>#${i + 1} ➝ token: ${r.token}, failed: ${r.failedRecipients.length}</p>`;
       });
-      recoveryResults.appendChild(list);
 
-      document.getElementById("retryFailedButton").style.display = "inline-block";
-      document.getElementById("recoverTokensButton").style.display = "inline-block";
-
-      window.lastRecordId = recordId;
-
+      uiModule.addLog(`📦 Found ${records.length} past airdrop(s).`);
     } catch (err) {
-      uiModule.addLog("❌ Failed to fetch airdrop record: " + err.message, "error");
+      console.error("[checkMyRecord] ❌", err);
+      uiModule.addLog("❌ Failed to fetch your records.", "error");
     }
   }
 
-  // ✅ Retry failed
   async function retryFailed(signer, tokenAddress) {
     try {
-      const contract = erc20Module.getBatchAirdropContract(signer);
-      const tx = await contract.recoverFailedTransfers(window.lastRecordId, tokenAddress);
+      uiModule.addLog("🔁 Retrying failed recipients...");
+      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+      const tx = await airdrop.retryFailed(tokenAddress);
+      uiModule.addLog(`⛽ Retry TX sent: ${tx.hash}`);
       await tx.wait();
-      uiModule.addLog("✅ Retry successful", "success");
+      uiModule.addLog("✅ Retry completed.");
     } catch (err) {
-      uiModule.addLog("❌ Retry failed: " + err.message, "error");
+      console.error("[retryFailed] ❌", err);
+      uiModule.addLog("❌ Retry failed: " + (err.message || "Unknown error"), "error");
     }
   }
 
-  // ✅ Recover Tokens
   async function recoverTokens(signer, tokenAddress) {
     try {
-      const contract = erc20Module.getBatchAirdropContract(signer);
-      const tx = await contract.recoverFailedTransfers(window.lastRecordId, tokenAddress);
+      uiModule.addLog("💸 Recovering tokens from failed recipients...");
+      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+      const tx = await airdrop.recoverFailedTransfer(tokenAddress);
+      uiModule.addLog(`⛽ Recover TX sent: ${tx.hash}`);
       await tx.wait();
-      uiModule.addLog("✅ Recovery complete. Tokens returned.", "success");
+      uiModule.addLog("✅ Recovery completed.");
     } catch (err) {
-      uiModule.addLog("❌ Recovery failed: " + err.message, "error");
+      console.error("[recoverTokens] ❌", err);
+      uiModule.addLog("❌ Recovery failed: " + (err.message || "Unknown error"), "error");
     }
   }
 
-  // ✅ Public API
   return {
     sendAirdrop,
     checkMyRecord,
