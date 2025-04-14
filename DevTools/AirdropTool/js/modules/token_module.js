@@ -7,7 +7,7 @@ window.tokenModule = (function () {
     try {
       const provider = walletModule.getProvider();
       if (!provider) {
-        uiModule.updateTokenStatus("❌ Wallet not connected", "error");
+        uiModule.updateTokenStatus("❌ Wallet not connected", false);
         return;
       }
 
@@ -16,18 +16,21 @@ window.tokenModule = (function () {
       const decimals = await contract.decimals();
 
       selectedToken = {
-        contractAddress: address, // ✅ προσθήκη
+        contractAddress: address,   // ✅ για χρήση στο send
         contract,
         symbol,
         decimals
       };
 
-      console.log("[tokenModule] ✅ Token loaded:", symbol);
-      uiModule.updateTokenStatus(`✅ Token loaded: ${symbol}`, "success");
+      // ✅ Log για έλεγχο
+      console.log("[tokenModule] ✅ Token loaded:", selectedToken);
+
+      // ✅ Ενημέρωση UI
+      uiModule.updateTokenStatus(`✅ Token loaded: ${symbol} (${decimals} decimals)`, true);
     } catch (error) {
       console.error("[tokenModule] ❌ Token check failed:", error);
       selectedToken = null;
-      uiModule.updateTokenStatus("❌ Invalid token address", "error");
+      uiModule.updateTokenStatus("❌ Invalid token address", false);
     }
   }
 
