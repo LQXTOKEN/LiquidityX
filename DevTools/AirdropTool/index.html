@@ -90,6 +90,22 @@
       <button id="sendButton" class="btn" style="background-color: var(--accent-green); margin-top: 1rem;">
         Send Airdrop
       </button>    
+      
+<!-- ✅ Live Logs (κάτω από Send Airdrop) -->
+<div id="logOutput" style="max-height: 200px; overflow-y: auto; font-family: monospace; padding: 10px; background: #1f2937; border-radius: 8px; margin-top: 1rem;"></div>
+
+<!-- ✅ Retry / Download Buttons (μόνο ενεργοποιούνται αν χρειαστεί) -->
+<div class="button-row" style="margin-top: 1rem;">
+  <button id="retryButton" class="btn" style="display: none;">Retry Failed</button>
+  <button id="downloadFailedBtn" class="btn" style="display: none;">Download Failed</button>
+</div>
+
+<!-- ✅ LAST AIRDROP TOKENS -->
+<div class="card" style="margin-top: 2rem;">
+  <h2>📢 Last Airdrop Tokens</h2>
+  <div id="lastAirdrops"></div>
+</div>
+
     </div>
 
     <div class="card about-section">
