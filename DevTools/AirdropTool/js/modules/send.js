@@ -5,8 +5,10 @@ window.sendModule = (function () {
     try {
       const userAddress = await signer.getAddress();
 
-      // ✅ Έλεγχος για invalid διευθύνσεις
-      const invalids = recipients.filter(addr => !ethers.utils.isAddress(addr) || addr === ethers.constants.AddressZero);
+      // ✅ Έλεγχος για μη έγκυρες διευθύνσεις
+      const invalids = recipients.filter(
+        (addr) => !ethers.utils.isAddress(addr) || addr === ethers.constants.AddressZero
+      );
       if (invalids.length > 0) {
         uiModule.showError(`❌ Invalid address found: ${invalids[0]}`);
         return;
@@ -16,25 +18,30 @@ window.sendModule = (function () {
       const userBalance = await token.balanceOf(userAddress);
       const totalRequired = amountPerUser.mul(recipients.length);
 
-      // ✅ Έλεγχος balance
-      if (userBalance.lt(totalRequired)) {
+      // ✅ Ορισμός fee (π.χ. 500 tokens) και μετατροπή σε wei, με βάση τα decimals του token
+      const fee = ethers.utils.parseUnits("500", window.selectedToken.decimals);
+      const totalForApprove = totalRequired.add(fee);
+
+      // ✅ Έλεγχος balance: πρέπει να έχεις αρκετά για ποσότητα + fee
+      if (userBalance.lt(totalForApprove)) {
         const userFormatted = ethers.utils.formatUnits(userBalance);
-        const requiredFormatted = ethers.utils.formatUnits(totalRequired);
-        uiModule.showError(`❌ Insufficient balance: You need ${requiredFormatted} ${symbol}, but only have ${userFormatted}`);
+        const requiredFormatted = ethers.utils.formatUnits(totalForApprove);
+        uiModule.showError(
+          `❌ Insufficient balance: You need ${requiredFormatted} ${symbol} (including fee), but only have ${userFormatted}`
+        );
         return;
       }
 
-      // ✅ APPROVE
-      uiModule.addLog(`🔄 Approving ${symbol} for ${recipients.length} recipients...`);
-      const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalRequired);
+      // ✅ APPROVE: Για την αποστολή tokens + fee
+      uiModule.addLog(`🔄 Approving ${symbol} (amount + fee) for ${recipients.length} recipients...`);
+      const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalForApprove);
       uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`);
       await approveTx.wait();
       uiModule.addLog(`✅ Approved successfully.`);
 
-      // ✅ Airdrop Execution
+      // ✅ Airdrop Execution (η fee διαχειρίζεται εσωτερικά από το smart contract)
       const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
       uiModule.addLog(`🚀 Sending airdrop to ${recipients.length} recipients...`);
-
       const tx = await airdrop.batchTransferSameAmount(tokenAddress, recipients, amountPerUser);
       uiModule.addLog(`⛽ Airdrop TX sent: ${tx.hash}`);
       await tx.wait();
@@ -45,7 +52,6 @@ window.sendModule = (function () {
         const failed = await airdrop.getFailedRecipients(tokenAddress, userAddress);
         if (failed.length > 0) {
           uiModule.addLog(`⚠️ ${failed.length} failed recipients. Retry or recover available.`);
-
           uiModule.enableDownloadFailed(failed, (arr) => {
             const blob = new Blob([arr.join("\n")], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
@@ -57,7 +63,6 @@ window.sendModule = (function () {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
           });
-
           document.getElementById("retryFailedButton").style.display = "inline-block";
           document.getElementById("recoverTokensButton").style.display = "inline-block";
         } else {
@@ -67,7 +72,6 @@ window.sendModule = (function () {
         uiModule.addLog(`ℹ️ Could not verify failed recipients.`, "warn");
         console.warn("[getFailedRecipients]", e);
       }
-
     } catch (err) {
       console.error("[sendAirdrop] ❌ Error:", err);
       uiModule.addLog("❌ Airdrop failed: " + (err.reason || err.message || "Unknown error"), "error");
