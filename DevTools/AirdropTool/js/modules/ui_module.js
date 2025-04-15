@@ -117,7 +117,10 @@ window.uiModule = (function () {
 
   function updateLastAirdrops() {
     fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/api/airdrops")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Airdrop logs not found");
+        return res.json();
+      })
       .then(data => {
         const logOutput = document.getElementById("logOutput");
         if (!logOutput || !Array.isArray(data)) return;
@@ -125,12 +128,22 @@ window.uiModule = (function () {
         const last = data.slice(-5).reverse();
         last.forEach(record => {
           const p = document.createElement("p");
-          p.textContent = `🪂 ${record.symbol} to ${record.count} users – ${new Date(record.timestamp).toLocaleString()}`;
+          const date = new Date(record.timestamp).toLocaleString();
+          p.textContent = `🪂 ${record.symbol} → ${record.count} users (${record.amount} ${record.symbol}) – ${date}`;
           p.style.color = "var(--accent-yellow)";
           logOutput.appendChild(p);
         });
       })
-      .catch(err => console.error("[uiModule] Failed to fetch airdrops:", err));
+      .catch(err => {
+        console.error("[uiModule] Failed to fetch airdrops:", err);
+        const logOutput = document.getElementById("logOutput");
+        if (logOutput) {
+          const p = document.createElement("p");
+          p.textContent = `⚠️ Could not load latest airdrop logs.`;
+          p.style.color = "var(--accent-red)";
+          logOutput.appendChild(p);
+        }
+      });
   }
 
   return {
