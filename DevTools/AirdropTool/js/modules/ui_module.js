@@ -89,7 +89,6 @@ window.uiModule = (function () {
     status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
   }
 
-  // ✅ Log με μηνύματα κατάστασης (στην κονσόλα ή και στο UI log)
   function addLog(message, type = "info") {
     console.log(`[LOG][${type.toUpperCase()}] ${message}`);
     const container = document.getElementById("logOutput");
@@ -108,7 +107,6 @@ window.uiModule = (function () {
     container.appendChild(p);
   }
 
-  // ✅ Ενεργοποίηση κουμπιού Download Failed
   function enableDownloadFailed(failedArray, onClickHandler) {
     const btn = document.getElementById("downloadFailedButton");
     if (!btn) return;
@@ -117,10 +115,22 @@ window.uiModule = (function () {
     btn.onclick = () => onClickHandler(failedArray);
   }
 
-  // ✅ Ενημέρωση τελευταίων airdrops (placeholder)
   function updateLastAirdrops() {
-    // Θα ενσωματωθεί μέσω fetch logs από backend
-    console.log("[uiModule] Placeholder: updateLastAirdrops");
+    fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/api/airdrops")
+      .then(res => res.json())
+      .then(data => {
+        const logOutput = document.getElementById("logOutput");
+        if (!logOutput || !Array.isArray(data)) return;
+
+        const last = data.slice(-5).reverse();
+        last.forEach(record => {
+          const p = document.createElement("p");
+          p.textContent = `🪂 ${record.symbol} to ${record.count} users – ${new Date(record.timestamp).toLocaleString()}`;
+          p.style.color = "var(--accent-yellow)";
+          logOutput.appendChild(p);
+        });
+      })
+      .catch(err => console.error("[uiModule] Failed to fetch airdrops:", err));
   }
 
   return {
