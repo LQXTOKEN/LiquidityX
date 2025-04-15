@@ -32,7 +32,6 @@ async function initializeApp() {
     const sendButton = document.getElementById("sendButton");
     const downloadButton = document.getElementById("downloadButton");
 
-    // ✅ Recovery κουμπιά
     const checkRecordButton = document.getElementById("checkRecordButton");
     const retryFailedButton = document.getElementById("retryFailedButton");
     const recoverTokensButton = document.getElementById("recoverTokensButton");
@@ -79,7 +78,7 @@ async function initializeApp() {
         const selected = tokenModule.getSelectedToken();
         if (selected) {
           window.selectedToken = selected;
-          window.currentTokenAddress = selected.contractAddress; // ✅ διορθωμένο
+          window.currentTokenAddress = selected.contractAddress;
         }
       } catch (err) {
         console.error("[main.js] Token check error:", err);
@@ -119,7 +118,16 @@ async function initializeApp() {
         uiModule.showError("Invalid amount per user");
         return;
       }
-      window.tokenAmountPerUser = amount;
+
+      try {
+        const parsedAmount = ethers.utils.parseUnits(amount, window.selectedToken.decimals);
+        window.tokenAmountPerUser = parsedAmount;
+        console.log("[main.js] Parsed amount in wei:", parsedAmount.toString());
+      } catch (err) {
+        console.error("[main.js] ❌ Failed to parse amount:", err);
+        uiModule.showError("❌ Failed to convert amount to token decimals");
+        return;
+      }
     });
 
     sendButton.addEventListener("click", () => {
@@ -130,7 +138,7 @@ async function initializeApp() {
         return;
       }
 
-      if (!window.tokenAmountPerUser || isNaN(window.tokenAmountPerUser)) {
+      if (!window.tokenAmountPerUser || !ethers.BigNumber.isBigNumber(window.tokenAmountPerUser)) {
         uiModule.showError("❌ Invalid amount per address.");
         return;
       }
@@ -143,7 +151,7 @@ async function initializeApp() {
       sendModule.sendAirdrop(
         window.selectedToken.contractAddress,
         window.selectedToken.symbol,
-        ethers.utils.parseUnits(window.tokenAmountPerUser, window.selectedToken.decimals),
+        window.tokenAmountPerUser,
         window.selectedAddresses,
         window.signer
       );
@@ -167,7 +175,6 @@ async function initializeApp() {
       URL.revokeObjectURL(url);
     });
 
-    // ✅ Recovery κουμπιά
     checkRecordButton.addEventListener("click", () => sendModule.checkMyRecord(window.signer));
     retryFailedButton.addEventListener("click", () => sendModule.retryFailed(window.signer, window.currentTokenAddress));
     recoverTokensButton.addEventListener("click", () => sendModule.recoverTokens(window.signer, window.currentTokenAddress));
