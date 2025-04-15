@@ -3,11 +3,12 @@
 window.sendModule = (function () {
   async function sendAirdrop(tokenAddress, symbol, amountPerUser, recipients, signer) {
     try {
+      const userAddress = await signer.getAddress();
+
       console.log("[send.js] amountPerUser (wei):", amountPerUser.toString());
       console.log("[send.js] recipients.length:", recipients.length);
 
-      const userAddress = await signer.getAddress();
-
+      // ✅ Έλεγχος για invalid διευθύνσεις
       const invalids = recipients.filter(addr => !ethers.utils.isAddress(addr) || addr === ethers.constants.AddressZero);
       if (invalids.length > 0) {
         uiModule.showError(`❌ Invalid address found: ${invalids[0]}`);
@@ -27,31 +28,32 @@ window.sendModule = (function () {
         return;
       }
 
-      // ✅ Approve Token
+      // ✅ Approve για το token του χρήστη
       uiModule.addLog(`🔄 Approving ${symbol} for ${recipients.length} recipients...`);
       const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalRequired);
       uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`);
       await approveTx.wait();
       uiModule.addLog(`✅ Approved successfully.`);
 
-      // ✅ Approve LQX Fee (1000 LQX)
-      const lqxToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
-      const feeAmount = ethers.utils.parseUnits("1000", 18); // Fixed fee: 1000 LQX
+      // ✅ Approve fee σε LQX
+      const feeToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
+      const feeAmount = ethers.utils.parseUnits("1000", 18); // 1000 LQX
       uiModule.addLog(`🔐 Approving ${ethers.utils.formatUnits(feeAmount)} LQX as fee...`);
-      const feeApproveTx = await lqxToken.approve(CONFIG.AIRDROP_CONTRACT_PROXY, feeAmount);
-      uiModule.addLog(`⛽ Fee Approve TX sent: ${feeApproveTx.hash}`);
-      await feeApproveTx.wait();
+      const approveFeeTx = await feeToken.approve(CONFIG.AIRDROP_CONTRACT_PROXY, feeAmount);
+      uiModule.addLog(`⛽ Fee Approve TX sent: ${approveFeeTx.hash}`);
+      await approveFeeTx.wait();
       uiModule.addLog(`✅ LQX Fee approved.`);
 
-      // ✅ Execute Airdrop
+      // ✅ Εκτέλεση Airdrop
       const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
       uiModule.addLog(`🚀 Sending airdrop to ${recipients.length} recipients...`);
+
       const tx = await airdrop.batchTransferSameAmount(tokenAddress, recipients, amountPerUser);
       uiModule.addLog(`⛽ Airdrop TX sent: ${tx.hash}`);
       await tx.wait();
       uiModule.addLog(`✅ Airdrop completed.`);
 
-      // ✅ Check for failed recipients
+      // ✅ Έλεγχος για αποτυχημένους
       try {
         const failed = await airdrop.getFailedRecipients(tokenAddress, userAddress);
         if (failed.length > 0) {
@@ -75,8 +77,8 @@ window.sendModule = (function () {
           uiModule.addLog(`🎉 All recipients succeeded!`);
         }
       } catch (e) {
-        uiModule.addLog(`ℹ️ Could not verify failed recipients.`, "warn");
         console.warn("[getFailedRecipients]", e);
+        uiModule.addLog(`ℹ️ Could not verify failed recipients.`, "warn");
       }
 
     } catch (err) {
