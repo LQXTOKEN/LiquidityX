@@ -184,3 +184,10 @@ async function initializeApp() {
     console.error("[main.js] ❌ Unexpected error:", err);
   }
 }
+document.getElementById('retryButton').addEventListener('click', async () => {
+  if (!window.connectedWallet) {
+    ui.log("🔌 Please connect your wallet first.");
+    return;
+  }
+  await recoverFailedTransfers();
+});
