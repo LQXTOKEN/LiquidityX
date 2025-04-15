@@ -42,6 +42,7 @@ async function initializeApp() {
 
       if (result) {
         window.signer = result.signer;
+        window.connectedWallet = result.userAddress;
         uiModule.updateWalletUI(result.userAddress);
 
         const lqx = await erc20Module.getLQXBalance(result.userAddress);
@@ -184,10 +185,11 @@ async function initializeApp() {
     console.error("[main.js] ❌ Unexpected error:", err);
   }
 }
+
 document.getElementById('retryButton').addEventListener('click', async () => {
   if (!window.connectedWallet) {
-    ui.log("🔌 Please connect your wallet first.");
+    uiModule.log("🔌 Please connect your wallet first.");
     return;
   }
-  await recoverFailedTransfers();
+  await sendModule.retryFailed(window.signer, window.currentTokenAddress);
 });
