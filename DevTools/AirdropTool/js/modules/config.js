@@ -1,5 +1,3 @@
-// js/modules/config.js
-
 window.CONFIG = {
   LQX_TOKEN_ADDRESS: "0x9E27F48659B1005b1aBc0F58465137E531430d4b",
   AIRDROP_CONTRACT_PROXY: "0x2012508a1dbE6BE9c1B666eBD86431b326ef6EF6",
@@ -7,7 +5,8 @@ window.CONFIG = {
   PROXY_API_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon",
   ACTIVE_WALLETS_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json",
 
-  // ✅ Οι ABIs αποθηκεύονται στο CONFIG και στο window
+  lqxFeeAmount: ethers.utils.parseUnits("500", 18), // ✅ NEW: 500 LQX σε wei
+
   ERC20_ABI: null,
   BATCH_AIRDROP_ABI: null,
 
@@ -23,11 +22,9 @@ window.CONFIG = {
       const erc20Abi = await erc20Res.json();
       const airdropAbi = await airdropRes.json();
 
-      // ✅ Αποθήκευση σε CONFIG
       this.ERC20_ABI = erc20Abi;
       this.BATCH_AIRDROP_ABI = airdropAbi;
 
-      // ✅ Και global (αν χρειάζεται από modules που δεν βλέπουν CONFIG)
       window.ERC20_ABI = erc20Abi;
       window.AIRDROP_ABI = airdropAbi;
 
