@@ -1,21 +1,45 @@
-// js/modules/recover.js
+console.log('[recover.js] Loaded');
 
-async function recoverFailedTransfers() {
+async function recoverFailedRecipients() {
+  if (!window.airdrop || !window.token || !window.walletAddress) {
+    console.log('[recover.js] Missing airdrop/token/wallet context');
+    return;
+  }
+
+  const airdrop = window.airdrop;
+  const token = window.token;
+  const sender = window.walletAddress;
+
   try {
-    const signer = await window.provider.getSigner();
-    const airdrop = new ethers.Contract(CONFIG.airdropContract, window.AIRDROP_ABI, signer);
+    // 🔄 Fetch failed recipients
+    const failedRecipients = await airdrop.getFailedRecipients();
+    console.log('[recover.js] Failed recipients:', failedRecipients);
 
-    console.log("[recover.js] 🔄 Calling recoverFailedTransfer()...");
+    if (failedRecipients.length === 0) {
+      alert('✅ No failed recipients to recover.');
+      return;
+    }
 
-    const tx = await airdrop.recoverFailedTransfer();
+    const confirmRecovery = confirm(
+      `There are ${failedRecipients.length} failed recipients.\nDo you want to retry sending ${window.lastAmountFormatted} tokens to each?`
+    );
+
+    if (!confirmRecovery) return;
+
+    // 🚀 Resend transaction
+    const tx = await airdrop.batchTransferSameAmount(
+      token.contract.address,
+      failedRecipients,
+      window.lastAmount
+    );
+
     console.log(`[recover.js] ⛽ TX sent: ${tx.hash}`);
-    ui.log("⛽ Recovery TX sent: " + tx.hash);
+    alert(`✅ Recovery sent. TX Hash:\n${tx.hash}`);
+    await tx.wait();
+    alert('✅ Recovery complete.');
 
-    const receipt = await tx.wait();
-    console.log(`[recover.js] ✅ Recovery TX confirmed: ${receipt.transactionHash}`);
-    ui.log("✅ Recovery completed: " + receipt.transactionHash);
-  } catch (err) {
-    console.error("[recover.js] ❌ Error during recovery:", err);
-    ui.log("❌ Recovery failed: " + (err.message || err));
+  } catch (error) {
+    console.error('[recover.js] ❌ Error during recovery:', error);
+    alert('❌ Recovery failed.\nCheck console for details.');
   }
 }
