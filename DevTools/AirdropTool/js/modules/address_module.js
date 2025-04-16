@@ -3,84 +3,50 @@
 window.addressModule = (function () {
   async function fetchAddresses(mode) {
     console.log("[addressModule] Fetching addresses for mode:", mode);
-
     if (mode === "paste") {
-      const textarea = document.getElementById("polygonScanInput");
-      const input = textarea.value.trim();
-
-      if (!input) {
-        uiModule.showError("❌ Please paste some addresses or a PolygonScan link.");
-        return [];
-      }
-
-      // Αν είναι PolygonScan link
-      if (input.includes("polygonscan.com")) {
-        return await fetchFromPolygonscan(input);
-      }
-
-      // Εναλλακτικά: χειροκίνητα επικολλημένες διευθύνσεις
-      const lines = input.split(/\r?\n/);
-      const addresses = lines.map(l => l.trim()).filter(a => ethers.utils.isAddress(a));
-      return [...new Set(addresses)].slice(0, 1000); // max 1000
+      return getAddressesFromPaste();
+    } else if (mode === "create") {
+      return await getAddressesFromHolders();
+    } else if (mode === "random") {
+      return generateRandomAddresses();
+    } else {
+      throw new Error("Invalid mode");
     }
-
-    if (mode === "create") {
-      const contractInput = document.getElementById("contractInput").value.trim();
-      const max = parseInt(document.getElementById("maxCreateAddresses").value);
-      if (!ethers.utils.isAddress(contractInput)) {
-        uiModule.showError("❌ Invalid token address.");
-        return [];
-      }
-
-      const url = `${CONFIG.PROXY_API}/api/polygon?contract=${contractInput}&limit=${max}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        return data.addresses?.slice(0, 1000) || [];
-      } catch (err) {
-        console.error("[addressModule] Create fetch failed:", err);
-        uiModule.showError("❌ Failed to fetch from backend.");
-        return [];
-      }
-    }
-
-    if (mode === "random") {
-      const count = parseInt(document.getElementById("maxAddresses").value);
-      return generateRandomAddresses(count);
-    }
-
-    uiModule.showError("❌ Invalid input mode");
-    return [];
   }
 
-  async function fetchFromPolygonscan(link) {
-    try {
-      const match = link.match(/token\/(0x[a-fA-F0-9]{40})/);
-      if (!match) {
-        uiModule.showError("❌ Could not extract contract address from URL.");
-        return [];
-      }
+  function getAddressesFromPaste() {
+    const raw = document.getElementById("polygonScanInput").value;
+    const lines = raw.split("\n").map((line) => line.trim());
+    const addresses = [...new Set(lines.filter((line) => ethers.utils.isAddress(line)))];
+    console.log("[addressModule] Paste mode - found valid:", addresses.length);
+    return addresses;
+  }
 
-      const tokenAddress = match[1];
-      const url = `${CONFIG.PROXY_API}/api/polygon?contract=${tokenAddress}&limit=1000`;
+  async function getAddressesFromHolders() {
+    const contractAddress = document.getElementById("contractInput").value.trim();
+    const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
 
-      const res = await fetch(url);
-      const data = await res.json();
-      return data.addresses?.slice(0, 1000) || [];
-    } catch (err) {
-      console.error("[addressModule] Polygonscan parsing error:", err);
-      uiModule.showError("❌ Failed to parse or fetch from link.");
-      return [];
+    if (!ethers.utils.isAddress(contractAddress)) {
+      throw new Error("Invalid token address");
     }
+
+    const url = `${CONFIG.PROXY_API}/api/polygon?contract=${contractAddress}&max=${max}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Failed to fetch holders");
+    const json = await res.json();
+    console.log("[addressModule] Create mode - fetched:", json.length);
+    return json;
   }
 
   function generateRandomAddresses(count = 100) {
+    const max = parseInt(document.getElementById("maxAddresses").value || "100");
     const addresses = [];
-    for (let i = 0; i < count; i++) {
-      const randomBytes = ethers.utils.randomBytes(20);
-      const address = ethers.utils.getAddress("0x" + Buffer.from(randomBytes).toString("hex"));
+    for (let i = 0; i < max; i++) {
+      const bytes = ethers.utils.randomBytes(20);
+      const address = ethers.utils.getAddress(ethers.utils.hexlify(bytes));
       addresses.push(address);
     }
+    console.log("[addressModule] Random mode - generated:", addresses.length);
     return addresses;
   }
 
