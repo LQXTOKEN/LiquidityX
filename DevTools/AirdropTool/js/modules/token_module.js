@@ -1,31 +1,82 @@
 // js/modules/token_module.js
 
-const tokenModule = {
-  async loadToken(tokenAddress) {
-    if (!window.ethereum || !ethers) throw new Error("Ethereum provider not found");
+window.tokenModule = (function () {
+  let selectedToken = null;
 
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const contract = new ethers.Contract(tokenAddress, CONFIG.ERC20_ABI, provider);
-
+  async function checkToken(address) {
     try {
-      const [symbol, decimals] = await Promise.all([
-        contract.symbol(),
-        contract.decimals()
-      ]);
+      const provider = walletModule.getProvider();
+      if (!provider) {
+        uiModule.updateTokenStatus("❌ Wallet not connected", false);
+        return;
+      }
 
-      const tokenData = {
-        contractAddress: tokenAddress,
+      const contract = new ethers.Contract(address, window.ERC20_ABI, provider);
+      const symbol = await contract.symbol();
+      const decimals = await contract.decimals();
+
+      selectedToken = {
+        contractAddress: address,
         contract,
         symbol,
         decimals
       };
 
-      window.selectedToken = tokenData;
-      return tokenData;
+      window.selectedToken = selectedToken;
 
-    } catch (err) {
-      console.error("[tokenModule] ❌ Failed to load token", err);
-      throw new Error("Token load failed");
+      // 🔍 Δυναμική επικοινωνία με το συμβόλαιο Airdrop
+      const signer = provider.getSigner();
+      const airdropContract = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, window.AIRDROP_ABI, signer);
+      const userAddress = await signer.getAddress();
+
+      // 📌 Get required LQX fee from contract
+      const requiredFee = await airdropContract.requiredFee();
+      window.requiredLQXFee = requiredFee;
+
+      // 🛡️ Check if user is fee-exempt
+      const isExempt = await airdropContract.isFeeExempt(userAddress);
+      window.isFeeExempt = isExempt;
+
+      // 🆔 Get recordId για αυτό το token/user
+      const recordId = await airdropContract.getRecordId(userAddress, address);
+      const hasClaimed = await airdropContract.hasClaimed(recordId);
+
+      window.airdropStatus = {
+        requiredFee,
+        isExempt,
+        recordId,
+        hasClaimed
+      };
+
+      // ✅ Log για έλεγχο
+      console.log("[tokenModule] ✅ Token loaded:", selectedToken);
+      console.log("[tokenModule] 🆔 Record ID:", recordId);
+      console.log("[tokenModule] 🧾 Required LQX fee:", requiredFee.toString());
+      console.log("[tokenModule] 🔒 Is fee-exempt:", isExempt);
+      console.log("[tokenModule] ✔️ Has claimed before:", hasClaimed);
+
+      // ✅ Ενημέρωση UI
+      uiModule.updateTokenStatus(
+        `✅ ${symbol} token loaded (${decimals} decimals)
+        ${isExempt ? "🛡️ Fee exempt" : `💰 Fee: ${ethers.utils.formatUnits(requiredFee, 18)} LQX`}
+        ${hasClaimed ? "⚠️ Already claimed" : "🆕 Eligible for airdrop"}`,
+        true
+      );
+
+    } catch (error) {
+      console.error("[tokenModule] ❌ Token check failed:", error);
+      selectedToken = null;
+      window.selectedToken = null;
+      uiModule.updateTokenStatus("❌ Invalid token address", false);
     }
   }
-};
+
+  function getSelectedToken() {
+    return selectedToken;
+  }
+
+  return {
+    checkToken,
+    getSelectedToken
+  };
+})();
