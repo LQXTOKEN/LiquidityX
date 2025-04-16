@@ -11,48 +11,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Ενημέρωση τελευταίων airdrops
   uiModule.updateLastAirdrops();
 
-  // Event Listeners
-  document.getElementById("connectWallet").addEventListener("click", async () => {
+  const onClick = (id, handler) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("click", handler);
+    else console.warn(`[main.js] ⚠️ Element with id '${id}' not found`);
+  };
+
+  const onChange = (id, handler) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", handler);
+    else console.warn(`[main.js] ⚠️ Element with id '${id}' not found`);
+  };
+
+  // ✅ Event listeners with safety
+  onClick("connectWallet", async () => {
     console.log("[main.js] Connect button clicked");
     await walletModule.connectWallet();
   });
 
-  document.getElementById("disconnectWallet").addEventListener("click", () => {
+  onClick("disconnectWallet", () => {
     walletModule.disconnectWallet();
   });
 
-  document.getElementById("backToMain").addEventListener("click", () => {
+  onClick("backToMain", () => {
     window.location.href = "https://liquidityx.io";
   });
 
-  document.getElementById("checkToken").addEventListener("click", async () => {
+  onClick("checkToken", async () => {
     console.log("[main.js] Check Token button clicked");
-
-    const input = document.getElementById("tokenAddress").value.trim();
+    const input = document.getElementById("tokenAddress")?.value.trim();
     if (!input) return uiModule.showError("Please enter a token contract address.");
 
     try {
       const token = await tokenModule.loadToken(input);
       uiModule.updateTokenStatus(`✅ Token loaded: ${token.symbol}`, true);
-      window.selectedToken = token; // ✅ Αποθήκευση για χρήση στο send.js
+      window.selectedToken = token;
     } catch (err) {
       uiModule.updateTokenStatus(`❌ ${err.message}`, false);
     }
   });
 
-  document.getElementById("mode").addEventListener("change", e => {
+  onChange("mode", e => {
     const mode = e.target.value;
     console.log("[main.js] Mode changed:", mode);
     uiModule.showModeSection(mode);
   });
 
-  document.getElementById("proceedButton").addEventListener("click", async () => {
+  onClick("proceedButton", async () => {
     console.log("[main.js] Proceed button clicked");
-
-    const mode = document.getElementById("mode").value;
+    const mode = document.getElementById("mode")?.value;
     try {
       const addresses = await addressModule.fetchAddresses(mode);
       uiModule.displayAddresses(addresses);
@@ -61,11 +70,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  document.getElementById("sendButton").addEventListener("click", async () => {
+  onClick("sendButton", async () => {
     console.log("[main.js] Send button clicked");
 
     const recipients = uiModule.getDisplayedAddresses();
-    const amountInput = document.getElementById("tokenAmount").value;
+    const amountInput = document.getElementById("tokenAmount")?.value;
     const amountPerUser = ethers.utils.parseUnits(amountInput, window.selectedToken?.decimals || 18);
     console.log("[main.js] Parsed amount in wei:", amountPerUser.toString());
 
@@ -82,7 +91,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  document.getElementById("recoverButton").addEventListener("click", async () => {
+  onClick("recoverButton", async () => {
     console.log("[main.js] Recover button clicked");
 
     if (!window.selectedToken || !window.selectedToken.contractAddress) {
@@ -98,7 +107,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  document.getElementById("downloadButton").addEventListener("click", () => {
+  onClick("downloadButton", () => {
     const addresses = uiModule.getDisplayedAddresses();
     const blob = new Blob([addresses.join("\n")], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -111,8 +120,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     URL.revokeObjectURL(url);
   });
 
-  document.getElementById("downloadFailedButton").addEventListener("click", () => {
-    // handler αντικαθίσταται δυναμικά από enableDownloadFailed
+  onClick("downloadFailedButton", () => {
+    // Αντικαθίσταται δυναμικά από enableDownloadFailed
   });
 
   console.log("[main.js] Initialization complete ✅");
