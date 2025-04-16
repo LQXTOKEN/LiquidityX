@@ -1,57 +1,148 @@
 // js/modules/send.js
 
 window.sendModule = (function () {
-  async function sendAirdrop(recipients, amountPerUser) {
+  async function sendAirdrop(tokenAddress, symbol, amountPerUser, recipients, signer) {
     try {
-      const { AIRDROP_CONTRACT_PROXY, LQX_TOKEN_ADDRESS, BATCH_AIRDROP_ABI, ERC20_ABI } = window.CONFIG;
+      const userAddress = await signer.getAddress();
 
-      if (!window.token || !window.token.contract) {
-        uiModule.addLog("❌ Token is missing or invalid.", "error");
+      console.log("[send.js] amountPerUser (wei):", amountPerUser.toString());
+      console.log("[send.js] recipients.length:", recipients.length);
+
+      const invalids = recipients.filter(addr => !ethers.utils.isAddress(addr) || addr === ethers.constants.AddressZero);
+      if (invalids.length > 0) {
+        uiModule.showError(`❌ Invalid address found: ${invalids[0]}`);
         return;
       }
 
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      const tokenContract = window.token.contract.connect(signer);
-      const lqxToken = new ethers.Contract(LQX_TOKEN_ADDRESS, ERC20_ABI, signer);
-      const airdropContract = new ethers.Contract(AIRDROP_CONTRACT_PROXY, BATCH_AIRDROP_ABI, signer);
+      const token = new ethers.Contract(tokenAddress, CONFIG.ERC20_ABI, signer);
+      const userBalance = await token.balanceOf(userAddress);
+      const totalRequired = amountPerUser.mul(recipients.length);
+      console.log("[send.js] totalRequired (wei):", totalRequired.toString());
 
-      const amountInWei = ethers.utils.parseUnits(amountPerUser.toString(), window.token.decimals);
-      const totalAmount = amountInWei.mul(recipients.length);
+      if (userBalance.lt(totalRequired)) {
+        const userFormatted = ethers.utils.formatUnits(userBalance);
+        const requiredFormatted = ethers.utils.formatUnits(totalRequired);
+        uiModule.showError(`❌ Insufficient balance: You need ${requiredFormatted} ${symbol}, but only have ${userFormatted}`);
+        return;
+      }
 
-      console.log("[send.js] amountPerUser (wei):", amountInWei.toString());
-      console.log("[send.js] recipients.length:", recipients.length);
-      console.log("[send.js] totalRequired (wei):", totalAmount.toString());
-
-      uiModule.addLog(`🔄 Approving ${window.token.symbol} for ${recipients.length} recipients...`, "info");
-      const approveTx = await tokenContract.approve(AIRDROP_CONTRACT_PROXY, totalAmount);
-      uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`, "info");
+      // ✅ Approve για token
+      uiModule.addLog(`🔄 Approving ${symbol} for ${recipients.length} recipients...`);
+      const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalRequired);
+      uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`);
       await approveTx.wait();
-      uiModule.addLog("✅ Approved successfully.", "success");
+      uiModule.addLog(`✅ Approved successfully.`);
 
-      const feeAmount = await airdropContract.requiredFee();
-      uiModule.addLog(`🔐 Approving ${ethers.utils.formatUnits(feeAmount, 18)} LQX as fee...`, "info");
-      const feeTx = await lqxToken.approve(AIRDROP_CONTRACT_PROXY, feeAmount);
-      uiModule.addLog(`⛽ Fee Approve TX sent: ${feeTx.hash}`, "info");
-      await feeTx.wait();
-      uiModule.addLog("✅ LQX Fee approved.", "success");
+      // ✅ Έλεγχος required fee από το smart contract
+      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+      const requiredFee = await airdrop.requiredFee();
+      const feeToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
 
-      uiModule.addLog(`🚀 Sending airdrop to ${recipients.length} recipients...`, "info");
-      const tx = await airdropContract.batchTransferSameAmount(
-        window.token.contractAddress,
-        recipients,
-        amountInWei
-      );
-      uiModule.addLog(`⛽ TX sent: ${tx.hash}`, "info");
+      // ✅ Έλεγχος αν ο χρήστης είναι feeExempt
+      const isExempt = await airdrop.feeExempt(userAddress);
+
+      if (requiredFee.gt(0) && !isExempt) {
+        uiModule.addLog(`🔐 Approving ${ethers.utils.formatUnits(requiredFee)} LQX as fee...`);
+        const approveFeeTx = await feeToken.approve(CONFIG.AIRDROP_CONTRACT_PROXY, requiredFee);
+        uiModule.addLog(`⛽ Fee Approve TX sent: ${approveFeeTx.hash}`);
+        await approveFeeTx.wait();
+        uiModule.addLog(`✅ LQX Fee approved.`);
+      } else {
+        uiModule.addLog(`ℹ️ No fee approval needed (either exempt or fee is 0).`);
+      }
+
+      // ✅ Εκτέλεση Airdrop
+      uiModule.addLog(`🚀 Sending airdrop to ${recipients.length} recipients...`);
+      const tx = await airdrop.batchTransferSameAmount(tokenAddress, recipients, amountPerUser);
+      uiModule.addLog(`⛽ Airdrop TX sent: ${tx.hash}`);
       await tx.wait();
-      uiModule.addLog("✅ Airdrop completed successfully!", "success");
-    } catch (error) {
-      console.error("[sendAirdrop] ❌ Error:", error);
-      uiModule.addLog(`❌ Airdrop failed: ${error.message}`, "error");
+      uiModule.addLog(`✅ Airdrop completed.`);
+
+      // ✅ Failed Recipients
+      try {
+        const failed = await airdrop.getFailedRecipients(tokenAddress, userAddress);
+        if (failed.length > 0) {
+          uiModule.addLog(`⚠️ ${failed.length} failed recipients. Retry or recover available.`);
+
+          uiModule.enableDownloadFailed(failed, (arr) => {
+            const blob = new Blob([arr.join("\n")], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "failed_recipients.txt";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          });
+
+          document.getElementById("retryFailedButton").style.display = "inline-block";
+          document.getElementById("recoverTokensButton").style.display = "inline-block";
+        } else {
+          uiModule.addLog(`🎉 All recipients succeeded!`);
+        }
+      } catch (e) {
+        console.warn("[getFailedRecipients]", e);
+        uiModule.addLog(`ℹ️ Could not verify failed recipients.`, "warn");
+      }
+
+    } catch (err) {
+      console.error("[sendAirdrop] ❌ Error:", err);
+      uiModule.addLog("❌ Airdrop failed: " + (err.reason || err.message || "Unknown error"), "error");
+    }
+  }
+
+  async function checkMyRecord(signer) {
+    try {
+      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+      const user = await signer.getAddress();
+      const records = await airdrop.getUserRecords(user);
+
+      const out = document.getElementById("recoveryResults");
+      out.innerHTML = `<p><strong>Total Records:</strong> ${records.length}</p>`;
+      records.forEach((r, i) => {
+        out.innerHTML += `<p>#${i + 1} ➝ token: ${r.token}, failed: ${r.failedRecipients.length}</p>`;
+      });
+
+      uiModule.addLog(`📦 Found ${records.length} past airdrop(s).`);
+    } catch (err) {
+      console.error("[checkMyRecord] ❌", err);
+      uiModule.addLog("❌ Failed to fetch your records.", "error");
+    }
+  }
+
+  async function retryFailed(signer, tokenAddress) {
+    try {
+      uiModule.addLog("🔁 Retrying failed recipients...");
+      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+      const tx = await airdrop.retryFailed(tokenAddress);
+      uiModule.addLog(`⛽ Retry TX sent: ${tx.hash}`);
+      await tx.wait();
+      uiModule.addLog("✅ Retry completed.");
+    } catch (err) {
+      console.error("[retryFailed] ❌", err);
+      uiModule.addLog("❌ Retry failed: " + (err.message || "Unknown error"), "error");
+    }
+  }
+
+  async function recoverTokens(signer, tokenAddress) {
+    try {
+      uiModule.addLog("💸 Recovering tokens from failed recipients...");
+      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+      const tx = await airdrop.recoverFailedTransfer(tokenAddress);
+      uiModule.addLog(`⛽ Recover TX sent: ${tx.hash}`);
+      await tx.wait();
+      uiModule.addLog("✅ Recovery completed.");
+    } catch (err) {
+      console.error("[recoverTokens] ❌", err);
+      uiModule.addLog("❌ Recovery failed: " + (err.message || "Unknown error"), "error");
     }
   }
 
   return {
-    sendAirdrop
+    sendAirdrop,
+    checkMyRecord,
+    retryFailed,
+    recoverTokens
   };
 })();
