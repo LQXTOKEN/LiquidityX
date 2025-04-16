@@ -22,51 +22,39 @@ window.tokenModule = (function () {
         decimals
       };
 
-      window.selectedToken = selectedToken;
-
-      // 🔍 Δυναμική επικοινωνία με το συμβόλαιο Airdrop
-      const signer = provider.getSigner();
-      const airdropContract = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, window.AIRDROP_ABI, signer);
-      const userAddress = await signer.getAddress();
-
-      // 📌 Get required LQX fee from contract
-      const requiredFee = await airdropContract.requiredFee();
-      window.requiredLQXFee = requiredFee;
-
-      // 🛡️ Check if user is fee-exempt
-      const isExempt = await airdropContract.isFeeExempt(userAddress);
-      window.isFeeExempt = isExempt;
-
-      // 🆔 Get recordId για αυτό το token/user
-      const recordId = await airdropContract.getRecordId(userAddress, address);
-      const hasClaimed = await airdropContract.hasClaimed(recordId);
-
-      window.airdropStatus = {
-        requiredFee,
-        isExempt,
-        recordId,
-        hasClaimed
-      };
-
-      // ✅ Log για έλεγχο
       console.log("[tokenModule] ✅ Token loaded:", selectedToken);
-      console.log("[tokenModule] 🆔 Record ID:", recordId);
-      console.log("[tokenModule] 🧾 Required LQX fee:", requiredFee.toString());
-      console.log("[tokenModule] 🔒 Is fee-exempt:", isExempt);
-      console.log("[tokenModule] ✔️ Has claimed before:", hasClaimed);
 
-      // ✅ Ενημέρωση UI
-      uiModule.updateTokenStatus(
-        `✅ ${symbol} token loaded (${decimals} decimals)
-        ${isExempt ? "🛡️ Fee exempt" : `💰 Fee: ${ethers.utils.formatUnits(requiredFee, 18)} LQX`}
-        ${hasClaimed ? "⚠️ Already claimed" : "🆕 Eligible for airdrop"}`,
-        true
-      );
+      uiModule.updateTokenStatus(`✅ Token loaded: ${symbol} (${decimals} decimals)`, true);
+
+      // ✅ Επιπλέον λειτουργίες με το νέο συμβόλαιο
+      const signer = window.signer;
+      if (signer) {
+        const userAddress = await signer.getAddress();
+        const airdropContract = new ethers.Contract(
+          CONFIG.AIRDROP_CONTRACT_PROXY,
+          CONFIG.BATCH_AIRDROP_ABI,
+          provider
+        );
+
+        // ➕ Ελέγχουμε αν ο χρήστης είναι exempt από fee
+        const isExempt = await airdropContract.feeExemptAddresses(userAddress);
+        if (isExempt) {
+          uiModule.addLog(`🟢 You are exempt from LQX fee.`);
+        } else {
+          // Δείχνει το required fee αν υπάρχει
+          try {
+            const requiredFee = await airdropContract.requiredFee();
+            const formattedFee = ethers.utils.formatUnits(requiredFee, 18);
+            uiModule.addLog(`💸 Protocol fee: ${formattedFee} LQX`);
+          } catch (e) {
+            console.warn("[tokenModule] Could not fetch required fee:", e);
+          }
+        }
+      }
 
     } catch (error) {
       console.error("[tokenModule] ❌ Token check failed:", error);
       selectedToken = null;
-      window.selectedToken = null;
       uiModule.updateTokenStatus("❌ Invalid token address", false);
     }
   }
