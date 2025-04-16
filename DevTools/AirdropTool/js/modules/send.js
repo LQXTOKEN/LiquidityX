@@ -18,6 +18,7 @@ window.sendModule = (function () {
       const token = new ethers.Contract(tokenAddress, CONFIG.ERC20_ABI, signer);
       const userBalance = await token.balanceOf(userAddress);
       const totalRequired = amountPerUser.mul(recipients.length);
+
       console.log("[send.js] totalRequired (wei):", totalRequired.toString());
 
       if (userBalance.lt(totalRequired)) {
@@ -27,38 +28,27 @@ window.sendModule = (function () {
         return;
       }
 
-      // ✅ Approve για token
-      uiModule.addLog(`🔄 Approving ${symbol} for ${recipients.length} recipients...`, "info");
+      // ✅ Approve για το token του χρήστη
+      uiModule.addLog(`🔄 Approving ${symbol} for ${recipients.length} recipients...`);
       const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalRequired);
-      uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`, "info");
+      uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`);
       await approveTx.wait();
-      uiModule.addLog(`✅ Approved successfully.`, "info");
-
-      // ✅ Approve για fee σε LQX
-      const feeToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
-
-      // Χρήση σταθερού fee
-      const feeAmount = ethers.BigNumber.from(CONFIG.LQX_FIXED_FEE);
-      uiModule.addLog(`🔐 Approving ${ethers.utils.formatUnits(feeAmount)} LQX as fee...`, "info");
-      const approveFeeTx = await feeToken.approve(CONFIG.AIRDROP_CONTRACT_PROXY, feeAmount);
-      uiModule.addLog(`⛽ Fee Approve TX sent: ${approveFeeTx.hash}`, "info");
-      await approveFeeTx.wait();
-      uiModule.addLog(`✅ LQX Fee approved.`, "info");
+      uiModule.addLog(`✅ Approved successfully.`);
 
       // ✅ Εκτέλεση Airdrop
       const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
-      uiModule.addLog(`🚀 Sending airdrop to ${recipients.length} recipients...`, "info");
+      uiModule.addLog(`🚀 Sending airdrop to ${recipients.length} recipients...`);
 
       const tx = await airdrop.batchTransferSameAmount(tokenAddress, recipients, amountPerUser);
-      uiModule.addLog(`⛽ Airdrop TX sent: ${tx.hash}`, "info");
+      uiModule.addLog(`⛽ Airdrop TX sent: ${tx.hash}`);
       await tx.wait();
-      uiModule.addLog(`✅ Airdrop completed.`, "success");
+      uiModule.addLog(`✅ Airdrop completed.`);
 
       // ✅ Έλεγχος για αποτυχημένους
       try {
-        const failed = await airdrop.getFailedRecipients(tokenAddress, userAddress);
+        const failed = await airdrop.getFailedRecipients(tokenAddress);
         if (failed.length > 0) {
-          uiModule.addLog(`⚠️ ${failed.length} failed recipients. Retry or recover available.`, "warn");
+          uiModule.addLog(`⚠️ ${failed.length} failed recipients. Retry or recover available.`);
 
           uiModule.enableDownloadFailed(failed, (arr) => {
             const blob = new Blob([arr.join("\n")], { type: "text/plain" });
@@ -75,7 +65,7 @@ window.sendModule = (function () {
           document.getElementById("retryFailedButton").style.display = "inline-block";
           document.getElementById("recoverTokensButton").style.display = "inline-block";
         } else {
-          uiModule.addLog(`🎉 All recipients succeeded!`, "success");
+          uiModule.addLog(`🎉 All recipients succeeded!`);
         }
       } catch (e) {
         console.warn("[getFailedRecipients]", e);
@@ -97,10 +87,10 @@ window.sendModule = (function () {
       const out = document.getElementById("recoveryResults");
       out.innerHTML = `<p><strong>Total Records:</strong> ${records.length}</p>`;
       records.forEach((r, i) => {
-        out.innerHTML += `<p>#${i + 1} ➝ token: ${r.token}, failed: ${r.failedRecipients.length}</p>`;
+        out.innerHTML += `<p>#${i + 1} ➔ token: ${r.token}, failed: ${r.failedRecipients.length}</p>`;
       });
 
-      uiModule.addLog(`📦 Found ${records.length} past airdrop(s).`, "info");
+      uiModule.addLog(`📦 Found ${records.length} past airdrop(s).`);
     } catch (err) {
       console.error("[checkMyRecord] ❌", err);
       uiModule.addLog("❌ Failed to fetch your records.", "error");
