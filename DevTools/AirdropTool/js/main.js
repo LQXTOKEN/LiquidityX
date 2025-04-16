@@ -7,8 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await CONFIG.loadAbis();
     console.log("[main.js] ✅ ABIs loaded and verified");
 
-    // ✅ Φόρτωσε τα τελευταία airdrops κατά το load
-    uiModule.updateLastAirdrops();
+    await uiModule.updateLastAirdrops(); // ✅ Dynamic logs from backend
   } catch (err) {
     console.error("[main.js] ❌ Initialization failed: ABI loading error");
     return;
@@ -31,10 +30,18 @@ async function initializeApp() {
     const proceedButton = document.getElementById("proceedButton");
     const sendButton = document.getElementById("sendButton");
     const downloadButton = document.getElementById("downloadButton");
-
     const checkRecordButton = document.getElementById("checkRecordButton");
     const retryFailedButton = document.getElementById("retryFailedButton");
     const recoverTokensButton = document.getElementById("recoverTokensButton");
+
+    if (
+      !connectBtn || !disconnectBtn || !backBtn || !checkTokenButton ||
+      !tokenAddressInput || !tokenAmountInput || !modeSelect ||
+      !proceedButton || !sendButton || !downloadButton
+    ) {
+      console.error("[main.js] ❌ Missing DOM elements!");
+      return;
+    }
 
     connectBtn.addEventListener("click", async () => {
       console.log("[main.js] Connect button clicked");
@@ -51,14 +58,16 @@ async function initializeApp() {
           uiModule.showError("Could not fetch LQX balance.");
         }
 
-        document.getElementById("recoveryCard").style.display = "block";
+        const recoveryCard = document.getElementById("recoveryCard");
+        if (recoveryCard) recoveryCard.style.display = "block";
       }
     });
 
     disconnectBtn.addEventListener("click", () => {
       walletModule.disconnectWallet();
       uiModule.resetUI();
-      document.getElementById("recoveryCard").style.display = "none";
+      const recoveryCard = document.getElementById("recoveryCard");
+      if (recoveryCard) recoveryCard.style.display = "none";
     });
 
     backBtn.addEventListener("click", () => {
@@ -67,6 +76,12 @@ async function initializeApp() {
 
     checkTokenButton.addEventListener("click", async () => {
       console.log("[main.js] Check Token button clicked");
+
+      if (!tokenAddressInput) {
+        console.error("[main.js] ❌ tokenAddressInput not found in DOM");
+        return;
+      }
+
       try {
         const tokenAddress = tokenAddressInput.value.trim();
         if (!tokenAddress) {
@@ -76,18 +91,9 @@ async function initializeApp() {
 
         await tokenModule.checkToken(tokenAddress);
         const selected = tokenModule.getSelectedToken();
-
         if (selected) {
           window.selectedToken = selected;
           window.currentTokenAddress = selected.contractAddress;
-
-          // ✅ Αν υπάρχει signer, ζήτησε το fee
-          if (window.signer) {
-            const airdropContract = new ethers.Contract(CONFIG.airdropContract, CONFIG.airdropAbi, window.signer);
-            const fee = await airdropContract.requiredFee();
-            window.requiredFeeAmount = fee;
-            console.log("[main.js] ✅ Required fee (wei):", fee.toString());
-          }
         }
       } catch (err) {
         console.error("[main.js] Token check error:", err);
