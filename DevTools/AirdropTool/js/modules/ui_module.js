@@ -42,6 +42,7 @@ window.uiModule = (function () {
     document.getElementById("recoveryResults").innerHTML = "";
     document.getElementById("recoveryCard").style.display = "none";
     clearResults();
+    clearLog();
   }
 
   function showError(message) {
@@ -89,6 +90,7 @@ window.uiModule = (function () {
     status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
   }
 
+  // ✅ Log με μηνύματα κατάστασης
   function addLog(message, type = "info") {
     console.log(`[LOG][${type.toUpperCase()}] ${message}`);
     const container = document.getElementById("logOutput");
@@ -96,6 +98,8 @@ window.uiModule = (function () {
 
     const p = document.createElement("p");
     p.textContent = message;
+    p.style.margin = "0.2rem 0";
+    p.style.fontSize = "0.9rem";
     p.style.color =
       type === "error"
         ? "var(--accent-red)"
@@ -105,6 +109,12 @@ window.uiModule = (function () {
         ? "var(--accent-yellow)"
         : "var(--text-light)";
     container.appendChild(p);
+    container.scrollTop = container.scrollHeight; // ✅ scroll to bottom
+  }
+
+  function clearLog() {
+    const container = document.getElementById("logOutput");
+    if (container) container.innerHTML = "";
   }
 
   function enableDownloadFailed(failedArray, onClickHandler) {
@@ -115,29 +125,27 @@ window.uiModule = (function () {
     btn.onclick = () => onClickHandler(failedArray);
   }
 
-  function updateLastAirdrops() {
-    fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/api/airdrops")
-      .then(res => res.json())
-      .then(data => {
-        const logOutput = document.getElementById("logOutput");
-        if (!logOutput || !Array.isArray(data)) return;
+  // ✅ Ενημέρωση τελευταίων airdrops μέσω backend proxy
+  async function updateLastAirdrops() {
+    try {
+      const res = await fetch(`${CONFIG.proxyUrl}/api/airdrops`);
+      if (!res.ok) throw new Error("Failed to fetch airdrops");
+      const data = await res.json();
 
-        const last = data.slice(-5).reverse();
-        last.forEach(record => {
-          const symbol = record.symbol || "Unknown";
-          const count = record.count || 0;
-          const time = record.timestamp ? new Date(record.timestamp).toLocaleString() : "Unknown time";
+      const container = document.getElementById("recoveryResults");
+      if (!container) return;
 
-          const p = document.createElement("p");
-          p.textContent = `🪂 ${symbol} to ${count} users – ${time}`;
-          p.style.color = "var(--accent-yellow)";
-          logOutput.appendChild(p);
-        });
-      })
-      .catch(err => {
-        console.error("[uiModule] Failed to fetch airdrops:", err);
-        addLog("ℹ️ Could not load latest airdrops", "warn");
+      const last = data.slice(0, 5);
+      container.innerHTML = "<h4>📦 Last Airdrop Records</h4>";
+      last.forEach(record => {
+        const p = document.createElement("p");
+        p.textContent = `🪙 ${record.token} → ${record.recipients.length} wallets`;
+        p.style.color = "var(--text-light)";
+        container.appendChild(p);
       });
+    } catch (err) {
+      console.warn("[uiModule] Could not load airdrop logs:", err);
+    }
   }
 
   return {
@@ -151,6 +159,7 @@ window.uiModule = (function () {
     getDisplayedAddresses,
     updateTokenStatus,
     addLog,
+    clearLog,
     enableDownloadFailed,
     updateLastAirdrops
   };
