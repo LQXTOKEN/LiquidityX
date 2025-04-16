@@ -1,151 +1,95 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>LiquidityX Airdrop Tool</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>LiquidityX Airdrop Tool</h1>
-
-    <!-- ✅ WALLET SECTION -->
-    <div class="card wallet-card">
-      <div class="button-row">
-        <button id="backToMain" class="btn">← Back to Main Website</button>
-        <button id="disconnectWallet" class="btn" style="display: none;">Disconnect Wallet</button>
+    <header>
+      <h1>LiquidityX Community Airdrop Tool 🪂</h1>
+      <div class="wallet-actions">
+        <button id="connectWallet">Connect Wallet</button>
+        <button id="disconnectWallet">Disconnect</button>
+        <button id="backToMain">Back to Main Website</button>
       </div>
+      <div id="lqxBalance" class="balance-display"></div>
+      <div id="accessMessage" class="access-warning"></div>
+    </header>
 
-      <div id="walletSection">
-        <button id="connectWallet" class="btn">Connect Wallet</button>
-        <p id="walletAddress"></p>
-        <p id="lqxBalance"></p>
-        <p id="eligibilityMessage" style="margin-top: 0.5rem;"></p>
-      </div>
+    <section id="tokenSection">
+      <h2>Select Token for Airdrop</h2>
+      <input type="text" id="tokenAddress" placeholder="Enter ERC-20 contract address" />
+      <button id="checkToken">Check Token</button>
+      <div id="tokenStatus"></div>
+    </section>
 
-      <div id="accessDenied" style="display:none;">
-        <p style="color: var(--accent-red);">You need at least 1000 LQX to use this tool.</p>
-      </div>
-    </div>
+    <section id="modeSection">
+      <h2>Create a list</h2>
+      <select id="mode">
+        <option value="paste">Paste</option>
+        <option value="create">Create</option>
+        <option value="random">Random</option>
+      </select>
 
-    <!-- ✅ AIRDROP TOOL SECTION -->
-    <div id="airdropTool" class="card" style="display: none;">
-      <!-- Token Selection -->
-      <div class="input-group">
-        <label for="tokenAddressInput">Which token do you want to airdrop?</label>
-        <input type="text" id="tokenAddressInput" placeholder="Enter ERC-20 token contract address" />
-        <button id="checkToken" class="btn">Check Token</button>
-        <p id="tokenStatus"></p>
-      </div>
-
-      <!-- Token Amount per User -->
-      <div class="input-group">
-        <label for="tokenAmountPerUser">Amount of tokens to send per address:</label>
-        <input type="number" id="tokenAmountPerUser" placeholder="Enter token amount per address" />
-      </div>
-
-      <!-- Mode Selection -->
-      <div class="input-group">
-        <label for="modeSelect">Choose input method:</label>
-        <select id="modeSelect">
-          <option value="paste">Paste</option>
-          <option value="create">Create</option>
-          <option value="random">Random</option>
-        </select>
-      </div>
-
-      <!-- Paste Mode -->
-      <div id="pasteSection" class="modeSection">
-        <div class="input-group">
-          <label for="polygonScanInput">Paste list of wallet addresses (one per line):</label>
-          <textarea id="polygonScanInput" placeholder="0x1234...\n0xabcd...\n0x5678..."></textarea>
+      <div id="pasteSection" class="mode-subsection">
+        <label for="pasteInput">Paste a PolygonScan token or transaction URL:</label>
+        <div class="paste-container">
+          <textarea id="pasteInput" placeholder="e.g. https://polygonscan.com/token/0x..."></textarea>
         </div>
       </div>
 
-      <!-- Create Mode -->
-      <div id="createSection" class="modeSection" style="display:none;">
-        <div class="input-group">
-          <label for="contractInput">Enter token address to extract holders:</label>
-          <input type="text" id="contractInput" placeholder="Enter token contract address..." />
-        </div>
-        <div class="input-group">
-          <label for="maxCreateAddresses">Enter max number of addresses to use (max 1000):</label>
-          <input type="number" id="maxCreateAddresses" max="1000" min="1" value="100" />
-        </div>
+      <div id="createSection" class="mode-subsection hidden">
+        <label>Enter max number of addresses to use:</label>
+        <input type="number" id="maxAddresses" min="1" max="1000" value="100" />
       </div>
 
-      <!-- Random Mode -->
-      <div id="randomSection" class="modeSection" style="display:none;">
-        <div class="input-group">
-          <label for="maxAddresses">Enter max number of addresses to use (max 1000):</label>
-          <input type="number" id="maxAddresses" max="1000" min="1" value="100" />
-        </div>
+      <div id="randomSection" class="mode-subsection hidden">
+        <label>Enter how many random addresses to use:</label>
+        <input type="number" id="randomCount" min="1" max="1000" value="50" />
       </div>
 
-      <!-- Action Buttons -->
-      <button id="proceedButton" class="btn">Proceed</button>
-      <button id="downloadButton" class="btn" style="display:none;">Download Addresses (.txt)</button>
-      <button id="downloadFailedButton" class="btn" style="display:none;">Download Failed (.txt)</button>
+      <button id="proceedButton">Proceed</button>
+    </section>
 
-      <!-- Address Results -->
-      <pre id="results"></pre>
+    <section id="resultSection" class="hidden">
+      <h2>Recipients</h2>
+      <div id="recipientsList"></div>
+      <button id="downloadButton">Download addresses (.txt)</button>
+    </section>
 
-      <!-- Send -->
-      <button id="sendButton" class="btn" style="background-color: var(--accent-green); margin-top: 1rem;">
-        Send Airdrop
-      </button>
-      <button id="retryButton" class="action-button">🔁 Retry Failed Transfers</button>
+    <section id="amountSection" class="hidden">
+      <h2>Set Airdrop Amount</h2>
+      <label>Amount per address:</label>
+      <input type="text" id="tokenAmount" placeholder="e.g. 10" />
+      <button id="sendButton">Send Airdrop</button>
+      <button id="recoverButton">Recover Failed</button>
+      <button id="downloadFailedButton">Download Failed</button>
+    </section>
 
-      <!-- Log Output -->
-      <div id="logOutput" class="card" style="margin-top: 1rem;"></div>
-    </div>
+    <section id="logsSection">
+      <h2>Logs</h2>
+      <div id="logOutput"></div>
+    </section>
 
-    <!-- ✅ RECOVERY CARD -->
-    <div id="recoveryCard" class="card" style="display: none; margin-top: 1.5rem;">
-      <h2>🔁 Recovery & Retry</h2>
-      <button id="checkRecordButton" class="btn">Check My Last Airdrop</button>
-      <button id="retryFailedButton" class="btn" style="display: none;">Retry Failed</button>
-      <button id="recoverTokensButton" class="btn" style="display: none;">Recover Tokens</button>
-      <div id="recoveryResults" style="margin-top: 1rem;"></div>
-    </div>
-
-    <!-- ✅ ABOUT SECTION -->
-    <div class="card about-section">
-      <h2>What is the LiquidityX Airdrop Tool?</h2>
-      <p>
-        The <strong>LiquidityX Airdrop Tool</strong> allows you to airdrop ERC-20 tokens efficiently on the Polygon network using a smart contract-based batch system.
-      </p>
-      <p>
-        Each airdrop sends <strong>500 LQX</strong> as protocol fee to increase APR in the LP staking contract, promoting sustainability.
-      </p>
-      <p>
-        No more manual claims, no more high gas costs — just pure automated power for your airdrop strategy.
-      </p>
-    </div>
-     <!-- ✅ LAST AIRDROPS SECTION -->
-    <div class="card last-airdrops-section" style="margin-top: 2rem;">
-     <h2>📦 Last Airdrops</h2>
-     <div id="lastAirdropsContainer">
-    <p>Loading recent airdrops...</p>
-  </div>
-</div>
-
-    <footer>
-      LiquidityX – AirdropTool Version 1.0
-    </footer>
+    <section id="lastAirdropsSection">
+      <h2>LAST AIRDROP TOKENS</h2>
+      <div id="lastAirdropsList"></div>
+    </section>
   </div>
 
-  <!-- ✅ JS MODULES -->
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="js/modules/config.js"></script>
   <script src="js/modules/wallet_module.js"></script>
-  <script src="js/modules/erc20_module.js"></script>
+  <script src="js/modules/token_module.js"></script>
   <script src="js/modules/ui_module.js"></script>
   <script src="js/modules/address_module.js"></script>
-  <script src="js/modules/token_module.js"></script>
   <script src="js/modules/send.js"></script>
-  <script src="js/main.js"></script>
-  <script src="./js/modules/recover.js"></script>
+  <script src="js/modules/recover.js"></script>
+  <script src="js/modules/main.js"></script>
 </body>
 </html>
