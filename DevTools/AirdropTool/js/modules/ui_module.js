@@ -116,28 +116,26 @@ window.uiModule = (function () {
   }
 
   async function updateLastAirdrops() {
-    const endpoint = "https://proxy-git-main-lqxtokens-projects.vercel.app/api/airdrops";
+    const container = document.getElementById("recoveryResults");
+    if (!container) return;
+
     try {
-      const response = await fetch(endpoint);
-      if (!response.ok) throw new Error("Failed to fetch airdrops");
+      const res = await fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/api/airdrops");
+      const data = await res.json();
 
-      const logs = await response.json();
-      console.log("[uiModule] Loaded last airdrops:", logs);
+      if (!Array.isArray(data)) return;
 
-      const container = document.getElementById("logOutput");
-      if (container && logs.length > 0) {
-        container.innerHTML += `<p><strong>LAST AIRDROP TOKENS:</strong></p>`;
-        logs.slice(0, 5).forEach((log, i) => {
-          const p = document.createElement("p");
-          p.textContent = `#${i + 1} – ${log.token} → ${log.count} wallets`;
-          p.style.color = "var(--accent-yellow)";
-          container.appendChild(p);
-        });
-      }
+      console.log("[uiModule] Loaded last airdrops:", data);
 
+      const logHtml = data.map((drop, index) => {
+        const count = Array.isArray(drop.wallets) ? drop.wallets.length : "0";
+        return `#${index + 1} – ${drop.token} → ${count} wallets`;
+      }).join("<br>");
+
+      container.innerHTML = `<h3>LAST AIRDROP TOKENS:</h3><p>${logHtml}</p>`;
     } catch (err) {
-      console.warn("[uiModule] Could not load airdrop logs:", err);
-      addLog("ℹ️ Could not load latest airdrop logs.", "warn");
+      console.error("[uiModule] Could not load airdrop logs:", err);
+      container.innerHTML = `<p style="color: var(--accent-red);">Failed to fetch airdrops</p>`;
     }
   }
 
