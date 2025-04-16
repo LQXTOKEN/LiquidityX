@@ -1,7 +1,7 @@
 // js/modules/config.js
 
 window.CONFIG = {
-  // 🛠 Proxy URLs
+  // ✅ Proxy endpoints
   PROXY_API_BASE: "https://proxy-git-main-lqxtokens-projects.vercel.app",
   POLYGON_API_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon",
   AIRDROP_LOGS_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/airdrops",
@@ -11,23 +11,23 @@ window.CONFIG = {
   LQX_TOKEN_ADDRESS: "0x9E27F48659B1005b1aBc0F58465137E531430d4b",
   STAKING_CONTRACT_ADDRESS: "0x9C021bC12c95fe8f020C180D8022593d3cbB02b8",
 
-  // 💸 Static LQX fee in wei (500 LQX)
+  // ✅ Required LQX fee in wei (500 LQX)
   REQUIRED_LQX_FEE: "500000000000000000000",
 
-  // 📂 ABI URLs
-  ERC20_ABI_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/erc20_abi.json",
-  AIRDROP_ABI_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/airdrop_abi.json",
+  // ✅ Correct ABI URLs (from liquidityx.io site, not proxy)
+  ERC20_ABI_URL: "https://liquidityx.io/DevTools/AirdropTool/abis/erc20_abi.json",
+  AIRDROP_ABI_URL: "https://liquidityx.io/DevTools/AirdropTool/abis/airdrop_abi.json",
 
-  // 📦 ABIs (θα φορτωθούν δυναμικά)
+  // ABIs loaded at runtime
   ERC20_ABI: null,
   BATCH_AIRDROP_ABI: null,
 
-  // ✅ Load ABIs and assign to CONFIG
+  // ✅ Load ABIs from correct paths
   loadAbis: async function () {
     try {
       const [erc20Res, airdropRes] = await Promise.all([
         fetch(this.ERC20_ABI_URL),
-        fetch(this.AIRDROP_ABI_URL)
+        fetch(this.AIRDROP_ABI_URL),
       ]);
 
       if (!erc20Res.ok || !airdropRes.ok) {
@@ -37,7 +37,7 @@ window.CONFIG = {
       this.ERC20_ABI = await erc20Res.json();
       this.BATCH_AIRDROP_ABI = await airdropRes.json();
 
-      // ✅ Store globally too (για legacy αρχεία όπως app.js)
+      // Store globally
       window.ERC20_ABI = this.ERC20_ABI;
       window.BATCH_AIRDROP_ABI = this.BATCH_AIRDROP_ABI;
 
