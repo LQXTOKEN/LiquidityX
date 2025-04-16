@@ -1,36 +1,49 @@
+// js/modules/config.js
+
 window.CONFIG = {
-  LQX_TOKEN_ADDRESS: "0x9E27F48659B1005b1aBc0F58465137E531430d4b",
+  // 🛠 Proxy URLs
+  PROXY_API_BASE: "https://proxy-git-main-lqxtokens-projects.vercel.app",
+  POLYGON_API_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon",
+  AIRDROP_LOGS_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/airdrops",
+
+  // ✅ Contract addresses
   AIRDROP_CONTRACT_PROXY: "0x2012508a1dbE6BE9c1B666eBD86431b326ef6EF6",
-  RPC_URL: "https://polygon-rpc.com",
-  PROXY_API_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon",
-  ACTIVE_WALLETS_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json",
+  LQX_TOKEN_ADDRESS: "0x9E27F48659B1005b1aBc0F58465137E531430d4b",
+  STAKING_CONTRACT_ADDRESS: "0x9C021bC12c95fe8f020C180D8022593d3cbB02b8",
 
-  lqxFeeAmount: ethers.utils.parseUnits("500", 18), // ✅ NEW: 500 LQX σε wei
+  // 💸 Static LQX fee in wei (500 LQX)
+  REQUIRED_LQX_FEE: "500000000000000000000",
 
+  // 📂 ABI URLs
+  ERC20_ABI_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/erc20_abi.json",
+  AIRDROP_ABI_URL: "https://proxy-git-main-lqxtokens-projects.vercel.app/abis/airdrop_abi.json",
+
+  // 📦 ABIs (θα φορτωθούν δυναμικά)
   ERC20_ABI: null,
   BATCH_AIRDROP_ABI: null,
 
-  async loadAbis() {
+  // ✅ Load ABIs and assign to CONFIG
+  loadAbis: async function () {
     try {
       const [erc20Res, airdropRes] = await Promise.all([
-        fetch("/DevTools/AirdropTool/abis/erc20_abi.json"),
-        fetch("/DevTools/AirdropTool/abis/airdrop_abi.json"),
+        fetch(this.ERC20_ABI_URL),
+        fetch(this.AIRDROP_ABI_URL)
       ]);
 
-      if (!erc20Res.ok || !airdropRes.ok) throw new Error("ABI fetch failed");
+      if (!erc20Res.ok || !airdropRes.ok) {
+        throw new Error("Failed to fetch ABI files.");
+      }
 
-      const erc20Abi = await erc20Res.json();
-      const airdropAbi = await airdropRes.json();
+      this.ERC20_ABI = await erc20Res.json();
+      this.BATCH_AIRDROP_ABI = await airdropRes.json();
 
-      this.ERC20_ABI = erc20Abi;
-      this.BATCH_AIRDROP_ABI = airdropAbi;
-
-      window.ERC20_ABI = erc20Abi;
-      window.AIRDROP_ABI = airdropAbi;
+      // ✅ Store globally too (για legacy αρχεία όπως app.js)
+      window.ERC20_ABI = this.ERC20_ABI;
+      window.BATCH_AIRDROP_ABI = this.BATCH_AIRDROP_ABI;
 
       console.log("[config.js] ✅ ABIs loaded successfully");
     } catch (err) {
-      console.error("[config.js] ❌ Failed to load ABIs", err);
+      console.error("[config.js] ❌ ABI loading failed:", err);
       throw err;
     }
   }
