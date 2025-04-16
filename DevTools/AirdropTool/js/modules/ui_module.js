@@ -1,156 +1,127 @@
 // js/modules/ui_module.js
 
 window.uiModule = (function () {
+  const walletAddressEl = document.getElementById("walletAddress");
+  const lqxBalanceEl = document.getElementById("lqxBalance");
+  const eligibilityMessageEl = document.getElementById("eligibilityMessage");
+  const tokenStatusEl = document.getElementById("tokenStatus");
+  const logOutput = document.getElementById("logOutput");
+  const resultsEl = document.getElementById("results");
+  const airdropToolEl = document.getElementById("airdropTool");
+
   function updateWalletUI(address) {
-    document.getElementById("walletAddress").textContent = `Connected: ${address}`;
+    walletAddressEl.textContent = `Connected: ${address}`;
     document.getElementById("connectWallet").style.display = "none";
     document.getElementById("disconnectWallet").style.display = "inline-block";
-    document.getElementById("airdropTool").style.display = "block";
   }
 
-  function updateLQXBalance(balanceInfo) {
-    const balanceText = `${balanceInfo.formatted} ${balanceInfo.symbol}`;
-    const balanceElement = document.getElementById("lqxBalance");
-    balanceElement.textContent = `LQX Balance: ${balanceText}`;
-
-    const eligible = parseFloat(balanceInfo.formatted) >= 1000;
-    const message = document.getElementById("eligibilityMessage");
-    const toolSection = document.getElementById("airdropTool");
-    const accessDenied = document.getElementById("accessDenied");
-
-    if (eligible) {
-      message.textContent = "✅ You are eligible to use the airdrop tool.";
-      message.style.color = "var(--accent-green)";
-      toolSection.style.display = "block";
-      accessDenied.style.display = "none";
+  function updateLQXBalance(balance) {
+    lqxBalanceEl.textContent = `LQX Balance: ${balance.formatted}`;
+    if (parseFloat(balance.formatted) >= 1000) {
+      airdropToolEl.style.display = "block";
+      eligibilityMessageEl.textContent = "✅ You are eligible to use the tool.";
+      document.getElementById("accessDenied").style.display = "none";
     } else {
-      message.textContent = "❌ You need at least 1000 LQX to use this tool.";
-      message.style.color = "var(--accent-red)";
-      toolSection.style.display = "none";
-      accessDenied.style.display = "block";
+      airdropToolEl.style.display = "none";
+      eligibilityMessageEl.textContent = "";
+      document.getElementById("accessDenied").style.display = "block";
     }
   }
 
-  function resetUI() {
-    document.getElementById("walletAddress").textContent = "";
-    document.getElementById("lqxBalance").textContent = "";
-    document.getElementById("eligibilityMessage").textContent = "";
-    document.getElementById("connectWallet").style.display = "inline-block";
-    document.getElementById("disconnectWallet").style.display = "none";
-    document.getElementById("airdropTool").style.display = "none";
-    document.getElementById("tokenStatus").textContent = "";
-    document.getElementById("recoveryResults").innerHTML = "";
-    document.getElementById("recoveryCard").style.display = "none";
-    clearResults();
+  function updateTokenStatus(message, success) {
+    tokenStatusEl.textContent = message;
+    tokenStatusEl.style.color = success ? "var(--accent-green)" : "var(--accent-red)";
   }
 
   function showError(message) {
-    const results = document.getElementById("results");
-    results.textContent = `❌ ${message}`;
-    results.style.color = "var(--accent-red)";
-  }
-
-  function clearResults() {
-    const results = document.getElementById("results");
-    results.textContent = "";
-    results.style.color = "";
-  }
-
-  function showModeSection(mode) {
-    document.querySelectorAll(".modeSection").forEach(section => {
-      section.style.display = "none";
-    });
-
-    if (mode === "paste") {
-      document.getElementById("pasteSection").style.display = "block";
-      document.getElementById("proceedButton").style.display = "none";
-    } else {
-      document.getElementById("proceedButton").style.display = "inline-block";
-      const target = mode === "create" ? "createSection" : "randomSection";
-      document.getElementById(target).style.display = "block";
-    }
-  }
-
-  function displayAddresses(addresses) {
-    const results = document.getElementById("results");
-    results.textContent = addresses.join("\n");
-    results.style.color = "var(--text-light)";
-    document.getElementById("downloadButton").style.display = "inline-block";
-  }
-
-  function getDisplayedAddresses() {
-    const results = document.getElementById("results").textContent.trim();
-    return results ? results.split("\n") : [];
-  }
-
-  function updateTokenStatus(message, isSuccess = true) {
-    const status = document.getElementById("tokenStatus");
-    status.textContent = message;
-    status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
+    addLog(message, "error");
   }
 
   function addLog(message, type = "info") {
-    console.log(`[LOG][${type.toUpperCase()}] ${message}`);
-    const container = document.getElementById("logOutput");
-    if (!container) return;
+    const line = document.createElement("div");
+    line.textContent = `[LOG][${type.toUpperCase()}] ${message}`;
+    line.style.color = {
+      info: "#ffffff",
+      error: "var(--accent-red)",
+      warn: "var(--accent-yellow)"
+    }[type] || "#ffffff";
 
-    const p = document.createElement("p");
-    p.textContent = message;
-    p.style.color =
-      type === "error"
-        ? "var(--accent-red)"
-        : type === "success"
-        ? "var(--accent-green)"
-        : type === "warn"
-        ? "var(--accent-yellow)"
-        : "var(--text-light)";
-    container.appendChild(p);
+    logOutput.appendChild(line);
+    logOutput.scrollTop = logOutput.scrollHeight;
   }
 
-  function enableDownloadFailed(failedArray, onClickHandler) {
-    const btn = document.getElementById("downloadFailedButton");
-    if (!btn) return;
+  function clearResults() {
+    resultsEl.textContent = "";
+    logOutput.innerHTML = "";
+  }
 
-    btn.style.display = "inline-block";
-    btn.onclick = () => onClickHandler(failedArray);
+  function displayAddresses(addresses) {
+    resultsEl.textContent = addresses.join("\n");
+  }
+
+  function showModeSection(mode) {
+    const sections = ["pasteSection", "createSection", "randomSection"];
+    sections.forEach((id) => {
+      document.getElementById(id).style.display = id.startsWith(mode) ? "block" : "none";
+    });
+
+    // Κρύψε κουμπί proceed αν είναι paste
+    document.getElementById("proceedButton").style.display = mode === "paste" ? "none" : "inline-block";
+  }
+
+  function resetUI() {
+    walletAddressEl.textContent = "";
+    lqxBalanceEl.textContent = "";
+    tokenStatusEl.textContent = "";
+    resultsEl.textContent = "";
+    logOutput.innerHTML = "";
+    document.getElementById("connectWallet").style.display = "inline-block";
+    document.getElementById("disconnectWallet").style.display = "none";
+    document.getElementById("airdropTool").style.display = "none";
+    document.getElementById("accessDenied").style.display = "none";
+    document.getElementById("retryFailedButton").style.display = "none";
+    document.getElementById("recoverTokensButton").style.display = "none";
+    document.getElementById("recoveryResults").innerHTML = "";
   }
 
   async function updateLastAirdrops() {
-    const container = document.getElementById("recoveryResults");
-    if (!container) return;
-
     try {
-      const res = await fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/api/airdrops");
+      const res = await fetch(`${CONFIG.PROXY_API_URL.replace("/api/polygon", "/api/last-airdrops")}`);
       const data = await res.json();
 
-      if (!Array.isArray(data)) return;
+      if (Array.isArray(data) && data.length > 0) {
+        const div = document.createElement("div");
+        div.classList.add("card");
+        div.style.marginTop = "1.5rem";
 
-      console.log("[uiModule] Loaded last airdrops:", data);
+        div.innerHTML = `<h2>📦 Last Airdrops</h2><ul style="padding-left: 1.2rem;">${data.map((r) => `
+          <li>Sender: ${r.sender}, Token: ${r.token}, Recipients: ${r.count}</li>
+        `).join("")}</ul>`;
 
-      const logHtml = data.map((drop, index) => {
-        const count = Array.isArray(drop.wallets) ? drop.wallets.length : "0";
-        return `#${index + 1} – ${drop.token} → ${count} wallets`;
-      }).join("<br>");
-
-      container.innerHTML = `<h3>LAST AIRDROP TOKENS:</h3><p>${logHtml}</p>`;
+        document.querySelector(".container").appendChild(div);
+      }
     } catch (err) {
-      console.error("[uiModule] Could not load airdrop logs:", err);
-      container.innerHTML = `<p style="color: var(--accent-red);">Failed to fetch airdrops</p>`;
+      console.warn("[uiModule] Could not load last airdrops");
     }
+  }
+
+  function enableDownloadFailed(addresses, callback) {
+    const btn = document.getElementById("downloadFailedButton");
+    btn.style.display = "inline-block";
+    btn.onclick = () => callback(addresses);
   }
 
   return {
     updateWalletUI,
     updateLQXBalance,
-    resetUI,
-    showError,
-    clearResults,
-    showModeSection,
-    displayAddresses,
-    getDisplayedAddresses,
     updateTokenStatus,
+    showError,
     addLog,
-    enableDownloadFailed,
-    updateLastAirdrops
+    clearResults,
+    displayAddresses,
+    showModeSection,
+    resetUI,
+    updateLastAirdrops,
+    enableDownloadFailed
   };
 })();
