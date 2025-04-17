@@ -1,20 +1,20 @@
 /* ===== LIQUIDITYX MAIN SITE STYLE REPLICA ===== */
 :root {
   /* Updated Color Palette (from liquidityx.io) */
-  --primary: #2563eb;  /* More vibrant blue */
+  --primary: #2563eb;
   --primary-hover: #1d4ed8;
-  --gradient-start: #4f46e5;  /* Deeper purple */
-  --gradient-end: #9333ea;  /* Brighter purple */
-  --dark-bg: #0f172a;  /* Same dark bg */
+  --gradient-start: #4f46e5;
+  --gradient-end: #9333ea;
+  --dark-bg: #0f172a;
   --card-bg: #1e293b;
-  --text-light: #f8fafc;  /* Softer white */
+  --text-light: #f8fafc;
   --text-gray: #94a3b8;
   --border-dark: #334155;
-  --accent-green: #10b981;  /* Updated green */
-  --accent-red: #ef4444;  /* Updated red */
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
 
   /* New spacing (matching main site) */
-  --radius-lg: 12px;  /* Larger rounded corners */
+  --radius-lg: 12px;
   --shadow-xl: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }
 
@@ -58,10 +58,7 @@ body {
 h1 {
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(90deg, 
-    var(--primary), 
-    var(--gradient-start), 
-    var(--gradient-end));
+  background: linear-gradient(90deg, var(--primary), var(--gradient-start), var(--gradient-end));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -158,16 +155,7 @@ input:focus, textarea:focus {
   border: 1px solid var(--border-dark);
 }
 
-/* ===== RESPONSIVE ADJUSTMENTS ===== */
-@media (max-width: 768px) {
-  .container {
-    padding: 1.5rem;
-  }
-  
-  h1 {
-    font-size: 2rem;
-  }
-}
+/* ===== BUTTON ROW ===== */
 .button-row {
   display: flex;
   justify-content: space-between;
@@ -179,10 +167,42 @@ input:focus, textarea:focus {
 .button-row .btn-outline {
   flex: 0 0 auto;
 }
-.last-airdrops-section .airdrop-entry {
-  background: #1d1d1d;
-  border: 1px solid #333;
-  border-radius: 10px;
-  padding: 0.8rem;
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+}
+
+/* ===== LAST AIRDROPS SECTION (NEW ADDITION) ===== */
+#lastAirdropSummary {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: var(--shadow-xl);
+  display: none; /* Hidden by default, shown via JS */
+}
+
+#lastAirdropSummary h2 {
+  font-size: 1.4rem;
   margin-bottom: 1rem;
+  color: var(--accent-green);
+}
+
+#lastAirdropSummary p {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+  color: var(--text-light);
+}
+
+#lastAirdropSummary .failed-count {
+  color: var(--accent-red);
+  font-weight: 600;
 }
