@@ -1,84 +1,74 @@
-// 📁 app.js
+// 📄 app.js
+// Δομή: Συνδέει wallet, ενημερώνει το UI, fetch balance, fetch last airdrop μία φορά
+
+let lastAirdropFetched = false;
 
 window.handleWalletConnected = async function () {
-  const connection = await walletModule.connectWallet();
+  const wallet = await walletModule.connectWallet();
+  if (!wallet) return;
 
-  if (!connection) {
-    uiModule.showError("❌ Wallet connection failed.");
-    return;
-  }
-
-  const { provider, signer, userAddress } = connection;
-
+  const { provider, signer, userAddress } = wallet;
   uiModule.updateWalletUI(userAddress);
 
-  // ✅ Φόρτωση LQX Balance
-  const lqxToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, provider);
-  const balanceRaw = await lqxToken.balanceOf(userAddress);
-  const decimals = await lqxToken.decimals();
-  const formatted = ethers.utils.formatUnits(balanceRaw, decimals);
+  try {
+    const lqxContract = new ethers.Contract(
+      CONFIG.LQX_TOKEN_ADDRESS,
+      CONFIG.ERC20_ABI,
+      provider
+    );
+    const rawBalance = await lqxContract.balanceOf(userAddress);
+    const formatted = ethers.utils.formatUnits(rawBalance, 18);
+    uiModule.updateLQXBalance({ formatted, symbol: "LQX" });
+  } catch (err) {
+    console.error("[app.js] ❌ Failed to fetch LQX balance:", err);
+  }
 
-  uiModule.updateLQXBalance({ formatted, symbol: "LQX" });
-
-  // ✅ Φόρτωση τελευταίων Airdrops
-  if (window.lastAirdropModule?.fetchLastAirdrop) {
-    await lastAirdropModule.fetchLastAirdrop(userAddress);
+  if (!lastAirdropFetched) {
+    lastAirdropModule.fetchLastAirdrop(userAddress);
+    lastAirdropFetched = true;
   }
 };
 
-// ✅ Επαναφορά Wallet
-window.handleWalletDisconnect = function () {
-  walletModule.disconnectWallet();
-  uiModule.resetUI();
-};
-
-// ✅ Send
 window.appSend = async function () {
   const signer = walletModule.getProvider()?.getSigner();
-  const selectedToken = tokenModule.getSelectedToken();
-  const addresses = uiModule.getDisplayedAddresses();
+  const token = tokenModule.getSelectedToken();
+  const recipients = uiModule.getDisplayedAddresses();
+  const rawAmount = document.getElementById("tokenAmountPerUser").value;
 
-  if (!signer || !selectedToken || addresses.length === 0) {
-    uiModule.showError("❌ Missing token, signer or recipients.");
+  if (!signer || !token || recipients.length === 0 || !rawAmount) {
+    uiModule.showError("❌ Missing data for airdrop.");
     return;
   }
 
-  const input = document.getElementById("tokenAmountPerUser").value;
-  const amount = ethers.utils.parseUnits(input, selectedToken.decimals);
-
-  console.log("[appSend] Parsed amount in wei:", amount.toString());
-
+  const amount = ethers.utils.parseUnits(rawAmount, token.decimals);
   await sendModule.sendAirdrop(
-    selectedToken.contractAddress,
-    selectedToken.symbol,
+    token.contractAddress,
+    token.symbol,
     amount,
-    addresses,
+    recipients,
     signer
   );
 };
 
-// ✅ Retry
 window.appRetry = async function () {
   const signer = walletModule.getProvider()?.getSigner();
-  const selectedToken = tokenModule.getSelectedToken();
+  const token = tokenModule.getSelectedToken();
+  if (!signer || !token) return;
 
-  if (!signer || !selectedToken) {
-    uiModule.showError("❌ Missing signer or token.");
-    return;
-  }
-
-  await sendModule.retryFailed(signer, selectedToken.contractAddress);
+  await sendModule.retryFailed(signer, token.contractAddress);
 };
 
-// ✅ Recover
 window.appRecover = async function () {
   const signer = walletModule.getProvider()?.getSigner();
-  const selectedToken = tokenModule.getSelectedToken();
+  const token = tokenModule.getSelectedToken();
+  if (!signer || !token) return;
 
-  if (!signer || !selectedToken) {
-    uiModule.showError("❌ Missing signer or token.");
-    return;
-  }
+  await sendModule.recoverTokens(signer, token.contractAddress);
+};
 
-  await sendModule.recoverTokens(signer, selectedToken.contractAddress);
+window.appCheckRecord = async function () {
+  const signer = walletModule.getProvider()?.getSigner();
+  if (!signer) return;
+
+  await sendModule.checkMyRecord(signer);
 };
