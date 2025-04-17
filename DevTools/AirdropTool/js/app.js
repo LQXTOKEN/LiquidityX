@@ -1,83 +1,83 @@
 // app.js
 //
-// 📦 Περιγραφή: Entry point για όλα τα smart contract interactions του LiquidityX Airdrop Tool.
-// Περιλαμβάνει:
-// - handleWalletConnected: φόρτωση πληροφοριών wallet και τελευταίου airdrop
-// - appSend: εκτελεί batchTransferSameAmount()
-// - appRetry: επαναλαμβάνει αποτυχημένους αποδέκτες
-// - appRecover: ανακτά tokens από αποτυχημένους αποδέκτες
+// 📦 Κύριο app controller για blockchain ενέργειες του εργαλείου.
+// ✅ Modular σύνδεση με walletModule, uiModule, sendModule, lastAirdropModule
+// ✅ Όλες οι smart contract interactions γίνονται από εδώ.
 
-window.addEventListener("load", () => {
-  // Αν υπάρχει ήδη wallet συνδεδεμένο κατά το load
-  if (window.ethereum && window.ethereum.selectedAddress) {
-    handleWalletConnected(window.ethereum.selectedAddress);
-  }
+window.handleWalletConnected = async function () {
+  const wallet = await walletModule.connectWallet();
+  if (!wallet) return;
 
-  // Trigger σε αλλαγή λογαριασμού
-  if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accounts) => {
-      if (accounts.length > 0) {
-        handleWalletConnected(accounts[0]);
-      }
-    });
-  }
-});
+  const { signer, userAddress } = wallet;
 
-// ✅ Συνάρτηση που καλείται από wallet_module.js ή event listeners
-window.handleWalletConnected = function (walletAddress) {
-  if (!walletAddress) return;
+  uiModule.updateWalletUI(userAddress);
 
-  if (window.lastAirdropModule && typeof lastAirdropModule.fetchLastAirdrop === "function") {
-    lastAirdropModule.fetchLastAirdrop(walletAddress);
+  // ➕ Fetch LQX Balance
+  const token = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
+  const balance = await token.balanceOf(userAddress);
+  const decimals = await token.decimals();
+  const symbol = await token.symbol();
+
+  const formatted = ethers.utils.formatUnits(balance, decimals);
+  uiModule.updateLQXBalance({ formatted, symbol });
+
+  // ➕ Last airdrop summary section
+  lastAirdropModule.fetchLastAirdrop(userAddress);
+};
+
+window.appSend = async function (amountPerUser, recipients) {
+  try {
+    const signer = walletModule.getProvider().getSigner();
+    const token = tokenModule.getSelectedToken();
+
+    if (!token) {
+      uiModule.showError("❌ No token selected");
+      return;
+    }
+
+    await sendModule.sendAirdrop(
+      token.contractAddress,
+      token.symbol,
+      amountPerUser,
+      recipients,
+      signer
+    );
+  } catch (err) {
+    console.error("[appSend] ❌ Error:", err);
+    uiModule.addLog(`❌ Airdrop failed: ${err.message || err}`, "error");
   }
 };
 
-// ✅ Εκτέλεση Airdrop (χρησιμοποιείται από send.js)
-window.appSend = async function ({ signer, tokenAddress, recipients, amountPerUser }) {
+window.appRetry = async function () {
   try {
-    const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+    const signer = walletModule.getProvider().getSigner();
+    const token = tokenModule.getSelectedToken();
 
-    uiModule.logMessage(`🚀 Sending airdrop to ${recipients.length} recipients...`);
-    const tx = await airdrop.batchTransferSameAmount(tokenAddress, recipients, amountPerUser);
-    uiModule.logMessage(`⛽ Airdrop TX sent: ${tx.hash}`);
+    if (!token) {
+      uiModule.showError("❌ No token selected");
+      return;
+    }
 
-    await tx.wait();
-    uiModule.logMessage(`✅ Airdrop completed successfully.`);
+    await sendModule.retryFailed(signer, token.contractAddress);
   } catch (err) {
-    console.error("[appSend] ❌", err);
-    uiModule.logMessage("❌ Airdrop failed: " + (err.reason || err.message || "Unknown error"), "error");
-    throw err;
+    console.error("[appRetry] ❌ Error:", err);
+    uiModule.addLog(`❌ Retry failed: ${err.message || err}`, "error");
   }
 };
 
-// ✅ Retry αποτυχημένων αποδεκτών (χρησιμοποιείται από send.js)
-window.appRetry = async function ({ signer, tokenAddress }) {
+window.appRecover = async function () {
   try {
-    uiModule.logMessage("🔁 Retrying failed recipients...");
-    const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
-    const tx = await airdrop.retryFailed(tokenAddress);
-    uiModule.logMessage(`⛽ Retry TX sent: ${tx.hash}`);
-    await tx.wait();
-    uiModule.logMessage("✅ Retry completed.");
-  } catch (err) {
-    console.error("[appRetry] ❌", err);
-    uiModule.logMessage("❌ Retry failed: " + (err.message || "Unknown error"), "error");
-    throw err;
-  }
-};
+    const signer = walletModule.getProvider().getSigner();
+    const token = tokenModule.getSelectedToken();
 
-// ✅ Recovery tokens από αποτυχημένους αποδέκτες (χρησιμοποιείται από send.js)
-window.appRecover = async function ({ signer, tokenAddress }) {
-  try {
-    uiModule.logMessage("💸 Recovering tokens from failed recipients...");
-    const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
-    const tx = await airdrop.recoverFailedTransfer(tokenAddress);
-    uiModule.logMessage(`⛽ Recover TX sent: ${tx.hash}`);
-    await tx.wait();
-    uiModule.logMessage("✅ Recovery completed.");
+    if (!token) {
+      uiModule.showError("❌ No token selected");
+      return;
+    }
+
+    await sendModule.recoverTokens(signer, token.contractAddress);
   } catch (err) {
-    console.error("[appRecover] ❌", err);
-    uiModule.logMessage("❌ Recovery failed: " + (err.message || "Unknown error"), "error");
-    throw err;
+    console.error("[appRecover] ❌ Error:", err);
+    uiModule.addLog(`❌ Recovery failed: ${err.message || err}`, "error");
   }
 };
