@@ -1,7 +1,7 @@
 // js/modules/send.js
 //
-// 📦 Περιγραφή: Εκτελεί τις βασικές ροές του airdrop tool (approve, send, retry, recover)
-// ✅ Το smart contract interaction `batchTransferSameAmount` μεταφέρθηκε στο app.js μέσω appSend()
+// 📦 Περιγραφή: Εκτελεί approve και validation logic για το airdrop εργαλείο.
+// Τα smart contract interactions γίνονται μέσω app.js (appSend, appRetry, appRecover)
 
 window.sendModule = (function () {
   async function sendAirdrop(tokenAddress, symbol, amountPerUser, recipients, signer) {
@@ -31,14 +31,14 @@ window.sendModule = (function () {
         return;
       }
 
-      // ✅ Approve token
+      // ✅ Approve για token
       uiModule.addLog(`🔄 Approving ${symbol} for ${recipients.length} recipients...`);
       const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalRequired);
       uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`);
       await approveTx.wait();
       uiModule.addLog(`✅ Approved successfully.`);
 
-      // ✅ Approve LQX Fee
+      // ✅ Approve για LQX Fee
       const feeToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
       const feeAmount = ethers.utils.parseUnits("1000", 18); // 1000 LQX
       uiModule.addLog(`🔐 Approving ${ethers.utils.formatUnits(feeAmount)} LQX as fee...`);
@@ -47,7 +47,7 @@ window.sendModule = (function () {
       await approveFeeTx.wait();
       uiModule.addLog(`✅ LQX Fee approved.`);
 
-      // ✅ Εκτέλεση Airdrop μέσω app.js
+      // ✅ Κλήση προς app.js για εκτέλεση airdrop
       if (typeof window.appSend === "function") {
         await window.appSend({ signer, tokenAddress, recipients, amountPerUser });
       } else {
@@ -110,12 +110,11 @@ window.sendModule = (function () {
 
   async function retryFailed(signer, tokenAddress) {
     try {
-      uiModule.addLog("🔁 Retrying failed recipients...");
-      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
-      const tx = await airdrop.retryFailed(tokenAddress);
-      uiModule.addLog(`⛽ Retry TX sent: ${tx.hash}`);
-      await tx.wait();
-      uiModule.addLog("✅ Retry completed.");
+      if (typeof window.appRetry === "function") {
+        await window.appRetry({ signer, tokenAddress });
+      } else {
+        throw new Error("appRetry is not defined in app.js");
+      }
     } catch (err) {
       console.error("[retryFailed] ❌", err);
       uiModule.addLog("❌ Retry failed: " + (err.message || "Unknown error"), "error");
@@ -124,12 +123,11 @@ window.sendModule = (function () {
 
   async function recoverTokens(signer, tokenAddress) {
     try {
-      uiModule.addLog("💸 Recovering tokens from failed recipients...");
-      const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
-      const tx = await airdrop.recoverFailedTransfer(tokenAddress);
-      uiModule.addLog(`⛽ Recover TX sent: ${tx.hash}`);
-      await tx.wait();
-      uiModule.addLog("✅ Recovery completed.");
+      if (typeof window.appRecover === "function") {
+        await window.appRecover({ signer, tokenAddress });
+      } else {
+        throw new Error("appRecover is not defined in app.js");
+      }
     } catch (err) {
       console.error("[recoverTokens] ❌", err);
       uiModule.addLog("❌ Recovery failed: " + (err.message || "Unknown error"), "error");
