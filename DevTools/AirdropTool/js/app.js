@@ -2,12 +2,13 @@
 //
 // 📦 Περιγραφή: Entry point για όλα τα smart contract interactions του LiquidityX Airdrop Tool.
 // Περιλαμβάνει:
-// - handleWalletConnected: φορτώνει last airdrop summary
-// - appSend: εκτελεί batchTransferSameAmount (delegate από send.js)
-// - appRetry: εκτελεί retryFailed (delegate από send.js)
+// - handleWalletConnected: φόρτωση πληροφοριών wallet και τελευταίου airdrop
+// - appSend: εκτελεί batchTransferSameAmount()
+// - appRetry: επαναλαμβάνει αποτυχημένους αποδέκτες
+// - appRecover: ανακτά tokens από αποτυχημένους αποδέκτες
 
 window.addEventListener("load", () => {
-  // Αν υπάρχει ήδη συνδεδεμένο wallet κατά το load
+  // Αν υπάρχει ήδη wallet συνδεδεμένο κατά το load
   if (window.ethereum && window.ethereum.selectedAddress) {
     handleWalletConnected(window.ethereum.selectedAddress);
   }
@@ -22,7 +23,7 @@ window.addEventListener("load", () => {
   }
 });
 
-// ✅ Συνάρτηση που καλείται από wallet_module.js όταν γίνει connect
+// ✅ Συνάρτηση που καλείται από wallet_module.js ή event listeners
 window.handleWalletConnected = function (walletAddress) {
   if (!walletAddress) return;
 
@@ -61,6 +62,22 @@ window.appRetry = async function ({ signer, tokenAddress }) {
   } catch (err) {
     console.error("[appRetry] ❌", err);
     uiModule.logMessage("❌ Retry failed: " + (err.message || "Unknown error"), "error");
+    throw err;
+  }
+};
+
+// ✅ Recovery tokens από αποτυχημένους αποδέκτες (χρησιμοποιείται από send.js)
+window.appRecover = async function ({ signer, tokenAddress }) {
+  try {
+    uiModule.logMessage("💸 Recovering tokens from failed recipients...");
+    const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
+    const tx = await airdrop.recoverFailedTransfer(tokenAddress);
+    uiModule.logMessage(`⛽ Recover TX sent: ${tx.hash}`);
+    await tx.wait();
+    uiModule.logMessage("✅ Recovery completed.");
+  } catch (err) {
+    console.error("[appRecover] ❌", err);
+    uiModule.logMessage("❌ Recovery failed: " + (err.message || "Unknown error"), "error");
     throw err;
   }
 };
