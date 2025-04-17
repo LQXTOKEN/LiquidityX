@@ -1,117 +1,48 @@
-// main.js
-//
-// 📦 Entry point του εργαλείου. Συνδέει UI με modules και triggers.
-// ✅ Δεν περιέχει καμία business λογική — όλα τα calls γίνονται σε modules.
+// 📄 js/main.js
+// ✅ Πλήρης main.js με:
+// - ασφαλή σύνδεση wallet
+// - σωστό disconnect/reset
+// - αυτόματο reconnect αν είναι ήδη συνδεδεμένος
+// - dynamic UI updates με βάση wallet state
 
-document.addEventListener("DOMContentLoaded", async () => {
-  console.log("[main.js] DOM loaded");
+document.addEventListener("DOMContentLoaded", async function () {
+  const connectBtn = document.getElementById("connectWallet");
+  const disconnectBtn = document.getElementById("disconnectWallet");
 
-  try {
-    await CONFIG.loadAbis();
-    console.log("[main.js] ✅ ABIs loaded and verified");
-  } catch (e) {
-    return uiModule.showError("❌ Failed to load smart contract definitions");
+  let walletAlreadyConnecting = false;
+
+  // 🔁 Auto-connect αν υπάρχει ενεργό session
+  if (window.ethereum && window.ethereum.selectedAddress) {
+    await tryConnectWallet();
   }
 
-  // 🔄 Initial placeholder log
-  uiModule.updateLastAirdrops();
-
-  // 🟢 Κουμπί σύνδεσης
-  document.getElementById("connectWallet").addEventListener("click", () => {
-    console.log("[main.js] Connect button clicked");
-    window.handleWalletConnected();
+  // 👆 Click handler για σύνδεση
+  connectBtn.addEventListener("click", async () => {
+    if (walletAlreadyConnecting) return;
+    await tryConnectWallet();
   });
 
-  // 🔴 Κουμπί αποσύνδεσης
-  document.getElementById("disconnectWallet").addEventListener("click", () => {
+  // 🔌 Disconnect button
+  disconnectBtn.addEventListener("click", () => {
     walletModule.disconnectWallet();
-    uiModule.resetUI();
+    location.reload(); // ✅ καθαρισμός UI, state και memory
   });
 
-  // 🔁 Κουμπί επανάληψης αποτυχημένων
-  document.getElementById("retryFailedButton").addEventListener("click", () => {
-    window.appRetry();
-  });
+  async function tryConnectWallet() {
+    walletAlreadyConnecting = true;
 
-  // 💸 Κουμπί ανάκτησης tokens
-  document.getElementById("recoverTokensButton").addEventListener("click", () => {
-    window.appRecover();
-  });
+    const wallet = await walletModule.connectWallet();
 
-  // 📦 Κουμπί προβολής προηγούμενης εγγραφής
-  document.getElementById("checkRecordButton").addEventListener("click", () => {
-    document.getElementById("recoveryCard").style.display = "block";
-    window.appRecover(); // ή αν θες, show fetch-only: sendModule.checkMyRecord()
-  });
-
-  // 🔍 Token validation
-  document.getElementById("checkToken").addEventListener("click", () => {
-    console.log("[main.js] Check Token button clicked");
-    const tokenAddr = document.getElementById("tokenAddressInput").value.trim();
-    tokenModule.checkToken(tokenAddr);
-  });
-
-  // 🔀 Mode selection
-  document.getElementById("modeSelect").addEventListener("change", (e) => {
-    const mode = e.target.value;
-    console.log("[main.js] Mode changed:", mode);
-    uiModule.showModeSection(mode);
-  });
-
-  // 🧠 Fetch addresses
-  document.getElementById("proceedButton").addEventListener("click", async () => {
-    console.log("[main.js] Proceed button clicked");
-
-    const token = tokenModule.getSelectedToken();
-    if (!token) {
-      uiModule.showError("❌ Please select a token first");
+    if (!wallet) {
+      walletAlreadyConnecting = false;
       return;
     }
 
-    try {
-      const mode = document.getElementById("modeSelect").value;
-      const addresses = await addressModule.fetchAddresses(mode);
+    // ✅ Αν όλα πήγαν καλά, συνέχισε
+    await window.handleWalletConnected();
 
-      if (!addresses.length) {
-        uiModule.showError("❌ No valid addresses found");
-        return;
-      }
-
-      uiModule.displayAddresses(addresses);
-    } catch (err) {
-      console.error("[main.js] Address fetch error:", err);
-      uiModule.showError("❌ Failed to fetch addresses");
-    }
-  });
-
-  // 🚀 Send Airdrop
-  document.getElementById("sendButton").addEventListener("click", () => {
-    console.log("[main.js] Send button clicked");
-
-    const amountStr = document.getElementById("tokenAmountPerUser").value.trim();
-    const recipients = uiModule.getDisplayedAddresses();
-
-    if (!amountStr || isNaN(amountStr)) {
-      uiModule.showError("❌ Invalid amount");
-      return;
-    }
-
-    if (!recipients.length) {
-      uiModule.showError("❌ No recipients to send to");
-      return;
-    }
-
-    const token = tokenModule.getSelectedToken();
-    if (!token) {
-      uiModule.showError("❌ No token selected");
-      return;
-    }
-
-    const amount = ethers.utils.parseUnits(amountStr, token.decimals);
-    console.log("[main.js] Parsed amount in wei:", amount.toString());
-
-    window.appSend(amount, recipients);
-  });
-
-  console.log("[main.js] Initialization complete ✅");
+    // 🔁 Εμφάνιση κουμπιού disconnect, απόκρυψη connect
+    connectBtn.style.display = "none";
+    disconnectBtn.style.display = "inline-block";
+  }
 });
