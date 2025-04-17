@@ -1,6 +1,6 @@
 // js/modules/last_airdrop_module.js
 //
-// 📦 Περιγραφή: Φορτώνει το τελευταίο airdrop του χρήστη από το backend
+// 📦 Περιγραφή: Φορτώνει το τελευταίο airdrop του χρήστη από το backend proxy (Vercel API)
 // και ενημερώνει το UI με τη λειτουργία uiModule.showLastAirdrop(...)
 
 window.lastAirdropModule = (function () {
@@ -8,7 +8,10 @@ window.lastAirdropModule = (function () {
     if (!walletAddress) return;
 
     try {
-      const response = await fetch(`/api/last-airdrops?address=${walletAddress}`);
+      // ✅ Χρησιμοποιούμε δυναμικά το σωστό backend URL (Vercel)
+      const baseUrl = window.API_BASE_URL || "https://proxy-git-main-lqxtokens-projects.vercel.app";
+      const response = await fetch(`${baseUrl}/api/last-airdrops?address=${walletAddress}`);
+
       if (!response.ok) {
         uiModule.logMessage("⚠️ Failed to fetch last airdrop info", "warn");
         return;
