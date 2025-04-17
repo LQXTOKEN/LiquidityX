@@ -1,8 +1,7 @@
 // js/modules/address_module.js
 //
-// 📦 Περιγραφή: Παράγει ή φορτώνει wallet addresses για το airdrop tool, ανάλογα με το επιλεγμένο mode.
-// Modes: paste, create, random
-// ✅ Διορθωμένο fetch URL (χρήση CONFIG.PROXY_API_URL αντί για relative path)
+// 📦 Περιγραφή: Παράγει ή φορτώνει wallet addresses για το airdrop εργαλείο, ανά mode (paste, create, random).
+// ✅ Περιλαμβάνει: περιορισμό max διευθύνσεων, σωστό URL fetch και valid address filtering.
 
 window.addressModule = (function () {
   async function fetchAddresses(mode) {
@@ -44,7 +43,12 @@ window.addressModule = (function () {
       }
 
       const data = await res.json();
-      return data.addresses || [];
+      const addresses = data.addresses || [];
+
+      // ✅ Περιορισμός στον αριθμό που ζήτησες
+      const limited = addresses.slice(0, max);
+      console.log(`[addressModule] Create mode - fetched: ${limited.length}`);
+      return limited;
     } catch (err) {
       console.error("[getAddressesFromHolders] ❌", err);
       throw err;
