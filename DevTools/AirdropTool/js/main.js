@@ -1,4 +1,6 @@
-// js/main.js
+// 📄 js/main.js
+// ✅ Λειτουργική έκδοση με προσθήκες βάσει των δυνατοτήτων του νέου smart contract
+
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[main.js] DOM loaded");
@@ -7,8 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await CONFIG.loadAbis();
     console.log("[main.js] ✅ ABIs loaded and verified");
 
-    // ✅ Φόρτωσε τα τελευταία airdrops κατά το load
-    uiModule.updateLastAirdrops();
+    uiModule.updateLastAirdrops(); // ✅ Load last airdrop summaries
   } catch (err) {
     console.error("[main.js] ❌ Initialization failed: ABI loading error");
     return;
@@ -21,6 +22,7 @@ async function initializeApp() {
   try {
     console.log("[main.js] Starting initialization...");
 
+    // 🔘 DOM Elements
     const connectBtn = document.getElementById("connectWallet");
     const disconnectBtn = document.getElementById("disconnectWallet");
     const backBtn = document.getElementById("backToMain");
@@ -35,7 +37,6 @@ async function initializeApp() {
     const checkRecordButton = document.getElementById("checkRecordButton");
     const retryFailedButton = document.getElementById("retryFailedButton");
     const recoverTokensButton = document.getElementById("recoverTokensButton");
-    const logOutput = document.getElementById("logOutput");
 
     connectBtn.addEventListener("click", async () => {
       console.log("[main.js] Connect button clicked");
@@ -53,7 +54,6 @@ async function initializeApp() {
         }
 
         document.getElementById("recoveryCard").style.display = "block";
-        subscribeToLiveAirdropLogs();
       }
     });
 
@@ -177,35 +177,17 @@ async function initializeApp() {
       URL.revokeObjectURL(url);
     });
 
+    // ✅ Προσθήκες νέων δυνατοτήτων
+
     checkRecordButton.addEventListener("click", () => sendModule.checkMyRecord(window.signer));
-    retryFailedButton.addEventListener("click", () => sendModule.retryFailed(window.signer, window.currentTokenAddress));
-    recoverTokensButton.addEventListener("click", () => sendModule.recoverTokens(window.signer, window.currentTokenAddress));
 
-    function subscribeToLiveAirdropLogs() {
-      try {
-        const provider = walletModule.getProvider();
-        if (!provider || !CONFIG.BATCH_AIRDROP_ABI) return;
+    retryFailedButton.addEventListener("click", () =>
+      sendModule.retryFailed(window.signer, window.currentTokenAddress)
+    );
 
-        const airdropContract = new ethers.Contract(
-          CONFIG.AIRDROP_CONTRACT_PROXY,
-          CONFIG.BATCH_AIRDROP_ABI,
-          provider
-        );
-
-        airdropContract.on("AirdropSent", (token, recipient, amount, event) => {
-          const msg = `[LIVE] ✅ Airdropped ${ethers.utils.formatUnits(amount, 18)} ${window.selectedToken?.symbol || "TOKEN"} to ${recipient}`;
-          console.log(msg);
-
-          const logLine = document.createElement("div");
-          logLine.textContent = msg;
-          logOutput.appendChild(logLine);
-        });
-
-        console.log("[main.js] 📡 Subscribed to AirdropSent logs");
-      } catch (e) {
-        console.warn("[main.js] ❌ Failed to subscribe to logs", e);
-      }
-    }
+    recoverTokensButton.addEventListener("click", () =>
+      sendModule.recoverTokens(window.signer, window.currentTokenAddress)
+    );
 
     console.log("[main.js] Initialization complete ✅");
   } catch (err) {
