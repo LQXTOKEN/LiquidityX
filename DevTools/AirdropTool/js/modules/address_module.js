@@ -1,51 +1,63 @@
 // js/modules/address_module.js
+//
+// 📦 Περιγραφή: Παράγει ή φορτώνει wallet addresses για το airdrop tool, ανάλογα με το επιλεγμένο mode.
+// Modes: paste, create, random
+// ✅ Διορθωμένο fetch URL (χρήση CONFIG.PROXY_API_URL αντί για relative path)
 
 window.addressModule = (function () {
   async function fetchAddresses(mode) {
     console.log("[addressModule] Fetching addresses for mode:", mode);
+
     if (mode === "paste") {
-      return getAddressesFromPaste();
-    } else if (mode === "create") {
-      return await getAddressesFromHolders();
-    } else if (mode === "random") {
-      return generateRandomAddresses();
-    } else {
-      throw new Error("Invalid mode");
+      const raw = document.getElementById("polygonScanInput").value;
+      const addresses = raw
+        .split("\n")
+        .map(addr => addr.trim())
+        .filter(addr => ethers.utils.isAddress(addr));
+
+      return addresses;
+    }
+
+    if (mode === "create") {
+      const contract = document.getElementById("contractInput").value.trim();
+      const max = parseInt(document.getElementById("maxCreateAddresses").value, 10);
+      return await getAddressesFromHolders(contract, max);
+    }
+
+    if (mode === "random") {
+      const max = parseInt(document.getElementById("maxAddresses").value, 10);
+      return generateRandomAddresses(max);
+    }
+
+    return [];
+  }
+
+  async function getAddressesFromHolders(contract, max = 1000) {
+    try {
+      if (!CONFIG.PROXY_API_URL) throw new Error("PROXY_API_URL is not defined");
+
+      const url = `${CONFIG.PROXY_API_URL}?contract=${contract}&max=${max}`;
+      const res = await fetch(url);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch holders");
+      }
+
+      const data = await res.json();
+      return data.addresses || [];
+    } catch (err) {
+      console.error("[getAddressesFromHolders] ❌", err);
+      throw err;
     }
   }
 
-  function getAddressesFromPaste() {
-    const raw = document.getElementById("polygonScanInput").value;
-    const lines = raw.split("\n").map((line) => line.trim());
-    const addresses = [...new Set(lines.filter((line) => ethers.utils.isAddress(line)))];
-    console.log("[addressModule] Paste mode - found valid:", addresses.length);
-    return addresses;
-  }
-
-  async function getAddressesFromHolders() {
-    const contractAddress = document.getElementById("contractInput").value.trim();
-    const max = parseInt(document.getElementById("maxCreateAddresses").value || "100");
-
-    if (!ethers.utils.isAddress(contractAddress)) {
-      throw new Error("Invalid token address");
-    }
-
-    const url = `${CONFIG.PROXY_API}/api/polygon?contract=${contractAddress}&max=${max}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Failed to fetch holders");
-    const json = await res.json();
-    console.log("[addressModule] Create mode - fetched:", json.length);
-    return json;
-  }
-
-  function generateRandomAddresses(count = 100) {
-    const max = parseInt(document.getElementById("maxAddresses").value || "100");
+  function generateRandomAddresses(count) {
     const addresses = [];
-    for (let i = 0; i < max; i++) {
-      const bytes = ethers.utils.randomBytes(20);
-      const address = ethers.utils.getAddress(ethers.utils.hexlify(bytes));
-      addresses.push(address);
+    for (let i = 0; i < count; i++) {
+      const rand = ethers.Wallet.createRandom().address;
+      addresses.push(rand);
     }
+
     console.log("[addressModule] Random mode - generated:", addresses.length);
     return addresses;
   }
