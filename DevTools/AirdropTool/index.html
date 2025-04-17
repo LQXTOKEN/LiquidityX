@@ -1,4 +1,15 @@
-<!-- index.html -->
+<!--
+  📄 File: index.html
+  📌 Περιγραφή: Κύριο αρχείο του LiquidityX Airdrop Tool
+  Περιλαμβάνει:
+  - Σύνδεση Wallet
+  - Επιλογή token & addresses
+  - Αποστολή airdrop
+  - Ανάκτηση/επανάληψη αποτυχημένων
+  - Νέο: Live Logging Console
+  - Νέο: Last Airdrop Summary Section
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,9 +108,12 @@
       <button id="sendButton" class="btn" style="background-color: var(--accent-green); margin-top: 1rem;">
         Send Airdrop
       </button>
+
+      <!-- ✅ Live Logging Terminal -->
+      <div id="logOutput" class="card" style="margin-top: 1rem;"></div>
     </div>
 
-    <!-- ✅ RECOVERY SECTION -->
+    <!-- ✅ RECOVERY CARD -->
     <div id="recoveryCard" class="card" style="display: none; margin-top: 1.5rem;">
       <h2>🔁 Recovery & Retry</h2>
       <button id="checkRecordButton" class="btn">Check My Last Airdrop</button>
@@ -108,11 +122,14 @@
       <div id="recoveryResults" style="margin-top: 1rem;"></div>
     </div>
 
-    <!-- ✅ LOGS -->
-    <div id="logOutput" class="card" style="margin-top: 1rem;"></div>
-    
-   
-
+    <!-- ✅ LAST AIRDROP SUMMARY -->
+    <div id="lastAirdropSummary" class="card" style="margin-top: 1.5rem; display: none;">
+      <h2>📦 Last Airdrop Summary</h2>
+      <p><strong>Token:</strong> <span id="lastToken"></span></p>
+      <p><strong>Total Sent:</strong> <span id="lastAmount"></span></p>
+      <p><strong>Recipients:</strong> <span id="lastRecipients"></span></p>
+      <p><strong>Failed:</strong> <span id="lastFailed"></span></p>
+    </div>
 
     <!-- ✅ ABOUT SECTION -->
     <div class="card about-section">
@@ -129,11 +146,11 @@
     </div>
 
     <footer>
-      LiquidityX – AirdropTool Version 1.3
+      LiquidityX – AirdropTool Version 1.0
     </footer>
   </div>
 
-  <!-- ✅ JS FILES -->
+  <!-- ✅ JS MODULES -->
   <script src="js/modules/config.js"></script>
   <script src="js/modules/wallet_module.js"></script>
   <script src="js/modules/erc20_module.js"></script>
@@ -141,8 +158,6 @@
   <script src="js/modules/address_module.js"></script>
   <script src="js/modules/token_module.js"></script>
   <script src="js/modules/send.js"></script>
-  <script src="js/modules/recover.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/app.js"></script>
 </body>
 </html>
