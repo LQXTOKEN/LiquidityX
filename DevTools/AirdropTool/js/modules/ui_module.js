@@ -1,175 +1,104 @@
-// js/modules/ui_module.js
-//
-// 📦 Περιγραφή: UI Helpers για το εργαλείο LiquidityX Airdrop Tool
-// Περιλαμβάνει: ενημέρωση wallet, eligibility, token status, logs, εμφάνιση/κρυψιμο sections,
-// νέα λειτουργία live logging (logMessage) και εμφάνιση τελευταίου airdrop (showLastAirdrop)
+// 📄 js/modules/ui_module.js
+// Περιλαμβάνει: ενημέρωση UI, logs, recovery results, balance, κλπ.
 
 window.uiModule = (function () {
+  // ✅ Ενημέρωση UI με διεύθυνση wallet
   function updateWalletUI(address) {
-    document.getElementById("walletAddress").textContent = `Connected: ${address}`;
-    document.getElementById("connectWallet").style.display = "none";
-    document.getElementById("disconnectWallet").style.display = "inline-block";
-    document.getElementById("airdropTool").style.display = "block";
+    const walletAddressEl = document.getElementById("walletAddress");
+    const connectBtn = document.getElementById("connectWallet");
+    const disconnectBtn = document.getElementById("disconnectWallet");
+
+    if (walletAddressEl) walletAddressEl.textContent = `Wallet: ${address}`;
+    if (connectBtn) connectBtn.style.display = "none";
+    if (disconnectBtn) disconnectBtn.style.display = "inline-block";
   }
 
-  function updateLQXBalance(balanceInfo) {
-    const balanceText = `${balanceInfo.formatted} ${balanceInfo.symbol}`;
-    const balanceElement = document.getElementById("lqxBalance");
-    balanceElement.textContent = `LQX Balance: ${balanceText}`;
-
-    const eligible = parseFloat(balanceInfo.formatted) >= 1000;
-    const message = document.getElementById("eligibilityMessage");
-    const toolSection = document.getElementById("airdropTool");
-    const accessDenied = document.getElementById("accessDenied");
-
-    if (eligible) {
-      message.textContent = "✅ You are eligible to use the airdrop tool.";
-      message.style.color = "var(--accent-green)";
-      toolSection.style.display = "block";
-      accessDenied.style.display = "none";
-    } else {
-      message.textContent = "❌ You need at least 1000 LQX to use this tool.";
-      message.style.color = "var(--accent-red)";
-      toolSection.style.display = "none";
-      accessDenied.style.display = "block";
-    }
-  }
-
+  // ✅ Επαναφορά UI μετά από αποσύνδεση
   function resetUI() {
-    document.getElementById("walletAddress").textContent = "";
-    document.getElementById("lqxBalance").textContent = "";
-    document.getElementById("eligibilityMessage").textContent = "";
-    document.getElementById("connectWallet").style.display = "inline-block";
-    document.getElementById("disconnectWallet").style.display = "none";
-    document.getElementById("airdropTool").style.display = "none";
-    document.getElementById("tokenStatus").textContent = "";
-    document.getElementById("recoveryResults").innerHTML = "";
-    document.getElementById("recoveryCard").style.display = "none";
-    document.getElementById("lastAirdropSummary").style.display = "none";
-    clearResults();
-    clearLog();
+    const walletAddressEl = document.getElementById("walletAddress");
+    const connectBtn = document.getElementById("connectWallet");
+    const disconnectBtn = document.getElementById("disconnectWallet");
+    const lqxBalanceEl = document.getElementById("lqxBalance");
+
+    if (walletAddressEl) walletAddressEl.textContent = "";
+    if (connectBtn) connectBtn.style.display = "inline-block";
+    if (disconnectBtn) disconnectBtn.style.display = "none";
+    if (lqxBalanceEl) lqxBalanceEl.textContent = "";
   }
 
-  function showError(message) {
-    const results = document.getElementById("results");
-    results.textContent = `❌ ${message}`;
-    results.style.color = "var(--accent-red)";
+  // ✅ Ενημέρωση υπολοίπου LQX
+  function updateLQXBalance({ formatted, symbol }) {
+    const lqxBalanceEl = document.getElementById("lqxBalance");
+    if (lqxBalanceEl) lqxBalanceEl.textContent = `Balance: ${formatted} ${symbol}`;
   }
 
-  function clearResults() {
-    const results = document.getElementById("results");
-    results.textContent = "";
-    results.style.color = "";
+  // ✅ Εμφάνιση σφαλμάτων
+  function showError(msg) {
+    alert(msg);
   }
 
-  function showModeSection(mode) {
-    document.querySelectorAll(".modeSection").forEach(section => {
-      section.style.display = "none";
-    });
+  // ✅ Εμφάνιση logs σε real-time
+  function log(message) {
+    const output = document.getElementById("logOutput");
+    if (!output) return;
 
-    if (mode === "paste") {
-      document.getElementById("pasteSection").style.display = "block";
-      document.getElementById("proceedButton").style.display = "none";
-    } else {
-      document.getElementById("proceedButton").style.display = "inline-block";
-      const target = mode === "create" ? "createSection" : "randomSection";
-      document.getElementById(target).style.display = "block";
-    }
+    const timestamp = new Date().toLocaleTimeString();
+    const entry = document.createElement("div");
+    entry.textContent = `[${timestamp}] ${message}`;
+    output.appendChild(entry);
+    output.scrollTop = output.scrollHeight;
   }
 
-  function displayAddresses(addresses) {
-    const results = document.getElementById("results");
-    results.textContent = addresses.join("\n");
-    results.style.color = "var(--text-light)";
-    document.getElementById("downloadButton").style.display = "inline-block";
+  // ✅ Καθαρισμός logs
+  function clearLogs() {
+    const output = document.getElementById("logOutput");
+    if (output) output.innerHTML = "";
   }
 
-  function getDisplayedAddresses() {
-    const results = document.getElementById("results").textContent.trim();
-    return results ? results.split("\n") : [];
+  // ✅ Ενημέρωση recovery αποτελεσμάτων
+  function updateRecoveryResults(text) {
+    const container = document.getElementById("recoveryResults");
+    if (container) container.textContent = text;
   }
 
-  function updateTokenStatus(message, isSuccess = true) {
-    const status = document.getElementById("tokenStatus");
-    status.textContent = message;
-    status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
-  }
-
-  function addLog(message, type = "info") {
-    console.log(`[LOG][${type.toUpperCase()}] ${message}`);
-    const container = document.getElementById("logOutput");
-    if (!container) return;
-
-    const p = document.createElement("p");
-    p.textContent = message;
-    p.style.color =
-      type === "error"
-        ? "var(--accent-red)"
-        : type === "success"
-        ? "var(--accent-green)"
-        : type === "warn"
-        ? "var(--accent-yellow)"
-        : "var(--text-light)";
-    container.appendChild(p);
-    container.scrollTop = container.scrollHeight;
-  }
-
-  // ✅ Λειτουργία για logging με ώρα (terminal style)
-  function logMessage(message) {
-    const container = document.getElementById("logOutput");
-    if (!container) return;
-    const time = new Date().toLocaleTimeString();
-    const line = document.createElement("div");
-    line.textContent = `[${time}] ${message}`;
-    line.style.color = "var(--text-light)";
-    container.appendChild(line);
-    container.scrollTop = container.scrollHeight;
-  }
-
-  function clearLog() {
-    const container = document.getElementById("logOutput");
-    if (container) container.innerHTML = "";
-  }
-
-  function enableDownloadFailed(failedArray, onClickHandler) {
-    const btn = document.getElementById("downloadFailedButton");
-    if (!btn) return;
-
-    btn.style.display = "inline-block";
-    btn.onclick = () => onClickHandler(failedArray);
-  }
-
-  // ✅ Εμφάνιση πληροφοριών τελευταίου airdrop
-  function showLastAirdrop(data) {
-    const section = document.getElementById("lastAirdropSummary");
-    if (!section) return;
-
-    document.getElementById("lastToken").textContent = data.token || "-";
-    document.getElementById("lastAmount").textContent = data.totalAmount || "0";
-    document.getElementById("lastRecipients").textContent = data.totalRecipients || "0";
-    document.getElementById("lastFailed").textContent = data.failedCount || "0";
-    section.style.display = "block";
-  }
-
+  // ✅ Ενημέρωση των τελευταίων airdrops (placeholder προς αντικατάσταση με fetch)
   function updateLastAirdrops() {
-    console.log("[uiModule] Placeholder: updateLastAirdrops");
+    console.warn("[uiModule] Placeholder: updateLastAirdrops");
+  }
+
+  // ✅ Εμφάνιση διευθύνσεων
+  function displayAddresses(addresses) {
+    const resultBox = document.getElementById("results");
+    if (!resultBox) return;
+    resultBox.textContent = addresses.join("\n");
+  }
+
+  // ✅ Καθαρισμός διευθύνσεων
+  function clearResults() {
+    const resultBox = document.getElementById("results");
+    if (resultBox) resultBox.textContent = "";
+  }
+
+  // ✅ Εναλλαγή μεταξύ modes (paste/create/random)
+  function showModeSection(mode) {
+    const sections = ["pasteSection", "createSection", "randomSection"];
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = id.includes(mode) ? "block" : "none";
+    });
   }
 
   return {
     updateWalletUI,
-    updateLQXBalance,
     resetUI,
+    updateLQXBalance,
     showError,
-    clearResults,
-    showModeSection,
-    displayAddresses,
-    getDisplayedAddresses,
-    updateTokenStatus,
-    addLog,
-    enableDownloadFailed,
+    log,
+    clearLogs,
+    updateRecoveryResults,
     updateLastAirdrops,
-    logMessage,
-    showLastAirdrop,
-    clearLog
+    displayAddresses,
+    clearResults,
+    showModeSection
   };
 })();
