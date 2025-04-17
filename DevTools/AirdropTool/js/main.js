@@ -1,6 +1,8 @@
 // 📄 js/main.js
-// ✅ Λειτουργική έκδοση με προσθήκες βάσει των δυνατοτήτων του νέου smart contract
+// ✅ Main entry για το Airdrop Tool
 
+// Περιμένουμε να φορτωθεί το DOM
+// και μετά κάνουμε init τα πάντα
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[main.js] DOM loaded");
@@ -9,7 +11,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await CONFIG.loadAbis();
     console.log("[main.js] ✅ ABIs loaded and verified");
 
-    uiModule.updateLastAirdrops(); // ✅ Load last airdrop summaries
+    // ✅ Φόρτωσε τα τελευταία airdrops κατά το load
+    uiModule.updateLastAirdrops();
   } catch (err) {
     console.error("[main.js] ❌ Initialization failed: ABI loading error");
     return;
@@ -18,11 +21,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   initializeApp();
 });
 
+// 🔧 Κύρια ρουτίνα αρχικοποίησης listeners και UI
 async function initializeApp() {
   try {
     console.log("[main.js] Starting initialization...");
 
-    // 🔘 DOM Elements
+    // 🔘 Βασικά κουμπιά και inputs
     const connectBtn = document.getElementById("connectWallet");
     const disconnectBtn = document.getElementById("disconnectWallet");
     const backBtn = document.getElementById("backToMain");
@@ -121,6 +125,12 @@ async function initializeApp() {
         return;
       }
 
+      // ✅ Προσθήκη ασφάλειας πριν χρησιμοποιήσεις decimals
+      if (!window.selectedToken || !window.selectedToken.decimals) {
+        uiModule.showError("❌ No valid token selected.");
+        return;
+      }
+
       try {
         const parsedAmount = ethers.utils.parseUnits(amount, window.selectedToken.decimals);
         window.tokenAmountPerUser = parsedAmount;
@@ -177,17 +187,9 @@ async function initializeApp() {
       URL.revokeObjectURL(url);
     });
 
-    // ✅ Προσθήκες νέων δυνατοτήτων
-
     checkRecordButton.addEventListener("click", () => sendModule.checkMyRecord(window.signer));
-
-    retryFailedButton.addEventListener("click", () =>
-      sendModule.retryFailed(window.signer, window.currentTokenAddress)
-    );
-
-    recoverTokensButton.addEventListener("click", () =>
-      sendModule.recoverTokens(window.signer, window.currentTokenAddress)
-    );
+    retryFailedButton.addEventListener("click", () => sendModule.retryFailed(window.signer, window.currentTokenAddress));
+    recoverTokensButton.addEventListener("click", () => sendModule.recoverTokens(window.signer, window.currentTokenAddress));
 
     console.log("[main.js] Initialization complete ✅");
   } catch (err) {
