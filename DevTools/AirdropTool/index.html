@@ -1,15 +1,4 @@
-<!--
-  📄 File: index.html
-  📌 Περιγραφή: Κύριο αρχείο του LiquidityX Airdrop Tool
-  Περιλαμβάνει:
-  - Σύνδεση Wallet
-  - Επιλογή token & addresses
-  - Αποστολή airdrop
-  - Ανάκτηση/επανάληψη αποτυχημένων
-  - Νέο: Live Logging Console
-  - Νέο: Last Airdrop Summary Section
--->
-
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -109,7 +98,7 @@
         Send Airdrop
       </button>
 
-      <!-- ✅ Live Logging Terminal -->
+      <!-- Log Output -->
       <div id="logOutput" class="card" style="margin-top: 1rem;"></div>
     </div>
 
@@ -122,13 +111,8 @@
       <div id="recoveryResults" style="margin-top: 1rem;"></div>
     </div>
 
-    <!-- ✅ LAST AIRDROP SUMMARY SECTION -->
-<div id="lastAirdropCard" class="card" style="display: none; margin-bottom: 2rem;">
-  <h2>📦 My Last Airdrop Summary</h2>
-  <div id="lastAirdropContent">
-    <p>Fetching your last airdrop data...</p>
-  </div>
-</div>
+    <!-- ✅ LAST AIRDROP SUMMARY -->
+    <div id="lastAirdropCard" class="card" style="display: none;"></div>
 
     <!-- ✅ ABOUT SECTION -->
     <div class="card about-section">
@@ -144,6 +128,7 @@
       </p>
     </div>
 
+    <!-- ✅ FOOTER -->
     <footer>
       LiquidityX – AirdropTool Version 1.0
     </footer>
