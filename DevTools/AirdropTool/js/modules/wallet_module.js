@@ -1,3 +1,8 @@
+// js/modules/wallet_module.js
+//
+// 📦 Περιγραφή: Διαχείριση wallet σύνδεσης (connect/disconnect/get address/provider).
+// ✅ Ενσωματώνει trigger προς app.js για smart contract-related ενέργειες (π.χ. fetch airdrop info)
+
 window.walletModule = (function () {
   let provider;
   let signer;
@@ -17,6 +22,12 @@ window.walletModule = (function () {
       userAddress = await signer.getAddress();
 
       console.log("[walletModule] Connected:", userAddress);
+
+      // ✅ Trigger app.js logic for smart contract interaction
+      if (typeof window.handleWalletConnected === "function") {
+        window.handleWalletConnected(userAddress);
+      }
+
       return { provider, signer, userAddress };
     } catch (error) {
       console.error("[walletModule] Connection error:", error);
