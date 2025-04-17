@@ -1,59 +1,50 @@
 // js/modules/last_airdrop_module.js
-//
-// ✅ Module που εμφανίζει την πιο πρόσφατη εγγραφή airdrop για τον χρήστη.
 
 window.lastAirdropModule = (function () {
   async function fetchLastAirdrop(address) {
-    const url = `${CONFIG.PROXY_API_URL.replace("/api/polygon", "")}/api/last-airdrops?address=${address}`;
-
     try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Airdrop not found");
+      const res = await fetch(
+        `https://proxy-git-main-lqxtokens-projects.vercel.app/api/last-airdrops?address=${address}`
+      );
+      if (!res.ok) throw new Error("Fetch failed");
 
       const data = await res.json();
-      renderLastAirdrop(data);
+      if (!data || !data.token) {
+        uiModule.addLog("ℹ️ No airdrop records found.", "warn");
+        return;
+      }
+
+      // ✅ Format timestamp
+      const date = new Date(data.timestamp);
+      const formattedTime = date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      // ✅ Render στο UI
+      const summaryHTML = `
+        <div class="card" style="margin-top: 1rem;">
+          <h2>📦 Last Airdrop Summary</h2>
+          <p><strong>Token:</strong> ${data.symbol} (${data.token})</p>
+          <p><strong>Recipients:</strong> ${data.count}</p>
+          <p><strong>Amount per User:</strong> ${data.amountPerUser}</p>
+          <p><strong>Timestamp:</strong> ${formattedTime}</p>
+          <p><strong>Transaction:</strong> <a href="https://polygonscan.com/tx/${data.tx}" target="_blank">${data.tx.slice(0, 10)}...</a></p>
+        </div>
+      `;
+
+      const container = document.getElementById("recoveryCard");
+      container.insertAdjacentHTML("beforebegin", summaryHTML);
     } catch (err) {
-      console.warn("[lastAirdropModule] No previous airdrop found or error fetching.");
-      hideLastAirdrop();
+      console.warn("[lastAirdropModule] ❌", err);
+      uiModule.addLog("❌ Failed to load last airdrop summary.", "error");
     }
   }
 
-  function renderLastAirdrop(data) {
-    const container = document.getElementById("lastAirdropCard");
-    if (!container) return;
-
-    const date = new Date(data.timestamp);
-    const formatted = date.toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-
-    container.innerHTML = `
-      <h2>📦 Last Airdrop Summary</h2>
-      <p><strong>Token:</strong> ${data.symbol || "Unknown"} (${shortenAddress(data.token)})</p>
-      <p><strong>Recipients:</strong> ${data.count}</p>
-      <p><strong>Amount per User:</strong> ${data.amountPerUser}</p>
-      <p><strong>Timestamp:</strong> ${formatted}</p>
-      <p><strong>Transaction:</strong> <a href="https://polygonscan.com/tx/${data.tx}" target="_blank">${shortenAddress(data.tx)}</a></p>
-    `;
-
-    container.style.display = "block";
-  }
-
-  function hideLastAirdrop() {
-    const container = document.getElementById("lastAirdropCard");
-    if (container) container.style.display = "none";
-  }
-
-  function shortenAddress(addr) {
-    if (!addr || addr.length < 10) return addr;
-    return addr.slice(0, 6) + "..." + addr.slice(-4);
-  }
-
   return {
-    fetchLastAirdrop
+    fetchLastAirdrop,
   };
 })();
