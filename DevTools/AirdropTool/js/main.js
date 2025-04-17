@@ -1,48 +1,47 @@
 // 📄 js/main.js
-// ✅ Πλήρης main.js με:
-// - ασφαλή σύνδεση wallet
-// - σωστό disconnect/reset
-// - αυτόματο reconnect αν είναι ήδη συνδεδεμένος
-// - dynamic UI updates με βάση wallet state
+// 🔄 Entry point του UI – φορτώνει ABIs, κάνει auto-connect, χειρίζεται UI triggers
 
-document.addEventListener("DOMContentLoaded", async function () {
-  const connectBtn = document.getElementById("connectWallet");
-  const disconnectBtn = document.getElementById("disconnectWallet");
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    // ⏳ Βήμα 1: Περιμένουμε να φορτωθούν τα ABIs
+    await CONFIG.loadAbis();
+    console.log("[main.js] ✅ ABIs loaded, now initializing wallet");
 
-  let walletAlreadyConnecting = false;
-
-  // 🔁 Auto-connect αν υπάρχει ενεργό session
-  if (window.ethereum && window.ethereum.selectedAddress) {
+    // ✅ Βήμα 2: Προσπάθεια αυτόματης σύνδεσης (αν έχει ενεργό wallet)
     await tryConnectWallet();
-  }
 
-  // 👆 Click handler για σύνδεση
-  connectBtn.addEventListener("click", async () => {
-    if (walletAlreadyConnecting) return;
-    await tryConnectWallet();
-  });
-
-  // 🔌 Disconnect button
-  disconnectBtn.addEventListener("click", () => {
-    walletModule.disconnectWallet();
-    location.reload(); // ✅ καθαρισμός UI, state και memory
-  });
-
-  async function tryConnectWallet() {
-    walletAlreadyConnecting = true;
-
-    const wallet = await walletModule.connectWallet();
-
-    if (!wallet) {
-      walletAlreadyConnecting = false;
-      return;
-    }
-
-    // ✅ Αν όλα πήγαν καλά, συνέχισε
-    await window.handleWalletConnected();
-
-    // 🔁 Εμφάνιση κουμπιού disconnect, απόκρυψη connect
-    connectBtn.style.display = "none";
-    disconnectBtn.style.display = "inline-block";
+    // ✅ Βήμα 3: Ενεργοποίηση των κουμπιών
+    initEventListeners();
+  } catch (err) {
+    console.error("[main.js] ❌ Initialization error:", err);
+    uiModule.showError("❌ Failed to initialize app – ABI loading issue.");
   }
 });
+
+async function tryConnectWallet() {
+  const wallet = await walletModule.connectWallet();
+  if (wallet) {
+    await handleWalletConnected();
+  }
+}
+
+function initEventListeners() {
+  document.getElementById("connectWallet").addEventListener("click", handleWalletConnected);
+  document.getElementById("disconnectWallet").addEventListener("click", () => {
+    walletModule.disconnectWallet();
+    location.reload();
+  });
+
+  document.getElementById("checkToken").addEventListener("click", tokenModule.checkToken);
+  document.getElementById("proceedButton").addEventListener("click", addressModule.handleProceed);
+  document.getElementById("sendButton").addEventListener("click", appSend);
+
+  document.getElementById("retryFailedButton").addEventListener("click", appRetry);
+  document.getElementById("recoverTokensButton").addEventListener("click", appRecover);
+  document.getElementById("checkRecordButton").addEventListener("click", appCheckRecord);
+  document.getElementById("backToMain").addEventListener("click", () => {
+    window.location.href = "https://liquidityx.finance";
+  });
+
+  document.getElementById("modeSelect").addEventListener("change", uiModule.switchMode);
+}
