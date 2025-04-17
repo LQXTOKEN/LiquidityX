@@ -2,6 +2,7 @@
 // 📦 Περιλαμβάνει: sendAirdrop, retryFailed, recoverTokens, checkMyRecord
 
 window.sendModule = (function () {
+  // ✅ Αποστολή airdrop σε πολλούς παραλήπτες με ίδιο ποσό
   async function sendAirdrop(tokenAddress, symbol, amountPerUser, recipients, signer) {
     try {
       const airdropContract = new ethers.Contract(
@@ -10,6 +11,7 @@ window.sendModule = (function () {
         signer
       );
 
+      uiModule.log(`🚀 Sending ${symbol} airdrop to ${recipients.length} recipients...`);
       const tx = await airdropContract.batchTransferSameAmount(
         tokenAddress,
         recipients,
@@ -25,6 +27,7 @@ window.sendModule = (function () {
     }
   }
 
+  // ✅ Retry σε παραλήπτες που απέτυχαν
   async function retryFailed(signer, tokenAddress) {
     try {
       const contract = new ethers.Contract(
@@ -44,6 +47,7 @@ window.sendModule = (function () {
     }
   }
 
+  // ✅ Ανάκτηση tokens από αποτυχημένες αποστολές
   async function recoverTokens(signer, tokenAddress) {
     try {
       const contract = new ethers.Contract(
@@ -63,6 +67,7 @@ window.sendModule = (function () {
     }
   }
 
+  // ✅ Έλεγχος ιστορικού του χρήστη
   async function checkMyRecord(signer) {
     try {
       const address = await signer.getAddress();
@@ -97,6 +102,7 @@ Claimed: ${r.claimed ? "✅" : "❌"}\n`;
     }
   }
 
+  // ✅ Public API του module
   return {
     sendAirdrop,
     retryFailed,
