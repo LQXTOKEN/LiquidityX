@@ -1,73 +1,214 @@
-// 📄 js/main.js
-// Περιγραφή: Entry point του εργαλείου. Κάνει init ABIs, wallet και binds UI listeners.
+// js/main.js
 
 document.addEventListener("DOMContentLoaded", async () => {
+  console.log("[main.js] DOM loaded");
+
   try {
     await CONFIG.loadAbis();
-    console.log("[main.js] ✅ ABIs loaded, now initializing wallet");
-    tryConnectWallet();
+    console.log("[main.js] ✅ ABIs loaded and verified");
+
+    // ✅ Φόρτωσε τα τελευταία airdrops κατά το load
+    uiModule.updateLastAirdrops();
   } catch (err) {
-    uiModule.showError("❌ Failed to initialize ABIs. Reload page.");
+    console.error("[main.js] ❌ Initialization failed: ABI loading error");
+    return;
   }
 
-  // ✅ Event listeners για modes
-  const modeSelect = document.getElementById("modeSelect");
-  const pasteSection = document.getElementById("pasteSection");
-  const createSection = document.getElementById("createSection");
-  const randomSection = document.getElementById("randomSection");
-
-  modeSelect.addEventListener("change", () => {
-    const mode = modeSelect.value;
-    pasteSection.style.display = mode === "paste" ? "block" : "none";
-    createSection.style.display = mode === "create" ? "block" : "none";
-    randomSection.style.display = mode === "random" ? "block" : "none";
-
-    // ✅ Always show Proceed button regardless of mode
-    document.getElementById("proceedButton").style.display = "inline-block";
-  });
-
-  // ✅ Trigger mode change manually on load to show correct section
-  modeSelect.dispatchEvent(new Event("change"));
-
-  // ✅ Connect wallet
-  document.getElementById("connectWallet").addEventListener("click", handleWalletConnected);
-
-  // ✅ Disconnect
-  document.getElementById("disconnectWallet").addEventListener("click", () => {
-    walletModule.disconnectWallet();
-    window.location.reload();
-  });
-
-  // ✅ Back to main site
-  document.getElementById("backToMain").addEventListener("click", () => {
-    window.location.href = "https://liquidityx.io";
-  });
-
-  // ✅ Token check
-  document.getElementById("checkToken").addEventListener("click", tokenModule.checkToken);
-
-  // ✅ Proceed
-  document.getElementById("proceedButton").addEventListener("click", async () => {
-    const mode = document.getElementById("modeSelect").value;
-    if (mode === "paste") return addressModule.handlePasteMode();
-    if (mode === "create") return addressModule.handleCreateMode();
-    if (mode === "random") return addressModule.handleRandomMode();
-  });
-
-  // ✅ Send
-  document.getElementById("sendButton").addEventListener("click", appSend);
-
-  // ✅ Download
-  document.getElementById("downloadButton").addEventListener("click", addressModule.downloadAddresses);
-  document.getElementById("downloadFailedButton").addEventListener("click", sendModule.downloadFailed);
-
-  // ✅ Recovery
-  document.getElementById("checkRecordButton").addEventListener("click", appCheckRecord);
-  document.getElementById("retryFailedButton").addEventListener("click", appRetry);
-  document.getElementById("recoverTokensButton").addEventListener("click", appRecover);
+  initializeApp();
 });
 
-async function tryConnectWallet() {
-  const wallet = await walletModule.connectWallet();
-  if (wallet) await handleWalletConnected();
+async function initializeApp() {
+  try {
+    console.log("[main.js] Starting initialization...");
+
+    const connectBtn = document.getElementById("connectWallet");
+    const disconnectBtn = document.getElementById("disconnectWallet");
+    const backBtn = document.getElementById("backToMain");
+    const checkTokenButton = document.getElementById("checkToken");
+    const tokenAddressInput = document.getElementById("tokenAddressInput");
+    const tokenAmountInput = document.getElementById("tokenAmountPerUser");
+    const modeSelect = document.getElementById("modeSelect");
+    const proceedButton = document.getElementById("proceedButton");
+    const sendButton = document.getElementById("sendButton");
+    const downloadButton = document.getElementById("downloadButton");
+
+    const checkRecordButton = document.getElementById("checkRecordButton");
+    const retryFailedButton = document.getElementById("retryFailedButton");
+    const recoverTokensButton = document.getElementById("recoverTokensButton");
+    const logOutput = document.getElementById("logOutput");
+
+    connectBtn.addEventListener("click", async () => {
+      console.log("[main.js] Connect button clicked");
+      const result = await walletModule.connectWallet();
+
+      if (result) {
+        window.signer = result.signer;
+        uiModule.updateWalletUI(result.userAddress);
+
+        const lqx = await erc20Module.getLQXBalance(result.userAddress);
+        if (lqx) {
+          uiModule.updateLQXBalance(lqx);
+        } else {
+          uiModule.showError("Could not fetch LQX balance.");
+        }
+
+        document.getElementById("recoveryCard").style.display = "block";
+        subscribeToLiveAirdropLogs();
+      }
+    });
+
+    disconnectBtn.addEventListener("click", () => {
+      walletModule.disconnectWallet();
+      uiModule.resetUI();
+      document.getElementById("recoveryCard").style.display = "none";
+    });
+
+    backBtn.addEventListener("click", () => {
+      window.location.href = "https://liquidityx.io";
+    });
+
+    checkTokenButton.addEventListener("click", async () => {
+      console.log("[main.js] Check Token button clicked");
+      try {
+        const tokenAddress = tokenAddressInput.value.trim();
+        if (!tokenAddress) {
+          uiModule.showError("Please enter a token address");
+          return;
+        }
+
+        await tokenModule.checkToken(tokenAddress);
+        const selected = tokenModule.getSelectedToken();
+        if (selected) {
+          window.selectedToken = selected;
+          window.currentTokenAddress = selected.contractAddress;
+        }
+      } catch (err) {
+        console.error("[main.js] Token check error:", err);
+        uiModule.showError("Token verification failed");
+      }
+    });
+
+    modeSelect.addEventListener("change", (event) => {
+      const mode = event.target.value;
+      console.log("[main.js] Mode changed:", mode);
+      uiModule.clearResults();
+      uiModule.showModeSection(mode);
+    });
+
+    proceedButton.addEventListener("click", async () => {
+      console.log("[main.js] Proceed button clicked");
+
+      const mode = modeSelect.value;
+      try {
+        const addresses = await addressModule.fetchAddresses(mode);
+        if (addresses?.length > 0) {
+          window.selectedAddresses = addresses;
+          uiModule.displayAddresses(addresses);
+          downloadButton.style.display = "inline-block";
+        } else {
+          uiModule.showError("No addresses found");
+          downloadButton.style.display = "none";
+        }
+      } catch (error) {
+        console.error("[main.js] Address fetch error:", error);
+        uiModule.showError("Failed to fetch addresses");
+        downloadButton.style.display = "none";
+      }
+
+      const amount = tokenAmountInput.value;
+      if (!amount || isNaN(amount)) {
+        uiModule.showError("Invalid amount per user");
+        return;
+      }
+
+      try {
+        const parsedAmount = ethers.utils.parseUnits(amount, window.selectedToken.decimals);
+        window.tokenAmountPerUser = parsedAmount;
+        console.log("[main.js] Parsed amount in wei:", parsedAmount.toString());
+      } catch (err) {
+        console.error("[main.js] ❌ Failed to parse amount:", err);
+        uiModule.showError("❌ Failed to convert amount to token decimals");
+        return;
+      }
+    });
+
+    sendButton.addEventListener("click", () => {
+      console.log("[main.js] Send button clicked");
+
+      if (!window.selectedToken) {
+        uiModule.showError("❌ Token not selected.");
+        return;
+      }
+
+      if (!window.tokenAmountPerUser || !ethers.BigNumber.isBigNumber(window.tokenAmountPerUser)) {
+        uiModule.showError("❌ Invalid amount per address.");
+        return;
+      }
+
+      if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
+        uiModule.showError("❌ No recipient addresses.");
+        return;
+      }
+
+      sendModule.sendAirdrop(
+        window.selectedToken.contractAddress,
+        window.selectedToken.symbol,
+        window.tokenAmountPerUser,
+        window.selectedAddresses,
+        window.signer
+      );
+    });
+
+    downloadButton.addEventListener("click", () => {
+      if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
+        uiModule.showError("❌ No addresses to download.");
+        return;
+      }
+
+      const content = window.selectedAddresses.join("\n");
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "airdrop_addresses.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    checkRecordButton.addEventListener("click", () => sendModule.checkMyRecord(window.signer));
+    retryFailedButton.addEventListener("click", () => sendModule.retryFailed(window.signer, window.currentTokenAddress));
+    recoverTokensButton.addEventListener("click", () => sendModule.recoverTokens(window.signer, window.currentTokenAddress));
+
+    function subscribeToLiveAirdropLogs() {
+      try {
+        const provider = walletModule.getProvider();
+        if (!provider || !CONFIG.BATCH_AIRDROP_ABI) return;
+
+        const airdropContract = new ethers.Contract(
+          CONFIG.AIRDROP_CONTRACT_PROXY,
+          CONFIG.BATCH_AIRDROP_ABI,
+          provider
+        );
+
+        airdropContract.on("AirdropSent", (token, recipient, amount, event) => {
+          const msg = `[LIVE] ✅ Airdropped ${ethers.utils.formatUnits(amount, 18)} ${window.selectedToken?.symbol || "TOKEN"} to ${recipient}`;
+          console.log(msg);
+
+          const logLine = document.createElement("div");
+          logLine.textContent = msg;
+          logOutput.appendChild(logLine);
+        });
+
+        console.log("[main.js] 📡 Subscribed to AirdropSent logs");
+      } catch (e) {
+        console.warn("[main.js] ❌ Failed to subscribe to logs", e);
+      }
+    }
+
+    console.log("[main.js] Initialization complete ✅");
+  } catch (err) {
+    console.error("[main.js] ❌ Unexpected error:", err);
+  }
 }
