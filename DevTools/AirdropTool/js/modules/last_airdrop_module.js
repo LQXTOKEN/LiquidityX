@@ -1,60 +1,56 @@
 // js/modules/last_airdrop_module.js
 //
-// 📦 Περιγραφή: Φέρνει τα δεδομένα του τελευταίου airdrop του χρήστη από το proxy API και τα εμφανίζει στο UI.
-// 📍 Ενσωματώνεται στην κάρτα `#lastAirdropCard` στο index.html
+// ✅ Module που εμφανίζει την πιο πρόσφατη εγγραφή airdrop για τον χρήστη.
 
 window.lastAirdropModule = (function () {
-  // 🔄 Κύρια λειτουργία: Φόρτωση τελευταίου airdrop
-  async function fetchLastAirdrop(userAddress) {
-    try {
-      const url = `https://proxy-git-main-lqxtokens-projects.vercel.app/api/last-airdrops?address=${userAddress}`;
-      const res = await fetch(url);
+  async function fetchLastAirdrop(address) {
+    const url = `${CONFIG.PROXY_API_URL.replace("/api/polygon", "")}/api/last-airdrops?address=${address}`;
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch last airdrop");
-      }
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Airdrop not found");
 
       const data = await res.json();
       renderLastAirdrop(data);
     } catch (err) {
-      console.error("[lastAirdropModule] ❌ Error:", err);
-      const el = document.getElementById("lastAirdropContent");
-      if (el) {
-        el.innerHTML = `<p style="color: var(--accent-red);">❌ Failed to load last airdrop info.</p>`;
-      }
+      console.warn("[lastAirdropModule] No previous airdrop found or error fetching.");
+      hideLastAirdrop();
     }
   }
 
-  // 🧱 Απόδοση των δεδομένων στο UI
   function renderLastAirdrop(data) {
-    const container = document.getElementById("lastAirdropContent");
+    const container = document.getElementById("lastAirdropCard");
+    if (!container) return;
 
-    if (!data || !data.token || !data.amount || !data.totalRecipients) {
-      container.innerHTML = `<p>No previous airdrop found for this wallet.</p>`;
-      return;
-    }
+    const date = new Date(data.timestamp);
+    const formatted = date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
 
-    const html = `
-      <p><strong>Token:</strong> ${data.token}</p>
-      <p><strong>Amount per user:</strong> ${data.amount}</p>
-      <p><strong>Total recipients:</strong> ${data.totalRecipients}</p>
-      <p><strong>Date:</strong> ${formatDate(data.timestamp)}</p>
-      <p><strong>TX Hash:</strong> <a href="https://polygonscan.com/tx/${data.txHash}" target="_blank">${shortHash(data.txHash)}</a></p>
+    container.innerHTML = `
+      <h2>📦 Last Airdrop Summary</h2>
+      <p><strong>Token:</strong> ${data.symbol || "Unknown"} (${shortenAddress(data.token)})</p>
+      <p><strong>Recipients:</strong> ${data.count}</p>
+      <p><strong>Amount per User:</strong> ${data.amountPerUser}</p>
+      <p><strong>Timestamp:</strong> ${formatted}</p>
+      <p><strong>Transaction:</strong> <a href="https://polygonscan.com/tx/${data.tx}" target="_blank">${shortenAddress(data.tx)}</a></p>
     `;
 
-    container.innerHTML = html;
-    document.getElementById("lastAirdropCard").style.display = "block";
+    container.style.display = "block";
   }
 
-  // 🧩 Συντόμευση tx hash
-  function shortHash(hash) {
-    return hash ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : "-";
+  function hideLastAirdrop() {
+    const container = document.getElementById("lastAirdropCard");
+    if (container) container.style.display = "none";
   }
 
-  // 📅 Format ημερομηνίας
-  function formatDate(timestamp) {
-    const date = new Date(timestamp);
-    return date.toLocaleString();
+  function shortenAddress(addr) {
+    if (!addr || addr.length < 10) return addr;
+    return addr.slice(0, 6) + "..." + addr.slice(-4);
   }
 
   return {
