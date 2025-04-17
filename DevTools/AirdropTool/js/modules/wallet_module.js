@@ -1,17 +1,20 @@
-// js/modules/wallet_module.js
-//
-// 📦 Περιγραφή: Διαχείριση wallet σύνδεσης (connect/disconnect/get address/provider).
-// ✅ Ενσωματώνει trigger προς app.js για smart contract-related ενέργειες (π.χ. fetch airdrop info)
+// 📄 js/modules/wallet_module.js
+// ✅ Wallet connect module με safety, logging & disconnect
 
 window.walletModule = (function () {
   let provider;
   let signer;
   let userAddress;
+  let isConnecting = false; // ⛔ για αποτροπή loop
 
   async function connectWallet() {
     try {
+      if (isConnecting) return; // ⛔ prevent re-entry
+      isConnecting = true;
+
       if (!window.ethereum) {
         alert("MetaMask is not installed!");
+        isConnecting = false;
         return null;
       }
 
@@ -21,16 +24,18 @@ window.walletModule = (function () {
       signer = provider.getSigner();
       userAddress = await signer.getAddress();
 
-      console.log("[walletModule] Connected:", userAddress);
-
-      // ✅ Trigger app.js logic for smart contract interaction
-      if (typeof window.handleWalletConnected === "function") {
-        window.handleWalletConnected(userAddress);
+      if (!userAddress || !ethers.utils.isAddress(userAddress)) {
+        console.error("[walletModule] ❌ Invalid or missing user address");
+        isConnecting = false;
+        return null;
       }
 
+      console.log("[walletModule] ✅ Connected:", userAddress);
+      isConnecting = false;
       return { provider, signer, userAddress };
     } catch (error) {
-      console.error("[walletModule] Connection error:", error);
+      console.error("[walletModule] ❌ Connection error:", error);
+      isConnecting = false;
       return null;
     }
   }
@@ -47,6 +52,8 @@ window.walletModule = (function () {
     provider = null;
     signer = null;
     userAddress = null;
+    isConnecting = false;
+    console.log("[walletModule] 🔌 Wallet disconnected");
   }
 
   return {
