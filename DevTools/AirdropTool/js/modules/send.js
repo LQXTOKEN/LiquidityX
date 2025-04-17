@@ -1,24 +1,35 @@
 // 📄 js/modules/send.js
 // 📦 Περιλαμβάνει: sendAirdrop, retryFailed, recoverTokens, checkMyRecord
+// ✅ Υποστηρίζει αυτόματο fee check & value όταν απαιτείται
 
 window.sendModule = (function () {
-  // ✅ Αποστολή airdrop σε πολλούς παραλήπτες με ίδιο ποσό
+  // ✅ Αποστολή Airdrop με fee check
   async function sendAirdrop(tokenAddress, symbol, amountPerUser, recipients, signer) {
     try {
-      const airdropContract = new ethers.Contract(
+      const contract = new ethers.Contract(
         CONFIG.AIRDROP_CONTRACT_PROXY,
         CONFIG.BATCH_AIRDROP_ABI,
         signer
       );
 
-      uiModule.log(`🚀 Sending ${symbol} airdrop to ${recipients.length} recipients...`);
-      const tx = await airdropContract.batchTransferSameAmount(
-        tokenAddress,
-        recipients,
-        amountPerUser
-      );
+      const sender = await signer.getAddress();
 
-      uiModule.log("⏳ Airdrop transaction sent. Waiting for confirmation...");
+      // ✅ Έλεγχος αν είναι exempt από fees
+      const isExempt = await contract.feeExemptAddresses(sender);
+      let overrides = {};
+
+      if (!isExempt) {
+        const requiredFee = await contract.requiredFee();
+        overrides = { value: requiredFee };
+        uiModule.log(`💸 Required fee: ${ethers.utils.formatEther(requiredFee)} MATIC`);
+      } else {
+        uiModule.log("✅ You are exempt from protocol fee.");
+      }
+
+      uiModule.log("🚀 Sending airdrop transaction...");
+      const tx = await contract.batchTransferSameAmount(tokenAddress, recipients, amountPerUser, overrides);
+      uiModule.log("⏳ Waiting for confirmation...");
+
       const receipt = await tx.wait();
       uiModule.log(`✅ Airdrop confirmed in block ${receipt.blockNumber}`);
     } catch (err) {
@@ -27,7 +38,7 @@ window.sendModule = (function () {
     }
   }
 
-  // ✅ Retry σε παραλήπτες που απέτυχαν
+  // 🔁 Retry αποτυχημένων αποδεκτών
   async function retryFailed(signer, tokenAddress) {
     try {
       const contract = new ethers.Contract(
@@ -47,7 +58,7 @@ window.sendModule = (function () {
     }
   }
 
-  // ✅ Ανάκτηση tokens από αποτυχημένες αποστολές
+  // ♻️ Recovery stuck tokens
   async function recoverTokens(signer, tokenAddress) {
     try {
       const contract = new ethers.Contract(
@@ -67,7 +78,7 @@ window.sendModule = (function () {
     }
   }
 
-  // ✅ Έλεγχος ιστορικού του χρήστη
+  // 📜 Προβολή ιστορικού χρήστη (airdrops)
   async function checkMyRecord(signer) {
     try {
       const address = await signer.getAddress();
@@ -102,7 +113,7 @@ Claimed: ${r.claimed ? "✅" : "❌"}\n`;
     }
   }
 
-  // ✅ Public API του module
+  // 🔁 Επιστρέφει όλα τα public functions του module
   return {
     sendAirdrop,
     retryFailed,
