@@ -1,7 +1,7 @@
 // js/modules/address_module.js
 //
 // 📦 Περιγραφή: Παράγει ή φορτώνει wallet addresses για το airdrop εργαλείο, ανά mode (paste, create, random).
-// ✅ Περιλαμβάνει: filtering null, empty, μη έγκυρων διευθύνσεων.
+// ✅ Περιλαμβάνει filtering: null, κενές, μη-έγκυρες, μη μοναδικές διευθύνσεις.
 
 window.addressModule = (function () {
   async function fetchAddresses(mode) {
@@ -62,15 +62,19 @@ window.addressModule = (function () {
   }
 
   function cleanAddresses(inputArray) {
+    const seen = new Set();
+
     const cleaned = inputArray
       .map(addr => addr.trim())
       .filter(addr =>
         addr &&
         addr !== ethers.constants.AddressZero &&
-        ethers.utils.isAddress(addr)
+        ethers.utils.isAddress(addr) &&
+        !seen.has(addr.toLowerCase()) &&
+        seen.add(addr.toLowerCase())
       );
 
-    console.log(`[addressModule] Cleaned addresses: ${cleaned.length}`);
+    console.log(`[addressModule] Cleaned addresses (valid & unique): ${cleaned.length}`);
     return cleaned;
   }
 
