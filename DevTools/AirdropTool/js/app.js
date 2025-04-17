@@ -1,83 +1,108 @@
 // app.js
 //
-// 📦 Κύριο app controller για blockchain ενέργειες του εργαλείου.
-// ✅ Modular σύνδεση με walletModule, uiModule, sendModule, lastAirdropModule
-// ✅ Όλες οι smart contract interactions γίνονται από εδώ.
+// ✅ Περιλαμβάνει όλες τις smart contract αλληλεπιδράσεις
+// ✅ Εκχωρεί global functions σε κουμπιά του UI
+// ✅ Χειρίζεται connect/send/retry/recover
+// ✅ Κάνει trigger για fetch των τελευταίων airdrop logs
 
-window.handleWalletConnected = async function () {
-  const wallet = await walletModule.connectWallet();
-  if (!wallet) return;
-
-  const { signer, userAddress } = wallet;
-
+window.handleWalletConnected = async function (userAddress) {
   uiModule.updateWalletUI(userAddress);
 
-  // ➕ Fetch LQX Balance
-  const token = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
+  const provider = walletModule.getProvider();
+  const signer = provider.getSigner();
+
+  // ✅ Fetch LQX balance & eligibility
+  const token = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, provider);
   const balance = await token.balanceOf(userAddress);
   const decimals = await token.decimals();
   const symbol = await token.symbol();
-
   const formatted = ethers.utils.formatUnits(balance, decimals);
   uiModule.updateLQXBalance({ formatted, symbol });
 
-  // ➕ Last airdrop summary section
+  // ✅ Fetch & render last airdrop summary
   lastAirdropModule.fetchLastAirdrop(userAddress);
+
+  // ✅ Assign to global for later reuse
+  window.connectedSigner = signer;
+  window.connectedAddress = userAddress;
 };
 
-window.appSend = async function (amountPerUser, recipients) {
+window.appSend = async function () {
   try {
-    const signer = walletModule.getProvider().getSigner();
-    const token = tokenModule.getSelectedToken();
-
-    if (!token) {
-      uiModule.showError("❌ No token selected");
+    const tokenInfo = tokenModule.getSelectedToken();
+    if (!tokenInfo) {
+      uiModule.showError("❌ Token not selected");
       return;
     }
 
+    const recipients = uiModule.getDisplayedAddresses();
+    if (recipients.length === 0) {
+      uiModule.showError("❌ No recipients loaded");
+      return;
+    }
+
+    const amountInput = document.getElementById("tokenAmountPerUser").value.trim();
+    if (!amountInput || isNaN(amountInput)) {
+      uiModule.showError("❌ Invalid amount per user");
+      return;
+    }
+
+    const amountPerUser = ethers.utils.parseUnits(amountInput, tokenInfo.decimals);
+
+    console.log("[app.js] Sending:", {
+      symbol: tokenInfo.symbol,
+      amount: amountPerUser.toString(),
+      recipients
+    });
+
     await sendModule.sendAirdrop(
-      token.contractAddress,
-      token.symbol,
+      tokenInfo.contractAddress,
+      tokenInfo.symbol,
       amountPerUser,
       recipients,
-      signer
+      connectedSigner
     );
   } catch (err) {
     console.error("[appSend] ❌ Error:", err);
-    uiModule.addLog(`❌ Airdrop failed: ${err.message || err}`, "error");
+    uiModule.addLog("❌ Send error: " + (err.message || "Unknown error"), "error");
   }
 };
 
-window.appRetry = async function () {
+window.appRetryFailed = async function () {
   try {
-    const signer = walletModule.getProvider().getSigner();
-    const token = tokenModule.getSelectedToken();
-
-    if (!token) {
-      uiModule.showError("❌ No token selected");
+    const tokenInfo = tokenModule.getSelectedToken();
+    if (!tokenInfo) {
+      uiModule.showError("❌ Token not selected");
       return;
     }
 
-    await sendModule.retryFailed(signer, token.contractAddress);
+    await sendModule.retryFailed(connectedSigner, tokenInfo.contractAddress);
   } catch (err) {
-    console.error("[appRetry] ❌ Error:", err);
-    uiModule.addLog(`❌ Retry failed: ${err.message || err}`, "error");
+    console.error("[appRetryFailed] ❌", err);
+    uiModule.addLog("❌ Retry failed", "error");
   }
 };
 
-window.appRecover = async function () {
+window.appRecoverTokens = async function () {
   try {
-    const signer = walletModule.getProvider().getSigner();
-    const token = tokenModule.getSelectedToken();
-
-    if (!token) {
-      uiModule.showError("❌ No token selected");
+    const tokenInfo = tokenModule.getSelectedToken();
+    if (!tokenInfo) {
+      uiModule.showError("❌ Token not selected");
       return;
     }
 
-    await sendModule.recoverTokens(signer, token.contractAddress);
+    await sendModule.recoverTokens(connectedSigner, tokenInfo.contractAddress);
   } catch (err) {
-    console.error("[appRecover] ❌ Error:", err);
-    uiModule.addLog(`❌ Recovery failed: ${err.message || err}`, "error");
+    console.error("[appRecoverTokens] ❌", err);
+    uiModule.addLog("❌ Recovery failed", "error");
+  }
+};
+
+window.appCheckMyRecord = async function () {
+  try {
+    await sendModule.checkMyRecord(connectedSigner);
+  } catch (err) {
+    console.error("[appCheckMyRecord] ❌", err);
+    uiModule.addLog("❌ Could not fetch your record", "error");
   }
 };
