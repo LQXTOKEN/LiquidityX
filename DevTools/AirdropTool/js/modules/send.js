@@ -3,10 +3,13 @@ window.sendModule = (function () {
     try {
       const userAddress = await signer.getAddress();
 
+      // ✅ Μετατροπή σε BigNumber
+      amountPerUser = ethers.BigNumber.from(amountPerUser);
+
       console.log("[send.js] amountPerUser (wei):", amountPerUser.toString());
       console.log("[send.js] recipients.length:", recipients.length);
 
-      // ✅ Έλεγχος για invalid διευθύνσεις
+      // ✅ Έλεγχος για μη έγκυρες διευθύνσεις
       const invalids = recipients.filter(addr => !ethers.utils.isAddress(addr) || addr === ethers.constants.AddressZero);
       if (invalids.length > 0) {
         uiModule.showError(`❌ Invalid address found: ${invalids[0]}`);
@@ -15,7 +18,7 @@ window.sendModule = (function () {
 
       const token = new ethers.Contract(tokenAddress, CONFIG.ERC20_ABI, signer);
       const userBalance = await token.balanceOf(userAddress);
-      const totalRequired = amountPerUser.mul(ethers.BigNumber.from(recipients.length));
+      const totalRequired = amountPerUser.mul(recipients.length);
 
       console.log("[send.js] totalRequired (wei):", totalRequired.toString());
       console.log("[send.js] userBalance (wei):", userBalance.toString());
@@ -27,23 +30,23 @@ window.sendModule = (function () {
         return;
       }
 
-      // ✅ Approve για το token του χρήστη
+      // ✅ Approve του χρήστη για το token
       uiModule.addLog(`🔄 Approving ${symbol} for ${recipients.length} recipients...`);
       const approveTx = await token.approve(CONFIG.AIRDROP_CONTRACT_PROXY, totalRequired);
       uiModule.addLog(`⛽ Approve TX sent: ${approveTx.hash}`);
       await approveTx.wait();
       uiModule.addLog(`✅ Approved ${symbol} successfully.`);
 
-      // ✅ Approve fee σε LQX
+      // ✅ Approve του LQX για fee
       const feeToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
-
       let feeAmount;
+
       try {
         const airdropContract = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
         feeAmount = await airdropContract.requiredFee();
       } catch (e) {
         console.warn("[send.js] ⚠️ requiredFee() not available, using fallback.");
-        feeAmount = ethers.utils.parseUnits("500", 18); // fallback fee
+        feeAmount = ethers.utils.parseUnits("500", 18); // fallback: 500 LQX
       }
 
       console.log("[send.js] requiredFee (wei):", feeAmount.toString());
@@ -54,7 +57,7 @@ window.sendModule = (function () {
       await approveFeeTx.wait();
       uiModule.addLog(`✅ LQX Fee approved.`);
 
-      // ✅ Εκτέλεση Airdrop
+      // ✅ Εκτέλεση του airdrop
       const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
       uiModule.addLog(`🚀 Sending airdrop of ${ethers.utils.formatUnits(amountPerUser)} ${symbol} to ${recipients.length} users...`);
 
@@ -63,12 +66,13 @@ window.sendModule = (function () {
       await tx.wait();
       uiModule.addLog(`✅ Airdrop completed.`);
 
-      // ✅ Έλεγχος για αποτυχημένους
+      // ✅ Έλεγχος για αποτυχημένες διευθύνσεις
       try {
         const failed = await airdrop.getFailedRecipients(tokenAddress, userAddress);
         if (failed.length > 0) {
           uiModule.addLog(`⚠️ ${failed.length} failed recipients. Retry or recover available.`);
 
+          // enable download
           uiModule.enableDownloadFailed(failed, (arr) => {
             const blob = new Blob([arr.join("\n")], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
@@ -81,6 +85,7 @@ window.sendModule = (function () {
             URL.revokeObjectURL(url);
           });
 
+          // enable buttons
           document.getElementById("retryFailedButton").style.display = "inline-block";
           document.getElementById("recoverTokensButton").style.display = "inline-block";
         } else {
