@@ -1,108 +1,84 @@
-// app.js
-//
-// ✅ Περιλαμβάνει όλες τις smart contract αλληλεπιδράσεις
-// ✅ Εκχωρεί global functions σε κουμπιά του UI
-// ✅ Χειρίζεται connect/send/retry/recover
-// ✅ Κάνει trigger για fetch των τελευταίων airdrop logs
+// 📁 app.js
 
-window.handleWalletConnected = async function (userAddress) {
+window.handleWalletConnected = async function () {
+  const connection = await walletModule.connectWallet();
+
+  if (!connection) {
+    uiModule.showError("❌ Wallet connection failed.");
+    return;
+  }
+
+  const { provider, signer, userAddress } = connection;
+
   uiModule.updateWalletUI(userAddress);
 
-  const provider = walletModule.getProvider();
-  const signer = provider.getSigner();
+  // ✅ Φόρτωση LQX Balance
+  const lqxToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, provider);
+  const balanceRaw = await lqxToken.balanceOf(userAddress);
+  const decimals = await lqxToken.decimals();
+  const formatted = ethers.utils.formatUnits(balanceRaw, decimals);
 
-  // ✅ Fetch LQX balance & eligibility
-  const token = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, provider);
-  const balance = await token.balanceOf(userAddress);
-  const decimals = await token.decimals();
-  const symbol = await token.symbol();
-  const formatted = ethers.utils.formatUnits(balance, decimals);
-  uiModule.updateLQXBalance({ formatted, symbol });
+  uiModule.updateLQXBalance({ formatted, symbol: "LQX" });
 
-  // ✅ Fetch & render last airdrop summary
-  lastAirdropModule.fetchLastAirdrop(userAddress);
-
-  // ✅ Assign to global for later reuse
-  window.connectedSigner = signer;
-  window.connectedAddress = userAddress;
+  // ✅ Φόρτωση τελευταίων Airdrops
+  if (window.lastAirdropModule?.fetchLastAirdrop) {
+    await lastAirdropModule.fetchLastAirdrop(userAddress);
+  }
 };
 
+// ✅ Επαναφορά Wallet
+window.handleWalletDisconnect = function () {
+  walletModule.disconnectWallet();
+  uiModule.resetUI();
+};
+
+// ✅ Send
 window.appSend = async function () {
-  try {
-    const tokenInfo = tokenModule.getSelectedToken();
-    if (!tokenInfo) {
-      uiModule.showError("❌ Token not selected");
-      return;
-    }
+  const signer = walletModule.getProvider()?.getSigner();
+  const selectedToken = tokenModule.getSelectedToken();
+  const addresses = uiModule.getDisplayedAddresses();
 
-    const recipients = uiModule.getDisplayedAddresses();
-    if (recipients.length === 0) {
-      uiModule.showError("❌ No recipients loaded");
-      return;
-    }
-
-    const amountInput = document.getElementById("tokenAmountPerUser").value.trim();
-    if (!amountInput || isNaN(amountInput)) {
-      uiModule.showError("❌ Invalid amount per user");
-      return;
-    }
-
-    const amountPerUser = ethers.utils.parseUnits(amountInput, tokenInfo.decimals);
-
-    console.log("[app.js] Sending:", {
-      symbol: tokenInfo.symbol,
-      amount: amountPerUser.toString(),
-      recipients
-    });
-
-    await sendModule.sendAirdrop(
-      tokenInfo.contractAddress,
-      tokenInfo.symbol,
-      amountPerUser,
-      recipients,
-      connectedSigner
-    );
-  } catch (err) {
-    console.error("[appSend] ❌ Error:", err);
-    uiModule.addLog("❌ Send error: " + (err.message || "Unknown error"), "error");
+  if (!signer || !selectedToken || addresses.length === 0) {
+    uiModule.showError("❌ Missing token, signer or recipients.");
+    return;
   }
+
+  const input = document.getElementById("tokenAmountPerUser").value;
+  const amount = ethers.utils.parseUnits(input, selectedToken.decimals);
+
+  console.log("[appSend] Parsed amount in wei:", amount.toString());
+
+  await sendModule.sendAirdrop(
+    selectedToken.contractAddress,
+    selectedToken.symbol,
+    amount,
+    addresses,
+    signer
+  );
 };
 
-window.appRetryFailed = async function () {
-  try {
-    const tokenInfo = tokenModule.getSelectedToken();
-    if (!tokenInfo) {
-      uiModule.showError("❌ Token not selected");
-      return;
-    }
+// ✅ Retry
+window.appRetry = async function () {
+  const signer = walletModule.getProvider()?.getSigner();
+  const selectedToken = tokenModule.getSelectedToken();
 
-    await sendModule.retryFailed(connectedSigner, tokenInfo.contractAddress);
-  } catch (err) {
-    console.error("[appRetryFailed] ❌", err);
-    uiModule.addLog("❌ Retry failed", "error");
+  if (!signer || !selectedToken) {
+    uiModule.showError("❌ Missing signer or token.");
+    return;
   }
+
+  await sendModule.retryFailed(signer, selectedToken.contractAddress);
 };
 
-window.appRecoverTokens = async function () {
-  try {
-    const tokenInfo = tokenModule.getSelectedToken();
-    if (!tokenInfo) {
-      uiModule.showError("❌ Token not selected");
-      return;
-    }
+// ✅ Recover
+window.appRecover = async function () {
+  const signer = walletModule.getProvider()?.getSigner();
+  const selectedToken = tokenModule.getSelectedToken();
 
-    await sendModule.recoverTokens(connectedSigner, tokenInfo.contractAddress);
-  } catch (err) {
-    console.error("[appRecoverTokens] ❌", err);
-    uiModule.addLog("❌ Recovery failed", "error");
+  if (!signer || !selectedToken) {
+    uiModule.showError("❌ Missing signer or token.");
+    return;
   }
-};
 
-window.appCheckMyRecord = async function () {
-  try {
-    await sendModule.checkMyRecord(connectedSigner);
-  } catch (err) {
-    console.error("[appCheckMyRecord] ❌", err);
-    uiModule.addLog("❌ Could not fetch your record", "error");
-  }
+  await sendModule.recoverTokens(signer, selectedToken.contractAddress);
 };
