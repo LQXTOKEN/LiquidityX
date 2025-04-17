@@ -1,3 +1,4 @@
+<!-- 📄 index.html - Full UI για το LiquidityX Airdrop Tool -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +12,7 @@
   <div class="container">
     <h1>LiquidityX Airdrop Tool</h1>
 
-    <!-- ✅ WALLET SECTION -->
+    <!-- ✅ WALLET CONNECTION -->
     <div class="card wallet-card">
       <div class="button-row">
         <button id="backToMain" class="btn">← Back to Main Website</button>
@@ -30,7 +31,7 @@
       </div>
     </div>
 
-    <!-- ✅ AIRDROP TOOL SECTION -->
+    <!-- ✅ AIRDROP TOOL -->
     <div id="airdropTool" class="card" style="display: none;">
       <!-- Token Selection -->
       <div class="input-group">
@@ -46,53 +47,54 @@
         <input type="number" id="tokenAmountPerUser" placeholder="Enter token amount per address" />
       </div>
 
-      <!-- Mode Selection -->
+      <!-- Input Mode -->
       <div class="input-group">
         <label for="modeSelect">Choose input method:</label>
         <select id="modeSelect">
           <option value="paste">Paste</option>
-          <option value="create">Create</option>
-          <option value="random">Random</option>
+          <option value="create">Create (from holders)</option>
+          <option value="random">Random (from active wallets)</option>
         </select>
       </div>
 
       <!-- Paste Mode -->
       <div id="pasteSection" class="modeSection">
         <div class="input-group">
-          <label for="polygonScanInput">Paste list of wallet addresses (one per line):</label>
+          <label for="polygonScanInput">Paste wallet addresses (one per line):</label>
           <textarea id="polygonScanInput" placeholder="0x1234...\n0xabcd...\n0x5678..."></textarea>
         </div>
+        <button id="proceedButton" class="btn">Proceed</button>
       </div>
 
       <!-- Create Mode -->
       <div id="createSection" class="modeSection" style="display:none;">
         <div class="input-group">
-          <label for="contractInput">Enter token address to extract holders:</label>
+          <label for="contractInput">Token address to extract holders:</label>
           <input type="text" id="contractInput" placeholder="Enter token contract address..." />
         </div>
         <div class="input-group">
-          <label for="maxCreateAddresses">Enter max number of addresses to use (max 1000):</label>
+          <label for="maxCreateAddresses">Max number of holders to use (max 1000):</label>
           <input type="number" id="maxCreateAddresses" max="1000" min="1" value="100" />
         </div>
+        <button id="proceedButton" class="btn">Proceed</button>
       </div>
 
       <!-- Random Mode -->
       <div id="randomSection" class="modeSection" style="display:none;">
         <div class="input-group">
-          <label for="maxAddresses">Enter max number of addresses to use (max 1000):</label>
+          <label for="maxAddresses">Max number of random addresses (max 1000):</label>
           <input type="number" id="maxAddresses" max="1000" min="1" value="100" />
         </div>
+        <button id="proceedButton" class="btn">Proceed</button>
       </div>
-
-      <!-- Action Buttons -->
-      <button id="proceedButton" class="btn">Proceed</button>
-      <button id="downloadButton" class="btn" style="display:none;">Download Addresses (.txt)</button>
-      <button id="downloadFailedButton" class="btn" style="display:none;">Download Failed (.txt)</button>
 
       <!-- Address Results -->
       <pre id="results"></pre>
 
-      <!-- Send -->
+      <!-- Download + Send -->
+      <button id="downloadButton" class="btn" style="display:none;">Download Addresses (.txt)</button>
+      <button id="downloadFailedButton" class="btn" style="display:none;">Download Failed (.txt)</button>
+
       <button id="sendButton" class="btn" style="background-color: var(--accent-green); margin-top: 1rem;">
         Send Airdrop
       </button>
@@ -101,7 +103,7 @@
       <div id="logOutput" class="card" style="margin-top: 1rem;"></div>
     </div>
 
-    <!-- ✅ RECOVERY CARD -->
+    <!-- ✅ RECOVERY PANEL -->
     <div id="recoveryCard" class="card" style="display: none; margin-top: 1.5rem;">
       <h2>🔁 Recovery & Retry</h2>
       <button id="checkRecordButton" class="btn">Check My Last Airdrop</button>
@@ -113,24 +115,19 @@
     <!-- ✅ LAST AIRDROP SUMMARY -->
     <div id="lastAirdropCard" class="card" style="display: none;"></div>
 
-    <!-- ✅ ABOUT SECTION -->
+    <!-- ✅ ABOUT -->
     <div class="card about-section">
       <h2>What is the LiquidityX Airdrop Tool?</h2>
       <p>
-        The <strong>LiquidityX Airdrop Tool</strong> allows you to airdrop ERC-20 tokens efficiently on the Polygon network using a smart contract-based batch system.
+        The <strong>LiquidityX Airdrop Tool</strong> allows you to airdrop ERC-20 tokens efficiently on Polygon via smart contract batch transfers.
       </p>
       <p>
-        Each airdrop sends <strong>500 LQX</strong> as protocol fee to increase APR in the LP staking contract, promoting sustainability.
-      </p>
-      <p>
-        No more manual claims, no more high gas costs — just pure automated power for your airdrop strategy.
+        Each airdrop sends <strong>500 LQX</strong> to the protocol as fee to support staking rewards.
       </p>
     </div>
 
     <!-- ✅ FOOTER -->
-    <footer>
-      LiquidityX – AirdropTool Version 1.0
-    </footer>
+    <footer>LiquidityX – AirdropTool Version 1.0</footer>
   </div>
 
   <!-- ✅ JS MODULES -->
@@ -142,6 +139,7 @@
   <script src="js/modules/token_module.js"></script>
   <script src="js/modules/send.js"></script>
   <script src="js/modules/last_airdrop_module.js"></script>
+  <script src="js/app.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
