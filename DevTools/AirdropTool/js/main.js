@@ -1,4 +1,7 @@
-// js/main.js
+// main.js
+//
+// 📦 Entry point του εργαλείου. Συνδέει UI με modules και triggers.
+// ✅ Δεν περιέχει καμία business λογική — όλα τα calls γίνονται σε modules.
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[main.js] DOM loaded");
@@ -6,194 +9,109 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     await CONFIG.loadAbis();
     console.log("[main.js] ✅ ABIs loaded and verified");
-
-    // ✅ Φόρτωσε τα τελευταία airdrops κατά το load
-    uiModule.updateLastAirdrops();
-  } catch (err) {
-    console.error("[main.js] ❌ Initialization failed: ABI loading error");
-    return;
+  } catch (e) {
+    return uiModule.showError("❌ Failed to load smart contract definitions");
   }
 
-  initializeApp();
+  // 🔄 Initial placeholder log
+  uiModule.updateLastAirdrops();
+
+  // 🟢 Κουμπί σύνδεσης
+  document.getElementById("connectWallet").addEventListener("click", () => {
+    console.log("[main.js] Connect button clicked");
+    window.handleWalletConnected();
+  });
+
+  // 🔴 Κουμπί αποσύνδεσης
+  document.getElementById("disconnectWallet").addEventListener("click", () => {
+    walletModule.disconnectWallet();
+    uiModule.resetUI();
+  });
+
+  // 🔁 Κουμπί επανάληψης αποτυχημένων
+  document.getElementById("retryFailedButton").addEventListener("click", () => {
+    window.appRetry();
+  });
+
+  // 💸 Κουμπί ανάκτησης tokens
+  document.getElementById("recoverTokensButton").addEventListener("click", () => {
+    window.appRecover();
+  });
+
+  // 📦 Κουμπί προβολής προηγούμενης εγγραφής
+  document.getElementById("checkRecordButton").addEventListener("click", () => {
+    document.getElementById("recoveryCard").style.display = "block";
+    window.appRecover(); // ή αν θες, show fetch-only: sendModule.checkMyRecord()
+  });
+
+  // 🔍 Token validation
+  document.getElementById("checkToken").addEventListener("click", () => {
+    console.log("[main.js] Check Token button clicked");
+    const tokenAddr = document.getElementById("tokenAddressInput").value.trim();
+    tokenModule.checkToken(tokenAddr);
+  });
+
+  // 🔀 Mode selection
+  document.getElementById("modeSelect").addEventListener("change", (e) => {
+    const mode = e.target.value;
+    console.log("[main.js] Mode changed:", mode);
+    uiModule.showModeSection(mode);
+  });
+
+  // 🧠 Fetch addresses
+  document.getElementById("proceedButton").addEventListener("click", async () => {
+    console.log("[main.js] Proceed button clicked");
+
+    const token = tokenModule.getSelectedToken();
+    if (!token) {
+      uiModule.showError("❌ Please select a token first");
+      return;
+    }
+
+    try {
+      const mode = document.getElementById("modeSelect").value;
+      const addresses = await addressModule.fetchAddresses(mode);
+
+      if (!addresses.length) {
+        uiModule.showError("❌ No valid addresses found");
+        return;
+      }
+
+      uiModule.displayAddresses(addresses);
+    } catch (err) {
+      console.error("[main.js] Address fetch error:", err);
+      uiModule.showError("❌ Failed to fetch addresses");
+    }
+  });
+
+  // 🚀 Send Airdrop
+  document.getElementById("sendButton").addEventListener("click", () => {
+    console.log("[main.js] Send button clicked");
+
+    const amountStr = document.getElementById("tokenAmountPerUser").value.trim();
+    const recipients = uiModule.getDisplayedAddresses();
+
+    if (!amountStr || isNaN(amountStr)) {
+      uiModule.showError("❌ Invalid amount");
+      return;
+    }
+
+    if (!recipients.length) {
+      uiModule.showError("❌ No recipients to send to");
+      return;
+    }
+
+    const token = tokenModule.getSelectedToken();
+    if (!token) {
+      uiModule.showError("❌ No token selected");
+      return;
+    }
+
+    const amount = ethers.utils.parseUnits(amountStr, token.decimals);
+    console.log("[main.js] Parsed amount in wei:", amount.toString());
+
+    window.appSend(amount, recipients);
+  });
+
+  console.log("[main.js] Initialization complete ✅");
 });
-
-async function initializeApp() {
-  try {
-    console.log("[main.js] Starting initialization...");
-
-    const connectBtn = document.getElementById("connectWallet");
-    const disconnectBtn = document.getElementById("disconnectWallet");
-    const backBtn = document.getElementById("backToMain");
-    const checkTokenButton = document.getElementById("checkToken");
-    const tokenAddressInput = document.getElementById("tokenAddressInput");
-    const tokenAmountInput = document.getElementById("tokenAmountPerUser");
-    const modeSelect = document.getElementById("modeSelect");
-    const proceedButton = document.getElementById("proceedButton");
-    const sendButton = document.getElementById("sendButton");
-    const downloadButton = document.getElementById("downloadButton");
-
-    const checkRecordButton = document.getElementById("checkRecordButton");
-    const retryFailedButton = document.getElementById("retryFailedButton");
-    const recoverTokensButton = document.getElementById("recoverTokensButton");
-
-    connectBtn.addEventListener("click", async () => {
-      console.log("[main.js] Connect button clicked");
-      const result = await walletModule.connectWallet();
-
-      if (result) {
-        window.signer = result.signer;
-        uiModule.updateWalletUI(result.userAddress);
-
-        const lqx = await erc20Module.getLQXBalance(result.userAddress);
-        if (lqx) {
-          uiModule.updateLQXBalance(lqx);
-        } else {
-          uiModule.showError("Could not fetch LQX balance.");
-        }
-
-        document.getElementById("recoveryCard").style.display = "block";
-      }
-    });
-
-    disconnectBtn.addEventListener("click", () => {
-      walletModule.disconnectWallet();
-      uiModule.resetUI();
-      document.getElementById("recoveryCard").style.display = "none";
-    });
-
-    backBtn.addEventListener("click", () => {
-      window.location.href = "https://liquidityx.io";
-    });
-
-    checkTokenButton.addEventListener("click", async () => {
-      console.log("[main.js] Check Token button clicked");
-      try {
-        const tokenAddress = tokenAddressInput.value.trim();
-        if (!tokenAddress) {
-          uiModule.showError("Please enter a token address");
-          return;
-        }
-
-        await tokenModule.checkToken(tokenAddress);
-        const selected = tokenModule.getSelectedToken();
-        if (selected) {
-          window.selectedToken = selected;
-          window.currentTokenAddress = selected.contractAddress;
-        }
-      } catch (err) {
-        console.error("[main.js] Token check error:", err);
-        uiModule.showError("Token verification failed");
-      }
-    });
-
-    modeSelect.addEventListener("change", (event) => {
-      const mode = event.target.value;
-      console.log("[main.js] Mode changed:", mode);
-      uiModule.clearResults();
-      uiModule.showModeSection(mode);
-
-      // ✅ Διατήρηση token στη μνήμη
-      if (window.selectedToken) {
-        console.log("[main.js] ✅ Token already selected:", window.selectedToken.symbol);
-      } else {
-        console.warn("[main.js] ⚠️ Token not selected yet");
-      }
-    });
-
-    proceedButton.addEventListener("click", async () => {
-      console.log("[main.js] Proceed button clicked");
-
-      const mode = modeSelect.value;
-      try {
-        const addresses = await addressModule.fetchAddresses(mode);
-        if (addresses?.length > 0) {
-          window.selectedAddresses = addresses;
-          uiModule.displayAddresses(addresses);
-          downloadButton.style.display = "inline-block";
-        } else {
-          uiModule.showError("No addresses found");
-          downloadButton.style.display = "none";
-        }
-      } catch (error) {
-        console.error("[main.js] Address fetch error:", error);
-        uiModule.showError("Failed to fetch addresses");
-        downloadButton.style.display = "none";
-      }
-
-      const amount = tokenAmountInput.value;
-      if (!amount || isNaN(amount)) {
-        uiModule.showError("Invalid amount per user");
-        return;
-      }
-
-      if (!window.selectedToken) {
-        console.warn("[main.js] ⚠️ Token missing during amount parse");
-        uiModule.showError("Please select a token before proceeding.");
-        return;
-      }
-
-      try {
-        const parsedAmount = ethers.utils.parseUnits(amount, window.selectedToken.decimals);
-        window.tokenAmountPerUser = parsedAmount;
-        console.log("[main.js] Parsed amount in wei:", parsedAmount.toString());
-      } catch (err) {
-        console.error("[main.js] ❌ Failed to parse amount:", err);
-        uiModule.showError("❌ Failed to convert amount to token decimals");
-        return;
-      }
-    });
-
-    sendButton.addEventListener("click", () => {
-      console.log("[main.js] Send button clicked");
-
-      if (!window.selectedToken) {
-        uiModule.showError("❌ Token not selected.");
-        return;
-      }
-
-      if (!window.tokenAmountPerUser || !ethers.BigNumber.isBigNumber(window.tokenAmountPerUser)) {
-        uiModule.showError("❌ Invalid amount per address.");
-        return;
-      }
-
-      if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
-        uiModule.showError("❌ No recipient addresses.");
-        return;
-      }
-
-      sendModule.sendAirdrop(
-        window.selectedToken.contractAddress,
-        window.selectedToken.symbol,
-        window.tokenAmountPerUser,
-        window.selectedAddresses,
-        window.signer
-      );
-    });
-
-    downloadButton.addEventListener("click", () => {
-      if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
-        uiModule.showError("❌ No addresses to download.");
-        return;
-      }
-
-      const content = window.selectedAddresses.join("\n");
-      const blob = new Blob([content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "airdrop_addresses.txt";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
-
-    checkRecordButton.addEventListener("click", () => sendModule.checkMyRecord(window.signer));
-    retryFailedButton.addEventListener("click", () => sendModule.retryFailed(window.signer, window.currentTokenAddress));
-    recoverTokensButton.addEventListener("click", () => sendModule.recoverTokens(window.signer, window.currentTokenAddress));
-
-    console.log("[main.js] Initialization complete ✅");
-  } catch (err) {
-    console.error("[main.js] ❌ Unexpected error:", err);
-  }
-}
