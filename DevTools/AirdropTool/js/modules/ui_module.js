@@ -1,156 +1,175 @@
 // js/modules/ui_module.js
+//
+// 📦 Περιγραφή: UI Helpers για το εργαλείο LiquidityX Airdrop Tool
+// Περιλαμβάνει: ενημέρωση wallet, eligibility, token status, logs, εμφάνιση/κρυψιμο sections,
+// νέα λειτουργία live logging (logMessage) και εμφάνιση τελευταίου airdrop (showLastAirdrop)
 
 window.uiModule = (function () {
-  const walletAddressEl = document.getElementById("walletAddress");
-  const lqxBalanceEl = document.getElementById("lqxBalance");
-  const eligibilityEl = document.getElementById("eligibilityMessage");
-  const airdropToolEl = document.getElementById("airdropTool");
-  const accessDeniedEl = document.getElementById("accessDenied");
-  const resultsEl = document.getElementById("results");
-  const logOutputEl = document.getElementById("logOutput");
-
   function updateWalletUI(address) {
-    walletAddressEl.textContent = `Connected: ${address}`;
+    document.getElementById("walletAddress").textContent = `Connected: ${address}`;
     document.getElementById("connectWallet").style.display = "none";
     document.getElementById("disconnectWallet").style.display = "inline-block";
+    document.getElementById("airdropTool").style.display = "block";
   }
 
-  function updateLQXBalance(balanceBN) {
-    try {
-      const formatted = ethers.utils.formatUnits(balanceBN, 18);
-      lqxBalanceEl.textContent = `LQX Balance: ${formatted}`;
-      const showTool = balanceBN.gte(ethers.utils.parseUnits("1000", 18));
-      airdropToolEl.style.display = showTool ? "block" : "none";
-      accessDeniedEl.style.display = showTool ? "none" : "block";
-    } catch (e) {
-      lqxBalanceEl.textContent = `LQX Balance: [error]`;
+  function updateLQXBalance(balanceInfo) {
+    const balanceText = `${balanceInfo.formatted} ${balanceInfo.symbol}`;
+    const balanceElement = document.getElementById("lqxBalance");
+    balanceElement.textContent = `LQX Balance: ${balanceText}`;
+
+    const eligible = parseFloat(balanceInfo.formatted) >= 1000;
+    const message = document.getElementById("eligibilityMessage");
+    const toolSection = document.getElementById("airdropTool");
+    const accessDenied = document.getElementById("accessDenied");
+
+    if (eligible) {
+      message.textContent = "✅ You are eligible to use the airdrop tool.";
+      message.style.color = "var(--accent-green)";
+      toolSection.style.display = "block";
+      accessDenied.style.display = "none";
+    } else {
+      message.textContent = "❌ You need at least 1000 LQX to use this tool.";
+      message.style.color = "var(--accent-red)";
+      toolSection.style.display = "none";
+      accessDenied.style.display = "block";
     }
   }
 
-  function updateTokenStatus(message, success = true) {
-    const el = document.getElementById("tokenStatus");
-    if (!el) return;
-    el.textContent = message;
-    el.style.color = success ? "var(--accent-green)" : "var(--accent-red)";
+  function resetUI() {
+    document.getElementById("walletAddress").textContent = "";
+    document.getElementById("lqxBalance").textContent = "";
+    document.getElementById("eligibilityMessage").textContent = "";
+    document.getElementById("connectWallet").style.display = "inline-block";
+    document.getElementById("disconnectWallet").style.display = "none";
+    document.getElementById("airdropTool").style.display = "none";
+    document.getElementById("tokenStatus").textContent = "";
+    document.getElementById("recoveryResults").innerHTML = "";
+    document.getElementById("recoveryCard").style.display = "none";
+    document.getElementById("lastAirdropSummary").style.display = "none";
+    clearResults();
+    clearLog();
+  }
+
+  function showError(message) {
+    const results = document.getElementById("results");
+    results.textContent = `❌ ${message}`;
+    results.style.color = "var(--accent-red)";
+  }
+
+  function clearResults() {
+    const results = document.getElementById("results");
+    results.textContent = "";
+    results.style.color = "";
   }
 
   function showModeSection(mode) {
-    ["paste", "create", "random"].forEach((m) => {
-      const section = document.getElementById(`${m}Section`);
-      if (section) section.style.display = mode === m ? "block" : "none";
+    document.querySelectorAll(".modeSection").forEach(section => {
+      section.style.display = "none";
     });
 
-    // Κρύψε το κουμπί Proceed στο Paste mode
-    const proceedButton = document.getElementById("proceedButton");
-    if (proceedButton) {
-      proceedButton.style.display = mode === "paste" ? "none" : "inline-block";
+    if (mode === "paste") {
+      document.getElementById("pasteSection").style.display = "block";
+      document.getElementById("proceedButton").style.display = "none";
+    } else {
+      document.getElementById("proceedButton").style.display = "inline-block";
+      const target = mode === "create" ? "createSection" : "randomSection";
+      document.getElementById(target).style.display = "block";
     }
   }
 
   function displayAddresses(addresses) {
-    resultsEl.textContent = addresses.join("\n");
+    const results = document.getElementById("results");
+    results.textContent = addresses.join("\n");
+    results.style.color = "var(--text-light)";
+    document.getElementById("downloadButton").style.display = "inline-block";
   }
 
-  function showError(message) {
-    addLog(`❌ ${message}`, "error");
+  function getDisplayedAddresses() {
+    const results = document.getElementById("results").textContent.trim();
+    return results ? results.split("\n") : [];
   }
 
-  function addLog(message, level = "info") {
+  function updateTokenStatus(message, isSuccess = true) {
+    const status = document.getElementById("tokenStatus");
+    status.textContent = message;
+    status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
+  }
+
+  function addLog(message, type = "info") {
+    console.log(`[LOG][${type.toUpperCase()}] ${message}`);
+    const container = document.getElementById("logOutput");
+    if (!container) return;
+
     const p = document.createElement("p");
     p.textContent = message;
-
-    if (level === "error") {
-      p.style.color = "var(--accent-red)";
-    } else if (level === "warn") {
-      p.style.color = "orange";
-    } else {
-      p.style.color = "var(--accent-green)";
-    }
-
-    logOutputEl.appendChild(p);
-    logOutputEl.scrollTop = logOutputEl.scrollHeight;
+    p.style.color =
+      type === "error"
+        ? "var(--accent-red)"
+        : type === "success"
+        ? "var(--accent-green)"
+        : type === "warn"
+        ? "var(--accent-yellow)"
+        : "var(--text-light)";
+    container.appendChild(p);
+    container.scrollTop = container.scrollHeight;
   }
 
-  function clearResults() {
-    resultsEl.textContent = "";
+  // ✅ Λειτουργία για logging με ώρα (terminal style)
+  function logMessage(message) {
+    const container = document.getElementById("logOutput");
+    if (!container) return;
+    const time = new Date().toLocaleTimeString();
+    const line = document.createElement("div");
+    line.textContent = `[${time}] ${message}`;
+    line.style.color = "var(--text-light)";
+    container.appendChild(line);
+    container.scrollTop = container.scrollHeight;
   }
 
-  function resetUI() {
-    walletAddressEl.textContent = "";
-    lqxBalanceEl.textContent = "";
-    eligibilityEl.textContent = "";
-    resultsEl.textContent = "";
-    logOutputEl.innerHTML = "";
-
-    document.getElementById("connectWallet").style.display = "inline-block";
-    document.getElementById("disconnectWallet").style.display = "none";
-    document.getElementById("airdropTool").style.display = "none";
-    document.getElementById("accessDenied").style.display = "none";
-
-    document.getElementById("downloadFailedButton").style.display = "none";
-    document.getElementById("retryFailedButton").style.display = "none";
-    document.getElementById("recoverTokensButton").style.display = "none";
-
-    const recoveryResults = document.getElementById("recoveryResults");
-    if (recoveryResults) recoveryResults.innerHTML = "";
+  function clearLog() {
+    const container = document.getElementById("logOutput");
+    if (container) container.innerHTML = "";
   }
 
-  async function updateLastAirdrops() {
-    try {
-      const res = await fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/api/last-airdrops");
-      if (!res.ok) throw new Error("Response not ok");
+  function enableDownloadFailed(failedArray, onClickHandler) {
+    const btn = document.getElementById("downloadFailedButton");
+    if (!btn) return;
 
-      const data = await res.json();
-      const container = document.createElement("div");
-      container.className = "card";
-      container.style.marginTop = "1.5rem";
-
-      const title = document.createElement("h2");
-      title.textContent = "📦 Last Airdrop Tokens";
-      container.appendChild(title);
-
-      if (!Array.isArray(data) || data.length === 0) {
-        const p = document.createElement("p");
-        p.textContent = "No recent airdrops found.";
-        container.appendChild(p);
-      } else {
-        const list = document.createElement("ul");
-        data.forEach((item) => {
-          const li = document.createElement("li");
-          li.innerHTML = `<strong>${item.symbol}</strong> – ${item.amount} tokens sent to ${item.recipients} users`;
-          list.appendChild(li);
-        });
-        container.appendChild(list);
-      }
-
-      const aboutSection = document.querySelector(".about-section");
-      if (aboutSection && aboutSection.parentNode) {
-        aboutSection.parentNode.insertBefore(container, aboutSection);
-      }
-    } catch (err) {
-      console.warn("[ui_module.js] Απέτυχε η φόρτωση του Fetch:", err);
-    }
+    btn.style.display = "inline-block";
+    btn.onclick = () => onClickHandler(failedArray);
   }
 
-  function enableDownloadFailed(failedArray, callback) {
-    const downloadBtn = document.getElementById("downloadFailedButton");
-    if (!downloadBtn) return;
+  // ✅ Εμφάνιση πληροφοριών τελευταίου airdrop
+  function showLastAirdrop(data) {
+    const section = document.getElementById("lastAirdropSummary");
+    if (!section) return;
 
-    downloadBtn.style.display = "inline-block";
-    downloadBtn.onclick = () => callback(failedArray);
+    document.getElementById("lastToken").textContent = data.token || "-";
+    document.getElementById("lastAmount").textContent = data.totalAmount || "0";
+    document.getElementById("lastRecipients").textContent = data.totalRecipients || "0";
+    document.getElementById("lastFailed").textContent = data.failedCount || "0";
+    section.style.display = "block";
+  }
+
+  function updateLastAirdrops() {
+    console.log("[uiModule] Placeholder: updateLastAirdrops");
   }
 
   return {
     updateWalletUI,
     updateLQXBalance,
-    updateTokenStatus,
+    resetUI,
+    showError,
+    clearResults,
     showModeSection,
     displayAddresses,
-    showError,
+    getDisplayedAddresses,
+    updateTokenStatus,
     addLog,
-    clearResults,
-    resetUI,
+    enableDownloadFailed,
     updateLastAirdrops,
-    enableDownloadFailed
+    logMessage,
+    showLastAirdrop,
+    clearLog
   };
 })();
