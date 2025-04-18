@@ -1,74 +1,68 @@
-// 📄 app.js
-// Δομή: Συνδέει wallet, ενημερώνει το UI, fetch balance, fetch last airdrop μία φορά
+// app.js
 
-let lastAirdropFetched = false;
-
-window.handleWalletConnected = async function () {
-  const wallet = await walletModule.connectWallet();
-  if (!wallet) return;
-
-  const { provider, signer, userAddress } = wallet;
-  uiModule.updateWalletUI(userAddress);
+document.addEventListener("DOMContentLoaded", async () => {
+  console.log("[app.js] DOM loaded");
 
   try {
-    const lqxContract = new ethers.Contract(
-      CONFIG.LQX_TOKEN_ADDRESS,
-      CONFIG.ERC20_ABI,
-      provider
-    );
-    const rawBalance = await lqxContract.balanceOf(userAddress);
-    const formatted = ethers.utils.formatUnits(rawBalance, 18);
-    uiModule.updateLQXBalance({ formatted, symbol: "LQX" });
+    // ✅ Φορτώνουμε και επαληθεύουμε τα ABIs
+    await CONFIG.loadAbis();
+    console.log("[app.js] ✅ ABIs loaded and verified");
+
+    // ✅ Αρχικοποίηση του Send Button
+    const sendButton = document.getElementById("sendButton");
+    if (!sendButton) {
+      console.error("[app.js] ❌ sendButton not found in DOM!");
+      return;
+    }
+
+    // ✅ Προσθήκη event listener στο Send Button
+    sendButton.addEventListener("click", async () => {
+      console.log("[app.js] Send button clicked");
+
+      // ✅ Επαλήθευση σύνδεσης wallet
+      if (!window.signer) {
+        uiModule.showError("❌ Wallet not connected.");
+        return;
+      }
+
+      // ✅ Ανάκτηση global παραμέτρων
+      const selectedToken = window.selectedToken;
+      const tokenAmountPerUser = window.tokenAmountPerUser;
+      const selectedAddresses = window.selectedAddresses;
+
+      // ✅ Έλεγχος παραμέτρων πριν την εκτέλεση του airdrop
+      if (!selectedToken) {
+        uiModule.showError("⚠️ Token not selected.");
+        return;
+      }
+
+      if (!tokenAmountPerUser) {
+        uiModule.showError("⚠️ Amount per user not specified.");
+        return;
+      }
+
+      if (!selectedAddresses || selectedAddresses.length === 0) {
+        uiModule.showError("⚠️ No recipient addresses found.");
+        return;
+      }
+
+      // ✅ Εκτέλεση του airdrop
+      try {
+        await window.airdropExecutor.executeAirdrop({
+          token: selectedToken,
+          amountPerUser: tokenAmountPerUser,
+          addresses: selectedAddresses
+        });
+        uiModule.addLog("✅ Airdrop execution successful.");
+      } catch (err) {
+        console.error("[app.js] ❌ Airdrop execution failed:", err);
+        uiModule.showError("❌ Airdrop failed. Check console for details.");
+      }
+    });
+
+    console.log("[app.js] Initialization complete ✅");
   } catch (err) {
-    console.error("[app.js] ❌ Failed to fetch LQX balance:", err);
+    console.error("[app.js] ❌ Initialization failed:", err);
+    uiModule.showError("❌ Initialization failed. Check console.");
   }
-
-  if (!lastAirdropFetched) {
-    lastAirdropModule.fetchLastAirdrop(userAddress);
-    lastAirdropFetched = true;
-  }
-};
-
-window.appSend = async function () {
-  const signer = walletModule.getProvider()?.getSigner();
-  const token = tokenModule.getSelectedToken();
-  const recipients = uiModule.getDisplayedAddresses();
-  const rawAmount = document.getElementById("tokenAmountPerUser").value;
-
-  if (!signer || !token || recipients.length === 0 || !rawAmount) {
-    uiModule.showError("❌ Missing data for airdrop.");
-    return;
-  }
-
-  const amount = ethers.utils.parseUnits(rawAmount, token.decimals);
-  await sendModule.sendAirdrop(
-    token.contractAddress,
-    token.symbol,
-    amount,
-    recipients,
-    signer
-  );
-};
-
-window.appRetry = async function () {
-  const signer = walletModule.getProvider()?.getSigner();
-  const token = tokenModule.getSelectedToken();
-  if (!signer || !token) return;
-
-  await sendModule.retryFailed(signer, token.contractAddress);
-};
-
-window.appRecover = async function () {
-  const signer = walletModule.getProvider()?.getSigner();
-  const token = tokenModule.getSelectedToken();
-  if (!signer || !token) return;
-
-  await sendModule.recoverTokens(signer, token.contractAddress);
-};
-
-window.appCheckRecord = async function () {
-  const signer = walletModule.getProvider()?.getSigner();
-  if (!signer) return;
-
-  await sendModule.checkMyRecord(signer);
-};
+});
