@@ -35,14 +35,20 @@ window.sendModule = (function () {
       await approveTx.wait();
       uiModule.addLog(`✅ Approved successfully.`);
 
-      // ✅ Approve fee σε LQX
+      // ✅ Approve fee σε LQX (μόνο αν δεν έχει ήδη εγκριθεί)
       const feeToken = new ethers.Contract(CONFIG.LQX_TOKEN_ADDRESS, CONFIG.ERC20_ABI, signer);
-      const feeAmount = ethers.utils.parseUnits("1000", 18); // 1000 LQX
-      uiModule.addLog(`🔐 Approving ${ethers.utils.formatUnits(feeAmount)} LQX as fee...`);
-      const approveFeeTx = await feeToken.approve(CONFIG.AIRDROP_CONTRACT_PROXY, feeAmount);
-      uiModule.addLog(`⛽ Fee Approve TX sent: ${approveFeeTx.hash}`);
-      await approveFeeTx.wait();
-      uiModule.addLog(`✅ LQX Fee approved.`);
+      const feeAmount = ethers.utils.parseUnits("500", 18); // ✅ 500 LQX
+      const currentAllowance = await feeToken.allowance(userAddress, CONFIG.AIRDROP_CONTRACT_PROXY);
+
+      if (currentAllowance.lt(feeAmount)) {
+        uiModule.addLog(`🔐 Approving ${ethers.utils.formatUnits(feeAmount)} LQX as fee...`);
+        const approveFeeTx = await feeToken.approve(CONFIG.AIRDROP_CONTRACT_PROXY, feeAmount);
+        uiModule.addLog(`⛽ Fee Approve TX sent: ${approveFeeTx.hash}`);
+        await approveFeeTx.wait();
+        uiModule.addLog(`✅ LQX Fee approved.`);
+      } else {
+        uiModule.addLog(`✅ LQX Fee already approved (${ethers.utils.formatUnits(currentAllowance)} LQX).`);
+      }
 
       // ✅ Εκτέλεση Airdrop
       const airdrop = new ethers.Contract(CONFIG.AIRDROP_CONTRACT_PROXY, CONFIG.BATCH_AIRDROP_ABI, signer);
