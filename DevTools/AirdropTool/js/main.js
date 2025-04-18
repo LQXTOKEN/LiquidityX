@@ -1,198 +1,105 @@
-// 📄 js/main.js
-// ✅ Main entry για το Airdrop Tool
+// 📦 Περιλαμβάνει: sendAirdrop, retryFailed, recoverTokens, checkMyRecord
 
-// Περιμένουμε να φορτωθεί το DOM
-// και μετά κάνουμε init τα πάντα
-
-document.addEventListener("DOMContentLoaded", async () => {
-  console.log("[main.js] DOM loaded");
-
-  try {
-    await CONFIG.loadAbis();
-    console.log("[main.js] ✅ ABIs loaded and verified");
-
-    // ✅ Φόρτωσε τα τελευταία airdrops κατά το load
-    uiModule.updateLastAirdrops();
-  } catch (err) {
-    console.error("[main.js] ❌ Initialization failed: ABI loading error");
-    return;
-  }
-
-  initializeApp();
-});
-
-// 🔧 Κύρια ρουτίνα αρχικοποίησης listeners και UI
-async function initializeApp() {
-  try {
-    console.log("[main.js] Starting initialization...");
-
-    // 🔘 Βασικά κουμπιά και inputs
-    const connectBtn = document.getElementById("connectWallet");
-    const disconnectBtn = document.getElementById("disconnectWallet");
-    const backBtn = document.getElementById("backToMain");
-    const checkTokenButton = document.getElementById("checkToken");
-    const tokenAddressInput = document.getElementById("tokenAddressInput");
-    const tokenAmountInput = document.getElementById("tokenAmountPerUser");
-    const modeSelect = document.getElementById("modeSelect");
-    const proceedButton = document.getElementById("proceedButton");
-    const sendButton = document.getElementById("sendButton");
-    const downloadButton = document.getElementById("downloadButton");
-
-    const checkRecordButton = document.getElementById("checkRecordButton");
-    const retryFailedButton = document.getElementById("retryFailedButton");
-    const recoverTokensButton = document.getElementById("recoverTokensButton");
-
-    connectBtn.addEventListener("click", async () => {
-      console.log("[main.js] Connect button clicked");
-      const result = await walletModule.connectWallet();
-
-      if (result) {
-        window.signer = result.signer;
-        uiModule.updateWalletUI(result.userAddress);
-
-        const lqx = await erc20Module.getLQXBalance(result.userAddress);
-        if (lqx) {
-          uiModule.updateLQXBalance(lqx);
-        } else {
-          uiModule.showError("Could not fetch LQX balance.");
-        }
-
-        document.getElementById("recoveryCard").style.display = "block";
-      }
-    });
-
-    disconnectBtn.addEventListener("click", () => {
-      walletModule.disconnectWallet();
-      uiModule.resetUI();
-      document.getElementById("recoveryCard").style.display = "none";
-    });
-
-    backBtn.addEventListener("click", () => {
-      window.location.href = "https://liquidityx.io";
-    });
-
-    checkTokenButton.addEventListener("click", async () => {
-      console.log("[main.js] Check Token button clicked");
-      try {
-        const tokenAddress = tokenAddressInput.value.trim();
-        if (!tokenAddress) {
-          uiModule.showError("Please enter a token address");
-          return;
-        }
-
-        await tokenModule.checkToken(tokenAddress);
-        const selected = tokenModule.getSelectedToken();
-        if (selected) {
-          window.selectedToken = selected;
-          window.currentTokenAddress = selected.contractAddress;
-        }
-      } catch (err) {
-        console.error("[main.js] Token check error:", err);
-        uiModule.showError("Token verification failed");
-      }
-    });
-
-    modeSelect.addEventListener("change", (event) => {
-      const mode = event.target.value;
-      console.log("[main.js] Mode changed:", mode);
-      uiModule.clearResults();
-      uiModule.showModeSection(mode);
-    });
-
-    proceedButton.addEventListener("click", async () => {
-      console.log("[main.js] Proceed button clicked");
-
-      const mode = modeSelect.value;
-      try {
-        const addresses = await addressModule.fetchAddresses(mode);
-        if (addresses?.length > 0) {
-          window.selectedAddresses = addresses;
-          uiModule.displayAddresses(addresses);
-          downloadButton.style.display = "inline-block";
-        } else {
-          uiModule.showError("No addresses found");
-          downloadButton.style.display = "none";
-        }
-      } catch (error) {
-        console.error("[main.js] Address fetch error:", error);
-        uiModule.showError("Failed to fetch addresses");
-        downloadButton.style.display = "none";
-      }
-
-      const amount = tokenAmountInput.value;
-      if (!amount || isNaN(amount)) {
-        uiModule.showError("Invalid amount per user");
-        return;
-      }
-
-      // ✅ Προσθήκη ασφάλειας πριν χρησιμοποιήσεις decimals
-      if (!window.selectedToken || !window.selectedToken.decimals) {
-        uiModule.showError("❌ No valid token selected.");
-        return;
-      }
-
-      try {
-        const parsedAmount = ethers.utils.parseUnits(amount, window.selectedToken.decimals);
-        window.tokenAmountPerUser = parsedAmount;
-        console.log("[main.js] Parsed amount in wei:", parsedAmount.toString());
-      } catch (err) {
-        console.error("[main.js] ❌ Failed to parse amount:", err);
-        uiModule.showError("❌ Failed to convert amount to token decimals");
-        return;
-      }
-    });
-
-    sendButton.addEventListener("click", () => {
-      console.log("[main.js] Send button clicked");
-
-      if (!window.selectedToken) {
-        uiModule.showError("❌ Token not selected.");
-        return;
-      }
-
-      if (!window.tokenAmountPerUser || !ethers.BigNumber.isBigNumber(window.tokenAmountPerUser)) {
-        uiModule.showError("❌ Invalid amount per address.");
-        return;
-      }
-
-      if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
-        uiModule.showError("❌ No recipient addresses.");
-        return;
-      }
-
-      sendModule.sendAirdrop(
-        window.selectedToken.contractAddress,
-        window.selectedToken.symbol,
-        window.tokenAmountPerUser,
-        window.selectedAddresses,
-        window.signer
+window.sendModule = (function () {
+  async function sendAirdrop(tokenAddress, symbol, amountPerUser, recipients, signer) {
+    try {
+      const airdropContract = new ethers.Contract(
+        CONFIG.AIRDROP_CONTRACT_PROXY,
+        CONFIG.BATCH_AIRDROP_ABI,
+        signer
       );
-    });
 
-    downloadButton.addEventListener("click", () => {
-      if (!window.selectedAddresses || window.selectedAddresses.length === 0) {
-        uiModule.showError("❌ No addresses to download.");
+      const tx = await airdropContract.batchTransferSameAmount(
+        tokenAddress,
+        recipients,
+        amountPerUser
+      );
+
+      uiModule.log("⏳ Airdrop transaction sent. Waiting for confirmation...");
+      const receipt = await tx.wait();
+      uiModule.log(`✅ Airdrop confirmed in block ${receipt.blockNumber}`);
+    } catch (err) {
+      console.error("[send.js] ❌ sendAirdrop failed:", err);
+      uiModule.log("❌ Airdrop failed. Check console for details.");
+    }
+  }
+
+  async function retryFailed(signer, tokenAddress) {
+    try {
+      const contract = new ethers.Contract(
+        CONFIG.AIRDROP_CONTRACT_PROXY,
+        CONFIG.BATCH_AIRDROP_ABI,
+        signer
+      );
+
+      uiModule.log("🔁 Retrying failed recipients...");
+      const tx = await contract.retryFailed(tokenAddress);
+      const receipt = await tx.wait();
+
+      uiModule.log(`✅ Retry completed in tx ${receipt.transactionHash}`);
+    } catch (err) {
+      console.error("[send.js] ❌ retryFailed error:", err);
+      uiModule.log("❌ Retry failed. See console for details.");
+    }
+  }
+
+  async function recoverTokens(signer, tokenAddress) {
+    try {
+      const contract = new ethers.Contract(
+        CONFIG.AIRDROP_CONTRACT_PROXY,
+        CONFIG.BATCH_AIRDROP_ABI,
+        signer
+      );
+
+      uiModule.log("♻️ Recovering stuck tokens...");
+      const tx = await contract.recoverFailedTransfer(tokenAddress);
+      const receipt = await tx.wait();
+
+      uiModule.log(`✅ Recovery complete in tx ${receipt.transactionHash}`);
+    } catch (err) {
+      console.error("[send.js] ❌ recoverTokens error:", err);
+      uiModule.log("❌ Recovery failed. Check console for details.");
+    }
+  }
+
+  async function checkMyRecord(signer) {
+    try {
+      const address = await signer.getAddress();
+      const contract = new ethers.Contract(
+        CONFIG.AIRDROP_CONTRACT_PROXY,
+        CONFIG.BATCH_AIRDROP_ABI,
+        signer
+      );
+
+      uiModule.log("🔍 Fetching airdrop history...");
+      const records = await contract.getUserRecords(address);
+
+      if (!records || records.length === 0) {
+        uiModule.updateRecoveryResults("ℹ️ No airdrop records found.");
         return;
       }
 
-      const content = window.selectedAddresses.join("\n");
-      const blob = new Blob([content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "airdrop_addresses.txt";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
+      const output = records
+        .map((r, i) => {
+          return `#${i + 1}
+Token: ${r.token}
+Total Sent: ${ethers.utils.formatUnits(r.totalAmount)}
+Failed: ${r.failedRecipients.length} addresses
+Claimed: ${r.claimed ? "✅" : "❌"}\n`;
+        })
+        .join("\n");
 
-    checkRecordButton.addEventListener("click", () => sendModule.checkMyRecord(window.signer));
-    retryFailedButton.addEventListener("click", () => sendModule.retryFailed(window.signer, window.currentTokenAddress));
-    recoverTokensButton.addEventListener("click", () => sendModule.recoverTokens(window.signer, window.currentTokenAddress));
-
-    console.log("[main.js] Initialization complete ✅");
-  } catch (err) {
-    console.error("[main.js] ❌ Unexpected error:", err);
+      uiModule.updateRecoveryResults(output);
+    } catch (err) {
+      console.error("[send.js] ❌ checkMyRecord error:", err);
+      uiModule.updateRecoveryResults("❌ Failed to fetch airdrop record.");
+    }
   }
-}
+
+  return {
+    sendAirdrop,
+    retryFailed,
+    recoverTokens,
+    checkMyRecord
+  };
+})();
