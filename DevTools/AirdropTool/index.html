@@ -1,11 +1,10 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LiquidityX Airdrop Tool</title>
-  <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
@@ -16,27 +15,25 @@
     <div class="card wallet-card">
       <div class="button-row">
         <button id="backToMain" class="btn">← Back to Main Website</button>
-        <button id="disconnectWallet" class="btn" style="display:none;">Disconnect Wallet</button>
+        <button id="disconnectWallet" class="btn" style="display: none;">Disconnect Wallet</button>
       </div>
-
       <div id="walletSection">
         <button id="connectWallet" class="btn">Connect Wallet</button>
         <p id="walletAddress"></p>
         <p id="lqxBalance"></p>
-        <p id="eligibilityMessage" style="margin-top:0.5rem;"></p>
+        <p id="eligibilityMessage" style="margin-top: 0.5rem;"></p>
       </div>
-
       <div id="accessDenied" style="display:none;">
         <p style="color: var(--accent-red);">You need at least 1000 LQX to use this tool.</p>
       </div>
     </div>
 
     <!-- ✅ AIRDROP TOOL SECTION -->
-    <div id="airdropTool" class="card" style="display:none;">
+    <div id="airdropTool" class="card" style="display: none;">
       <!-- Token Selection -->
       <div class="input-group">
         <label for="tokenAddressInput">Which token do you want to airdrop?</label>
-        <input type="text" id="tokenAddressInput" placeholder="Enter ERC-20 token contract address"/>
+        <input type="text" id="tokenAddressInput" placeholder="Enter ERC-20 token contract address" />
         <button id="checkToken" class="btn">Check Token</button>
         <p id="tokenStatus"></p>
       </div>
@@ -44,7 +41,7 @@
       <!-- Token Amount per User -->
       <div class="input-group">
         <label for="tokenAmountPerUser">Amount of tokens to send per address:</label>
-        <input type="number" id="tokenAmountPerUser" placeholder="Enter token amount per address"/>
+        <input type="number" id="tokenAmountPerUser" placeholder="Enter token amount per address" />
       </div>
 
       <!-- Mode Selection -->
@@ -69,11 +66,11 @@
       <div id="createSection" class="modeSection" style="display:none;">
         <div class="input-group">
           <label for="contractInput">Enter token address to extract holders:</label>
-          <input type="text" id="contractInput" placeholder="Enter token contract address..."/>
+          <input type="text" id="contractInput" placeholder="Enter token contract address..." />
         </div>
         <div class="input-group">
           <label for="maxCreateAddresses">Enter max number of addresses to use (max 1000):</label>
-          <input type="number" id="maxCreateAddresses" max="1000" min="1" value="100"/>
+          <input type="number" id="maxCreateAddresses" max="1000" min="1" value="100" />
         </div>
       </div>
 
@@ -81,7 +78,7 @@
       <div id="randomSection" class="modeSection" style="display:none;">
         <div class="input-group">
           <label for="maxAddresses">Enter max number of addresses to use (max 1000):</label>
-          <input type="number" id="maxAddresses" max="1000" min="1" value="100"/>
+          <input type="number" id="maxAddresses" max="1000" min="1" value="100" />
         </div>
       </div>
 
@@ -99,20 +96,25 @@
       </button>
 
       <!-- Log Output -->
-      <div id="logOutput" class="card" style="margin-top:1rem;"></div>
+      <div id="logOutput" class="card" style="margin-top: 1rem;"></div>
     </div>
 
     <!-- ✅ RECOVERY CARD -->
-    <div id="recoveryCard" class="card" style="display:none; margin-top:1.5rem;">
+    <div id="recoveryCard" class="card" style="display: none; margin-top: 1.5rem;">
       <h2>🔁 Recovery & Retry</h2>
       <button id="checkRecordButton" class="btn">Check My Last Airdrop</button>
-      <button id="retryFailedButton" class="btn" style="display:none;">Retry Failed</button>
-      <button id="recoverTokensButton" class="btn" style="display:none;">Recover Tokens</button>
-      <div id="recoveryResults" style="margin-top:1rem;"></div>
+      <button id="retryFailedButton" class="btn" style="display: none;">Retry Failed</button>
+      <button id="recoverTokensButton" class="btn" style="display: none;">Recover Tokens</button>
+      <div id="recoveryResults" style="margin-top: 1rem;"></div>
     </div>
 
-    <!-- ✅ LAST AIRDROP SUMMARY -->
-    <div id="lastAirdropCard" class="card" style="display:none;"></div>
+    <!-- 📦 RECENT AIRDROPS SECTION -->
+    <div id="lastAirdropsContainer" class="card" style="margin-top: 1.5rem;">
+      <h2>📦 Recent Airdrops</h2>
+      <div id="lastAirdropsList">
+        <!-- Τα τελευταία airdrops θα φορτωθούν εδώ μέσω JS -->
+      </div>
+    </div>
 
     <!-- ✅ ABOUT SECTION -->
     <div class="card about-section">
@@ -128,7 +130,6 @@
       </p>
     </div>
 
-    <!-- ✅ FOOTER -->
     <footer>
       LiquidityX – AirdropTool Version 1.0
     </footer>
@@ -142,8 +143,15 @@
   <script src="js/modules/address_module.js"></script>
   <script src="js/modules/token_module.js"></script>
   <script src="js/modules/send.js"></script>
-  <script src="js/modules/last_airdrop_module.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/modules/last_airdrops.js"></script>
   <script src="js/main.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // ✅ Φόρτωση τελευταίων airdrops κατά το load
+      lastAirdropModule.fetchLastAirdrops();
+    });
+  </script>
+
 </body>
 </html>
