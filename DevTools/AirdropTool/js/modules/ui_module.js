@@ -1,7 +1,7 @@
 // js/modules/ui_module.js
 
 window.uiModule = (function () {
-  // ✅ Ενημέρωση UI πορτοφολιού
+  // ✅ Ενημέρωση Wallet UI
   function updateWalletUI(address) {
     document.getElementById("walletAddress").textContent = `Connected: ${address}`;
     document.getElementById("connectWallet").style.display = "none";
@@ -9,7 +9,7 @@ window.uiModule = (function () {
     document.getElementById("airdropTool").style.display = "block";
   }
 
-  // ✅ Ενημέρωση υπολοίπου LQX & eligibility
+  // ✅ Ενημέρωση LQX Balance και eligibility
   function updateLQXBalance(balanceInfo) {
     const balanceText = `${balanceInfo.formatted} ${balanceInfo.symbol}`;
     const balanceElement = document.getElementById("lqxBalance");
@@ -33,7 +33,7 @@ window.uiModule = (function () {
     }
   }
 
-  // ✅ Επαναφορά UI στην αρχική κατάσταση
+  // ✅ Reset ολόκληρου UI
   function resetUI() {
     document.getElementById("walletAddress").textContent = "";
     document.getElementById("lqxBalance").textContent = "";
@@ -45,6 +45,7 @@ window.uiModule = (function () {
     document.getElementById("recoveryResults").innerHTML = "";
     document.getElementById("recoveryCard").style.display = "none";
     clearResults();
+    clearLogs();
   }
 
   // ✅ Εμφάνιση error
@@ -54,32 +55,36 @@ window.uiModule = (function () {
     results.style.color = "var(--accent-red)";
   }
 
-  // ✅ Καθαρισμός αποτελεσμάτων
+  // ✅ Καθαρισμός αποτελεσμάτων διευθύνσεων
   function clearResults() {
     const results = document.getElementById("results");
     results.textContent = "";
     results.style.color = "";
   }
 
-  // ✅ Προβολή ενότητας mode (Paste, Create, Random)
+  // ✅ Καθαρισμός log output
+  function clearLogs() {
+    const log = document.getElementById("logOutput");
+    if (log) log.innerHTML = "";
+  }
+
+  // ✅ Εμφάνιση της αντίστοιχης ενότητας ανά mode
   function showModeSection(mode) {
     document.querySelectorAll(".modeSection").forEach(section => {
       section.style.display = "none";
     });
 
-    const proceedButton = document.getElementById("proceedButton");
-    proceedButton.style.display = "inline-block";
-
     if (mode === "paste") {
       document.getElementById("pasteSection").style.display = "block";
-    } else if (mode === "create") {
-      document.getElementById("createSection").style.display = "block";
-    } else if (mode === "random") {
-      document.getElementById("randomSection").style.display = "block";
+      document.getElementById("proceedButton").style.display = "inline-block"; // ✅ always show it
+    } else {
+      document.getElementById("proceedButton").style.display = "inline-block";
+      const target = mode === "create" ? "createSection" : "randomSection";
+      document.getElementById(target).style.display = "block";
     }
   }
 
-  // ✅ Προβολή διευθύνσεων στον πίνακα
+  // ✅ Εμφάνιση διευθύνσεων που φορτώθηκαν
   function displayAddresses(addresses) {
     const results = document.getElementById("results");
     results.textContent = addresses.join("\n");
@@ -87,20 +92,20 @@ window.uiModule = (function () {
     document.getElementById("downloadButton").style.display = "inline-block";
   }
 
-  // ✅ Απόκτηση διευθύνσεων από το UI
+  // ✅ Απόκτηση των εμφανιζόμενων διευθύνσεων
   function getDisplayedAddresses() {
     const results = document.getElementById("results").textContent.trim();
     return results ? results.split("\n") : [];
   }
 
-  // ✅ Ενημέρωση κατάστασης token
+  // ✅ Ενημέρωση status token (επιτυχία/αποτυχία)
   function updateTokenStatus(message, isSuccess = true) {
     const status = document.getElementById("tokenStatus");
     status.textContent = message;
     status.style.color = isSuccess ? "var(--accent-green)" : "var(--accent-red)";
   }
 
-  // ✅ Log με μηνύματα κατάστασης (UI και κονσόλα)
+  // ✅ Προσθήκη μηνύματος στο log (UI + console)
   function addLog(message, type = "info") {
     console.log(`[LOG][${type.toUpperCase()}] ${message}`);
     const container = document.getElementById("logOutput");
@@ -119,7 +124,7 @@ window.uiModule = (function () {
     container.appendChild(p);
   }
 
-  // ✅ Ενεργοποίηση κουμπιού Download Failed
+  // ✅ Ενεργοποίηση κουμπιού Download Failed (.txt)
   function enableDownloadFailed(failedArray, onClickHandler) {
     const btn = document.getElementById("downloadFailedButton");
     if (!btn) return;
@@ -128,9 +133,38 @@ window.uiModule = (function () {
     btn.onclick = () => onClickHandler(failedArray);
   }
 
-  // ✅ Ενημέρωση τελευταίων airdrops (placeholder - προσεχώς)
+  // ✅ Ενημέρωση με τα τελευταία airdrops (μέσω backend)
   function updateLastAirdrops() {
-    console.log("[uiModule] Placeholder: updateLastAirdrops");
+    const container = document.getElementById("lastAirdrops");
+    if (!container) return;
+
+    fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/api/last-airdrops")
+      .then(res => res.json())
+      .then(data => {
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No recent airdrops.</p>";
+          return;
+        }
+
+        const html = data
+          .map((drop, i) => {
+            const short = addr => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+            return `<div class="airdrop-item">
+              <p>#${i + 1}</p>
+              <p><strong>Sender:</strong> ${short(drop.sender)}</p>
+              <p><strong>Token:</strong> ${short(drop.token)}</p>
+              <p><strong>Count:</strong> ${drop.count}</p>
+              <p><strong>Date:</strong> ${new Date(drop.timestamp * 1000).toLocaleString()}</p>
+            </div>`;
+          })
+          .join("");
+
+        container.innerHTML = html;
+      })
+      .catch(err => {
+        console.warn("[uiModule] Failed to fetch last airdrops:", err);
+        container.innerHTML = "<p>Could not load recent airdrops.</p>";
+      });
   }
 
   return {
@@ -139,6 +173,7 @@ window.uiModule = (function () {
     resetUI,
     showError,
     clearResults,
+    clearLogs,
     showModeSection,
     displayAddresses,
     getDisplayedAddresses,
