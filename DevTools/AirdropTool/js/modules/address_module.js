@@ -1,81 +1,53 @@
 // js/modules/address_module.js
-//
-// 📦 Περιγραφή: Παράγει ή φορτώνει wallet addresses για το airdrop εργαλείο, ανά mode (paste, create, random).
-// ✅ Περιλαμβάνει filtering: null, κενές, μη-έγκυρες, μη μοναδικές διευθύνσεις.
 
 window.addressModule = (function () {
+  const MAX_LIMIT = 1000;
+
   async function fetchAddresses(mode) {
-    console.log("[addressModule] Fetching addresses for mode:", mode);
-
-    if (mode === "paste") {
-      const raw = document.getElementById("polygonScanInput").value;
-      return cleanAddresses(raw.split("\n"));
-    }
-
-    if (mode === "create") {
-      const contract = document.getElementById("contractInput").value.trim();
-      const max = parseInt(document.getElementById("maxCreateAddresses").value, 10);
-      const fetched = await getAddressesFromHolders(contract, max);
-      return cleanAddresses(fetched);
-    }
-
-    if (mode === "random") {
-      const max = parseInt(document.getElementById("maxAddresses").value, 10);
-      return generateRandomAddresses(max);
-    }
-
-    return [];
-  }
-
-  async function getAddressesFromHolders(contract, max = 1000) {
     try {
-      if (!CONFIG.PROXY_API_URL) throw new Error("PROXY_API_URL is not defined");
+      console.log("[addressModule] Fetching addresses with mode:", mode);
 
-      const url = `${CONFIG.PROXY_API_URL}?contract=${contract}&max=${max}`;
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch holders");
+      if (mode === "paste") {
+        const raw = document.getElementById("polygonScanInput").value.trim();
+        const lines = raw.split("\n").map(addr => addr.trim()).filter(Boolean);
+        const unique = [...new Set(lines)].slice(0, MAX_LIMIT);
+        console.log("[addressModule] Paste mode: ", unique.length, "addresses");
+        return unique;
       }
 
-      const data = await res.json();
-      const addresses = data.addresses || [];
-      const limited = addresses.slice(0, max);
+      if (mode === "random") {
+        const limit = parseInt(document.getElementById("maxAddresses").value, 10) || 100;
+        const response = await fetch("https://proxy-git-main-lqxtokens-projects.vercel.app/abis/active_polygon_wallets.json");
+        const data = await response.json();
+        const shuffled = data.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, Math.min(limit, MAX_LIMIT));
+        console.log("[addressModule] Random mode:", selected.length, "addresses");
+        return selected;
+      }
 
-      console.log(`[addressModule] Create mode - fetched: ${limited.length}`);
-      return limited;
-    } catch (err) {
-      console.error("[getAddressesFromHolders] ❌", err);
-      throw err;
+      if (mode === "create") {
+        const contract = document.getElementById("contractInput").value.trim();
+        const limit = parseInt(document.getElementById("maxCreateAddresses").value, 10) || 100;
+
+        const proxyUrl = "https://proxy-git-main-lqxtokens-projects.vercel.app/api/polygon";
+        const urlWithParams = proxyUrl + "?contract=" + encodeURIComponent(contract);
+
+        const response = await fetch(urlWithParams, {
+          method: "GET",
+          headers: { "Accept": "application/json" }
+        });
+
+        const result = await response.json();
+        const addresses = [...new Set(result.addresses || [])].slice(0, Math.min(limit, MAX_LIMIT));
+        console.log("[addressModule] Create mode:", addresses.length, "addresses");
+        return addresses;
+      }
+
+      return [];
+    } catch (error) {
+      console.error("[addressModule] Fetch error:", error);
+      throw error;
     }
-  }
-
-  function generateRandomAddresses(count) {
-    const addresses = [];
-    for (let i = 0; i < count; i++) {
-      const rand = ethers.Wallet.createRandom().address;
-      addresses.push(rand);
-    }
-
-    console.log("[addressModule] Random mode - generated:", addresses.length);
-    return addresses;
-  }
-
-  function cleanAddresses(inputArray) {
-    const seen = new Set();
-
-    const cleaned = inputArray
-      .map(addr => addr.trim())
-      .filter(addr =>
-        addr &&
-        addr !== ethers.constants.AddressZero &&
-        ethers.utils.isAddress(addr) &&
-        !seen.has(addr.toLowerCase()) &&
-        seen.add(addr.toLowerCase())
-      );
-
-    console.log(`[addressModule] Cleaned addresses (valid & unique): ${cleaned.length}`);
-    return cleaned;
   }
 
   return {
