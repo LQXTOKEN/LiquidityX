@@ -1,1 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Contract Finder Tool</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input { padding: 6px; width: 350px; }
+    button { padding: 6px 12px; margin-left: 10px; }
+    table { margin-top: 20px; border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f3f3f3; }
+  </style>
+</head>
+<body>
+  <h2>🔍 Contract Finder Tool</h2>
+  <input id="addressInput" placeholder="Enter Polygon address">
+  <button onclick="findContracts()">Find Contracts</button>
+  <div id="loading" style="margin-top: 15px;"></div>
+  <div id="resultsContainer"></div>
 
+  <script>
+    async function findContracts() {
+      const address = document.getElementById("addressInput").value.trim();
+      const loading = document.getElementById("loading");
+      const resultsContainer = document.getElementById("resultsContainer");
+
+      if (!address) {
+        alert("Please enter a valid address.");
+        return;
+      }
+
+      loading.innerText = "Fetching deployed contracts...";
+      resultsContainer.innerHTML = "";
+
+      try {
+        const res = await fetch(`https://proxy-git-main-lqxtokens-projects.vercel.app/api/deployments?address=${address}`);
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+          loading.innerText = "No deployed contracts found.";
+          return;
+        }
+
+        // Build results table
+        let html = `<table>
+          <tr>
+            <th>Contract</th>
+            <th>Verified</th>
+            <th>Name</th>
+            <th>Compiler</th>
+            <th>Block</th>
+            <th>Tx</th>
+          </tr>`;
+
+        for (const c of data) {
+          html += `<tr>
+            <td><a href="https://polygonscan.com/address/${c.contractAddress}" target="_blank">${c.contractAddress}</a></td>
+            <td>${c.verified ? '✅' : '❌'}</td>
+            <td>${c.contractName}</td>
+            <td>${c.compiler}</td>
+            <td>${c.blockNumber}</td>
+            <td><a href="https://polygonscan.com/tx/${c.txHash}" target="_blank">View</a></td>
+          </tr>`;
+        }
+
+        html += `</table>`;
+        resultsContainer.innerHTML = html;
+        loading.innerText = "";
+      } catch (err) {
+        console.error(err);
+        loading.innerText = "Error fetching data.";
+      }
+    }
+  </script>
+</body>
+</html>
