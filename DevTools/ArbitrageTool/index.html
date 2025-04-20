@@ -1,28 +1,28 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Crypto Arbitrage Bot</title>
+  <title>Safe Arbitrage Bot</title>
   <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-  <script src="bot.js"></script>
   <style>
-    body { font-family: Arial; max-width: 800px; margin: 0 auto; }
-    #status { padding: 10px; background: #f0f0f0; border-radius: 5px; }
-    #logs { height: 300px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; }
+    body { font-family: Arial; max-width: 700px; margin: 30px auto; }
+    #status { padding: 10px; background: #eef; margin-bottom: 10px; }
+    #logs { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; background: #f9f9f9; }
+    button { padding: 10px 20px; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>Safe Arbitrage Bot</h1>
-  <div id="status">Status: ⏳ Connecting...</div>
+  <h1>🔎 Safe Arbitrage Bot</h1>
+  <div id="status">Status: Not Connected</div>
   <button id="startBtn">▶️ Start Bot</button>
-  <h3>Transaction Logs:</h3>
+  <h3>Logs:</h3>
   <div id="logs"></div>
 
+  <script src="bot-browser.js"></script>
   <script>
-    document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById("startBtn").onclick = () => {
       const bot = new SafeArbitrageBot();
       bot.run();
-    });
+    };
   </script>
 </body>
 </html>
