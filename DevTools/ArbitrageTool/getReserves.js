@@ -1,12 +1,21 @@
-const { ethers } = require('ethers');
-const config = require('./config');
+// 📁 getreserves.js
+import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js";
+import { CONFIG } from "./config.js";
 
-async function getReserves(pairAddress) {
+export async function fetchReserves(provider) {
   const abi = ["function getReserves() external view returns (uint112, uint112, uint32)"];
-  const provider = new ethers.providers.JsonRpcProvider(config.RPC_URL);
-  const pair = new ethers.Contract(pairAddress, abi, provider);
-  const [r0, r1] = await pair.getReserves();
-  return { reserve0: r0.toString(), reserve1: r1.toString() };
-}
+  const results = [];
 
-module.exports = getReserves;
+  for (const pair of CONFIG.PAIRS) {
+    const contract = new ethers.Contract(pair.address, abi, provider);
+    const [reserve0, reserve1] = await contract.getReserves();
+    results.push({
+      tokenA: pair.tokenA,
+      tokenB: pair.tokenB,
+      reserveA: reserve0.toString(),
+      reserveB: reserve1.toString(),
+      address: pair.address
+    });
+  }
+  return results;
+}
