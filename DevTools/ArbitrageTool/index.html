@@ -1,16 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>DEX Analyzer</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script src="config.js"></script>
-  <script src="getReserves.js"></script>
-  <script src="analyze.js"></script>
-  <script src="main.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arbitrage Monitor</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Polygon DEX Liquidity Analyzer</h1>
-  <button onclick="startAnalysis()">Start Analysis</button>
-  <div id="output"></div>
+  <div class="container">
+    <h1>Arbitrage Monitor</h1>
+    <div class="status">
+      <span id="connectionStatus">🔴 Disconnected</span>
+    </div>
+
+    <div class="controls">
+      <label for="pairSelector">Select LP Pair:</label>
+      <select id="pairSelector"></select>
+    </div>
+
+    <div class="log-container">
+      <h2>Live Transactions</h2>
+      <pre id="log"></pre>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
