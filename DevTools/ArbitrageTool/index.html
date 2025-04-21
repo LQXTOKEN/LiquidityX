@@ -1,27 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Arbitrage Monitor</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <h1>Arbitrage Monitor</h1>
-    <div class="status">
-      <span id="connectionStatus">🔴 Disconnected</span>
-    </div>
-
-    <div class="controls">
-      <label for="pairSelector">Select LP Pair:</label>
-      <select id="pairSelector"></select>
-    </div>
-
-    <div class="log-container">
-      <h2>Live Transactions</h2>
-      <pre id="log"></pre>
-    </div>
+    <button id="startMonitoring">Start Monitoring</button>
+    <pre id="output"></pre>
   </div>
 
   <script src="script.js"></script>
