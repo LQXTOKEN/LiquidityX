@@ -1,47 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Direct RPC Analyzer</title>
-  <style>
-    body { font-family: sans-serif; }
-    table { width: 100%; border-collapse: collapse; }
-    td, th { padding: 5px; border: 1px solid #ddd; }
-  </style>
+  <title>DEX Analyzer</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="getreserves.js"></script>
+  <script src="analyze.js"></script>
+  <script src="main.js"></script>
 </head>
 <body>
-  <h1>Live Pair Reserves</h1>
-  <button onclick="startAnalysis()">🔄 Fetch</button>
+  <h1>Polygon DEX Liquidity Analyzer</h1>
+  <button onclick="startAnalysis()">Start Analysis</button>
   <div id="output"></div>
-
-  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-  <script src="config.js"></script>
-  <script src="getReserves.js"></script>
-  <script src="analyze.js"></script>
-  <script>
-    async function startAnalysis() {
-      const pairs = [
-        { tokenA: 'WMATIC', tokenB: 'USDC', address: '0x...' },
-        { tokenA: 'WMATIC', tokenB: 'QUICK', address: '0x...' },
-        // κλπ.
-      ];
-
-      const table = document.createElement("table");
-      const header = table.insertRow();
-      ["Token A", "Token B", "Reserve A", "Reserve B", "Address"].forEach(text => {
-        const cell = header.insertCell(); cell.textContent = text;
-      });
-
-      const results = await window.analyzePairs(pairs);
-      for (const row of results) {
-        const tr = table.insertRow();
-        [row.tokenA, row.tokenB, row.reservesA, row.reservesB, row.address].forEach(val => {
-          const td = tr.insertCell(); td.textContent = val;
-        });
-      }
-
-      document.getElementById("output").innerHTML = "";
-      document.getElementById("output").appendChild(table);
-    }
-  </script>
 </body>
 </html>
