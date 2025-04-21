@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Direct RPC Liquidity Analyzer</title>
-  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -73,8 +73,11 @@
         : [tokenB, tokenA];
 
       const salt = ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'address'], [token0, token1]));
-      const pair = ethers.utils.getCreate2Address(FACTORY, salt, INIT_CODE_HASH);
-      return pair;
+      return ethers.utils.getCreate2Address(
+        FACTORY,
+        salt,
+        INIT_CODE_HASH
+      );
     }
 
     async function getReserves(pairAddress) {
