@@ -1,93 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Direct RPC Liquidity Analyzer</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <title>Direct RPC Analyzer</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f4f4f4; }
+    body { font-family: sans-serif; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 5px; border: 1px solid #ddd; }
   </style>
 </head>
 <body>
-  <h2>📊 Direct RPC Liquidity Analyzer</h2>
-  <button onclick="startAnalysis()">🔍 Scan Liquidity</button>
-  <table id="results">
-    <thead>
-      <tr>
-        <th>Token A</th>
-        <th>Token B</th>
-        <th>Reserves A</th>
-        <th>Reserves B</th>
-        <th>Pair Address</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <h1>Live Pair Reserves</h1>
+  <button onclick="startAnalysis()">🔄 Fetch</button>
+  <div id="output"></div>
 
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="getReserves.js"></script>
+  <script src="analyze.js"></script>
   <script>
-    const RPC = "https://polygon-rpc.com"; // Ή Vercel proxy
-    const provider = new ethers.providers.JsonRpcProvider(RPC);
-
-    const FACTORY = "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32"; // QuickSwap Factory
-    const INIT_CODE_HASH = "0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f";
-
-    const TOKENS = {
-      WMATIC: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-      USDC:   "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-      QUICK:  "0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
-      USDT:   "0xc2132D05D31c914a87C6611C10748AEb04B58e8f"
-    };
-
-    const PAIR_ABI = ["function getReserves() view returns (uint112, uint112, uint32)"];
-
     async function startAnalysis() {
-      const tbody = document.querySelector("#results tbody");
-      tbody.innerHTML = "";
+      const pairs = [
+        { tokenA: 'WMATIC', tokenB: 'USDC', address: '0x...' },
+        { tokenA: 'WMATIC', tokenB: 'QUICK', address: '0x...' },
+        // κλπ.
+      ];
 
-      const tokenKeys = Object.keys(TOKENS);
-      for (let i = 0; i < tokenKeys.length; i++) {
-        for (let j = i + 1; j < tokenKeys.length; j++) {
-          const tokenA = TOKENS[tokenKeys[i]];
-          const tokenB = TOKENS[tokenKeys[j]];
-          const pair = await getPairAddress(tokenA, tokenB);
-          const reserves = await getReserves(pair);
+      const table = document.createElement("table");
+      const header = table.insertRow();
+      ["Token A", "Token B", "Reserve A", "Reserve B", "Address"].forEach(text => {
+        const cell = header.insertCell(); cell.textContent = text;
+      });
 
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${tokenKeys[i]}</td>
-            <td>${tokenKeys[j]}</td>
-            <td>${reserves ? reserves[0] : "-"}</td>
-            <td>${reserves ? reserves[1] : "-"}</td>
-            <td><a href="https://polygonscan.com/address/${pair}" target="_blank">${pair.slice(0,6)}...${pair.slice(-4)}</a></td>
-          `;
-          tbody.appendChild(row);
-        }
+      const results = await window.analyzePairs(pairs);
+      for (const row of results) {
+        const tr = table.insertRow();
+        [row.tokenA, row.tokenB, row.reservesA, row.reservesB, row.address].forEach(val => {
+          const td = tr.insertCell(); td.textContent = val;
+        });
       }
-    }
 
-    async function getPairAddress(tokenA, tokenB) {
-      const [token0, token1] = tokenA.toLowerCase() < tokenB.toLowerCase()
-        ? [tokenA, tokenB]
-        : [tokenB, tokenA];
-
-      const salt = ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'address'], [token0, token1]));
-      return ethers.utils.getCreate2Address(
-        FACTORY,
-        salt,
-        INIT_CODE_HASH
-      );
-    }
-
-    async function getReserves(pairAddress) {
-      try {
-        const contract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
-        const [res0, res1] = await contract.getReserves();
-        return [res0.toString(), res1.toString()];
-      } catch (err) {
-        return null;
-      }
+      document.getElementById("output").innerHTML = "";
+      document.getElementById("output").appendChild(table);
     }
   </script>
 </body>
